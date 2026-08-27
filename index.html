@@ -17,12 +17,25 @@
   --txt:#e8f1f1; --dim:#93a5a6; --mut:#5f7375;
   --glow:rgba(46,230,192,.30);
 }
-:root[data-tema="turquesa"]{
-  --bg:#070d0f; --bg2:#050a0b; --panel:#0d1618; --panel2:#121e21; --raise:#16252a;
-  --acc:#2ee6c0; --acc-s:#7df5da; --acc-d:#12a88c; --acc-ink:#032019;
-  --meta:#2ee6c0; --meta-s:#7df5da;
-  --pos:#2ee6c0; --neg:#ff7a7a; --warn:#e8c15a;
-  --txt:#e8f1f1; --dim:#93a5a6; --mut:#5f7375; --glow:rgba(46,230,192,.30);
+/* Clássico Lidere — preto e dourado, o padrão da casa (app-interno-lidere) */
+:root[data-tema="classico"]{
+  --bg:#07090d; --bg2:#05070a; --panel:#0e131d; --panel2:#131926; --raise:#1a2130;
+  --line:rgba(255,255,255,.07); --line-f:rgba(255,255,255,.14);
+  --acc:#d4a840; --acc-s:#f2c94c; --acc-d:#a37f22; --acc-ink:#171204;
+  --meta:#d4a840; --meta-s:#f2c94c;
+  --pos:#3ea06b; --neg:#ef4444; --warn:#d4a840;
+  --txt:#e9edf4; --dim:#9aa3b2; --mut:#6b7484;
+  --glow:rgba(212,168,64,.26);
+}
+/* Claro — o mesmo dourado sobre papel, como nas propostas da Lidere */
+:root[data-tema="claro"]{
+  --bg:#f6f4ee; --bg2:#efece2; --panel:#ffffff; --panel2:#faf8f1; --raise:#f1ede1;
+  --line:#e6e2d6; --line-f:#d3cdbb;
+  --acc:#8a6811; --acc-s:#6f5410; --acc-d:#a37f22; --acc-ink:#ffffff;
+  --meta:#8a6811; --meta-s:#6f5410;
+  --pos:#1c7a4d; --neg:#b3261e; --warn:#96650a;
+  --txt:#1d1c18; --dim:#4a4740; --mut:#78736a;
+  --glow:rgba(156,118,20,.20);
 }
 :root[data-tema="ambar"]{
   --bg:#0a0908; --bg2:#070605; --panel:#15120e; --panel2:#1c1813; --raise:#231e17;
@@ -164,7 +177,7 @@ input,select,textarea{font-family:inherit}
 table{width:100%;border-collapse:collapse;font-size:12.5px}
 th{text-align:left;font-size:9.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--mut);font-weight:800;
   padding:0 10px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
-td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
 .tbl-scroll table th:first-child,.tbl-scroll table td:first-child{padding-left:18px}
 .tbl-scroll table th:last-child,.tbl-scroll table td:last-child{padding-right:18px}
 tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
@@ -304,7 +317,7 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .filters input,.filters select{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:7px 11px;border-radius:8px;font-size:12.5px}
 .filters input:focus,.filters select:focus{outline:none;border-color:var(--acc)}
 .right{margin-left:auto}
-.seg{display:inline-flex;gap:0;background:var(--panel2);border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg{display:inline-flex;gap:0;flex-wrap:wrap;background:var(--panel2);border:1px solid var(--line);border-radius:9px;overflow:hidden}
 .seg .o{padding:8px 15px;font-weight:600;color:var(--dim);font-size:12.5px;cursor:pointer;transition:.14s;border-right:1px solid var(--line)}
 .seg .o:last-child{border-right:none}
 .seg .o:hover{background:var(--raise);color:var(--txt)}
@@ -342,26 +355,64 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .dre-sec{font-weight:800;color:var(--acc);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding-top:16px}
 .dre-tot td{border-top:1px solid var(--line-f);border-bottom:1px solid var(--line-f);font-weight:700}
 .dre-ind td{border:none;padding:6px 10px}
-/* ---------- Princípios ---------- */
-.pr{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}
-.pr-c{background:var(--panel);border:1px solid var(--line);border-left:2px solid var(--line-f);border-radius:0 12px 12px 0;
-  padding:16px 18px;transition:.16s;position:relative}
-.pr-c:hover{border-color:var(--line-f)}
-.pr-c.on{border-left-color:var(--acc);background:linear-gradient(90deg,var(--panel2),var(--panel) 55%)}
-.pr-c .cab{display:flex;align-items:center;gap:9px;margin-bottom:9px}
-.pr-c .cat{font-size:9px;letter-spacing:1.4px;text-transform:uppercase;color:var(--mut);font-weight:800}
-.pr-c .t{font-size:15px;font-weight:700;line-height:1.35;letter-spacing:-.2px}
-.pr-c.on .t{color:var(--acc)}
-.pr-c .d{font-size:12.5px;color:var(--dim);line-height:1.6;margin-top:9px}
-.pr-c .ac{display:flex;gap:7px;margin-top:14px;align-items:center}
-.pr-adotar{background:transparent;border:1px solid var(--line-f);color:var(--mut);font-size:11px;font-weight:700;
-  padding:5px 11px;border-radius:20px;transition:.15s;letter-spacing:.3px}
-.pr-adotar:hover{border-color:var(--acc);color:var(--acc)}
-.pr-adotar.on{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+/* ---------- Princípios ----------
+   Efeitos que dizem algo: o fio lateral carrega a cor da categoria e
+   preenche quando o princípio é adotado; o porquê fica atrás de um
+   clique, para a grade poder ser lida de relance. */
+.pr{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:13px;align-items:start}
+.pr-c{position:relative;background:var(--panel);border:1px solid var(--line);
+  border-radius:0 13px 13px 0;padding:18px 20px 16px;overflow:hidden;
+  transition:transform .18s cubic-bezier(.2,.7,.2,1),border-color .18s,box-shadow .18s}
+.pr-c::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--pcor,var(--mut));opacity:.45;transition:opacity .22s,width .22s}
+.pr-c:hover{transform:translateY(-2px);border-color:var(--line-f);
+  box-shadow:0 10px 26px rgba(0,0,0,.16)}
+.pr-c:hover::before{opacity:.8}
+.pr-c.on{background:linear-gradient(100deg,color-mix(in srgb,var(--pcor) 11%,var(--panel)),var(--panel) 62%)}
+.pr-c.on::before{opacity:1;width:4px}
+.pr-c .cab{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.pr-c .cat{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--pcor,var(--mut));font-weight:800}
+.pr-c .t{font-size:16px;font-weight:700;line-height:1.38;letter-spacing:-.25px;
+  transition:color .2s}
+.pr-c.on .t{color:var(--txt)}
+.pr-c .acs{display:flex;gap:6px;margin-left:auto;opacity:0;transition:opacity .18s}
+.pr-c:hover .acs,.pr-c:focus-within .acs{opacity:1}
+
+/* o porquê, atrás de um clique — <details> nativo, sem JS */
+.pr-c details{margin-top:11px}
+.pr-c summary{list-style:none;cursor:pointer;font-size:11px;font-weight:700;
+  letter-spacing:.4px;color:var(--mut);display:inline-flex;align-items:center;gap:6px;
+  padding:3px 0;transition:color .16s}
+.pr-c summary::-webkit-details-marker{display:none}
+.pr-c summary:hover{color:var(--pcor,var(--acc))}
+.pr-c summary::after{content:"▾";font-size:9px;transition:transform .22s}
+.pr-c details[open] summary::after{transform:rotate(180deg)}
+.pr-c details .d{font-size:12.5px;color:var(--dim);line-height:1.65;margin-top:8px;
+  animation:prAbre .26s cubic-bezier(.2,.7,.2,1)}
+@keyframes prAbre{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+
+.pr-adotar{background:transparent;border:1px solid var(--line-f);color:var(--mut);
+  font-size:11px;font-weight:700;padding:5px 13px;border-radius:20px;
+  letter-spacing:.3px;margin-top:13px;display:inline-flex;align-items:center;gap:6px;
+  transition:.18s}
+.pr-adotar:hover{border-color:var(--pcor,var(--acc));color:var(--pcor,var(--acc))}
+.pr-adotar.on{background:var(--pcor,var(--acc));border-color:var(--pcor,var(--acc));
+  color:var(--acc-ink)}
+.pr-adotar .tick{width:13px;height:13px;flex:0 0 13px;border-radius:50%;
+  border:1.5px solid currentColor;display:inline-flex;align-items:center;justify-content:center}
+.pr-adotar.on .tick{background:currentColor}
+.pr-adotar.on .tick::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--pcor)}
+
+/* entrada escalonada: a grade se monta, não pisca */
+.pr-c{animation:prEntra .34s cubic-bezier(.2,.7,.2,1) backwards}
+@keyframes prEntra{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+
 .pdia{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);
   border-left:2px solid var(--acc);border-radius:0 12px 12px 0;padding:13px 18px;margin-bottom:16px}
 .pdia .k{font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:var(--mut);font-weight:800;white-space:nowrap}
 .pdia .t{font-size:14px;font-weight:600;flex:1;min-width:180px;line-height:1.4}
+@media(prefers-reduced-motion:reduce){.pr-c{animation:none}.pr-c:hover{transform:none}}
 /* ---------- Playbooks ---------- */
 .pb{display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));gap:12px}
 .pb-c{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;cursor:pointer;
@@ -421,6 +472,53 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .gate-links{display:flex;justify-content:space-between;gap:10px;margin-top:14px;flex-wrap:wrap}
 .gate-links .lnk{background:none;border:none;color:var(--mut);font-size:11.5px;font-weight:600;padding:4px}
 .gate-links .lnk:hover{color:var(--acc)}
+
+/* ---------- Playbook em papel (design das propostas Lidere) ----------
+   Vale para ler na tela em modo claro e para o PDF. Cores literais de
+   propósito: o papel não muda com a paleta do app nem com a impressora. */
+.papel{--tinta:#2d2d2d;--preto:#1a1a1a;--ouro:#B8860B;--ouro-l:#D4A840;
+  --ouro-tint:#FBF5E6;--risco:#e8e8e8;--cinza:#6b6b6b;
+  background:#fff;color:var(--tinta);
+  font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+  padding:40px 46px;border-radius:10px;max-width:760px;margin:0 auto}
+.papel .cab{display:flex;justify-content:space-between;align-items:flex-start;
+  border-bottom:3px solid var(--preto);padding-bottom:18px;margin-bottom:26px;gap:22px}
+.papel .cab svg{width:210px;height:auto;display:block}
+.papel .cab-dir{text-align:right;font-size:12px;color:#555;min-width:170px}
+.papel .cab-dir .doc{font-size:13px;font-weight:700;color:var(--preto);
+  text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.papel .selo{display:inline-block;background:var(--ouro-l);color:var(--preto);
+  font-size:10px;font-weight:700;padding:3px 12px;border-radius:10px;
+  text-transform:uppercase;letter-spacing:.5px;margin-top:8px}
+.papel h1{font-size:25px;color:var(--preto);line-height:1.25;margin:0 0 12px;
+  letter-spacing:-.3px;text-wrap:balance}
+.papel .resumo{font-size:15px;color:#444;line-height:1.65;
+  border-left:3px solid var(--ouro-l);padding-left:15px;margin:0 0 26px}
+.papel h2{font-size:14px;color:var(--preto);border-bottom:2px solid var(--risco);
+  padding-bottom:7px;margin:28px 0 12px;text-transform:uppercase;letter-spacing:.6px}
+.papel p{font-size:14px;line-height:1.75;margin:0 0 14px;color:var(--tinta)}
+.papel .acao{background:var(--ouro-tint);border:1px solid var(--ouro-l);
+  border-radius:8px;padding:16px 18px;margin-top:26px}
+.papel .acao b{display:block;font-size:10.5px;letter-spacing:1.4px;
+  text-transform:uppercase;color:var(--ouro);margin-bottom:7px}
+.papel .acao p{margin:0;font-size:13.5px;color:#3a3a3a}
+.papel .nota{margin-top:16px;font-size:11.5px;color:var(--cinza);
+  line-height:1.6;font-style:italic;border-top:1px solid var(--risco);padding-top:12px}
+.papel .rodape{margin-top:30px;border-top:2px solid var(--risco);padding-top:12px;
+  display:flex;justify-content:space-between;font-size:11px;color:var(--cinza);gap:14px}
+
+/* área de impressão: fica fora da tela até o momento do PDF */
+#imprimir{display:none}
+@media print{
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{background:#fff!important}
+  body > *{display:none!important}
+  #imprimir{display:block!important;position:static}
+  #imprimir .papel{max-width:100%;padding:0;border-radius:0}
+  .papel h2{break-after:avoid}
+  .papel p{orphans:3;widows:3}
+  .papel .acao{break-inside:avoid}
+}
 </style>
 
 <div class="gate" id="gate"></div>
@@ -458,15 +556,28 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
     <input type="hidden" id="l_id">
     <div class="field"><label>Tipo</label><div class="seg" id="l_dir">
       <div class="o sel" data-v="S" onclick="pickDir('S')">↓ Saída</div>
-      <div class="o" data-v="E" onclick="pickDir('E')">↑ Entrada</div></div></div>
+      <div class="o" data-v="E" onclick="pickDir('E')">↑ Entrada</div>
+      <div class="o" data-v="T" onclick="pickDir('T')">⇄ Transferência</div></div>
+      <div class="hint" id="l_transfAviso" style="display:none">Este lançamento faz par com outro.
+        Editar aqui muda os dois lados.</div></div>
+    <div id="l_transfBox" style="display:none">
+      <div class="field"><label>Para onde foi *</label>
+        <select id="l_destino" onchange="destinoMudou()"></select>
+        <div class="hint" id="l_transfHint"></div></div>
+      <div id="l_novoAtivoBox" style="display:none" class="fgrid">
+        <div class="field"><label>Nome do ativo *</label>
+          <input id="l_novoAtivo" placeholder="Ex.: Automóvel, Ações LIDERE"></div>
+        <div class="field"><label>Classe</label><select id="l_novaClasse"></select></div>
+      </div>
+    </div>
     <div class="fgrid">
       <div class="field"><label>Data *</label><input type="date" id="l_data"></div>
-      <div class="field"><label>Conta *</label><select id="l_conta"></select></div>
+      <div class="field"><label>Conta *</label><select id="l_conta" onchange="encheDestino()"></select></div>
     </div>
     <div class="field"><label>Histórico / descrição *</label><input id="l_desc" placeholder="Ex.: SUPERMERCADO CONDOR" oninput="sugereConta()"></div>
     <div class="fgrid">
       <div class="field"><label>Valor (R$) *</label><input id="l_valor" inputmode="decimal" placeholder="0,00"></div>
-      <div class="field"><label>Conta do plano *</label><select id="l_cod"></select><div class="hint" id="l_codHint"></div></div>
+      <div class="field" id="l_codBox"><label>Conta do plano *</label><select id="l_cod" onchange="this.dataset.tocado='1'"></select><div class="hint" id="l_codHint"></div></div>
     </div>
     <div class="field"><label>Observação</label><input id="l_obs" placeholder="opcional"></div>
   </div>
@@ -515,6 +626,8 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
     </div>
     <div class="fgrid">
       <div class="field"><label>Situação</label><select id="p_st"><option>Pendente</option><option>Pago</option></select></div>
+      <div class="field"><label>Pago em</label><input type="date" id="p_pagoEm">
+        <div class="hint">É por esta data que a conta aparece no arquivo.</div></div>
       <div class="field"><label>Recorrência</label><select id="p_rec"><option>Única</option><option>Mensal</option><option>Bimestral</option><option>Trimestral</option><option>Semestral</option><option>Anual</option></select></div>
     </div>
     <div class="field"><label>Conta do plano (para lançar quando pagar)</label><select id="p_cod"></select></div>
@@ -696,6 +809,36 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
   <div class="modal-foot" id="pbFoot"></div>
 </div></div>
 
+
+<!-- Modal: lançamentos em lote -->
+<div class="overlay" id="ovLote"><div class="modal wide" style="max-width:760px">
+  <div class="modal-head"><h3>Lançar em lote</h3><button class="modal-x" onclick="closeModal('ovLote')">×</button></div>
+  <div class="modal-body">
+    <div class="alert"><span>⌨</span><div>Conta e classificação valem para <b>todas</b> as linhas.
+      Use <b>Enter</b> no valor para abrir a próxima.</div></div>
+    <div class="fgrid">
+      <div class="field"><label>Conta *</label><select id="lo_conta"></select></div>
+      <div class="field"><label>Mês de referência</label><input type="month" id="lo_mes"></div>
+    </div>
+    <div class="field"><label>Tipo</label><div class="seg" id="lo_dir">
+      <div class="o sel" data-v="S" onclick="pickDirLote('S')">↓ Saída</div>
+      <div class="o" data-v="E" onclick="pickDirLote('E')">↑ Entrada</div></div></div>
+    <div class="field"><label>Conta do plano (para todas)</label><select id="lo_cod"></select>
+      <div class="hint">Deixe em branco para o app classificar cada linha pela palavra-chave.</div></div>
+    <div class="tbl-scroll" style="max-height:40vh;overflow-y:auto">
+      <table><thead><tr><th>Data</th><th>Histórico</th><th class="num">Valor</th><th></th></tr></thead>
+      <tbody id="loteBody"></tbody></table>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">
+      <button class="btn btn-sm" onclick="loteAdd()">＋ linha</button>
+      <span class="muted right" id="loteTotal" style="font-size:12px"></span>
+    </div>
+  </div>
+  <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('ovLote')">Cancelar</button>
+    <button class="btn btn-gold" onclick="saveLote()">Lançar todas</button></div>
+</div></div>
+
+<div id="imprimir"></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -708,7 +851,7 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 
 /* Semente injetada por build.py a partir de data/seed.json.
    Só vale na primeira abertura do arquivo; depois manda o localStorage. */
-const SEED = {"plano":[{"cod":"1.01","nome":"Salário / Ordenado","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"1.02","nome":"Pró-Labore","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"1.03","nome":"Freelance / Prestação de Serviço","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"1.04","nome":"Comissões Recebidas","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"1.05","nome":"13º Salário / Férias","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"1.06","nome":"Receita Sec","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"1.07","nome":"Receita proveniente da Faculdade","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"1.08","nome":"Pensão / Alimônia Recebida","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"1.09","nome":"Recebimentos PIX","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"2.01","nome":"Rendimento CDB/LCI/LCA","grupo":"RECEITAS FINANCEIRAS","tipo":"RECEITA"},{"cod":"2.02","nome":"Dividendos de Ações / FIIs","grupo":"RECEITAS FINANCEIRAS","tipo":"RECEITA"},{"cod":"2.03","nome":"Rendimento Poupança","grupo":"RECEITAS FINANCEIRAS","tipo":"RECEITA"},{"cod":"2.04","nome":"Juros Recebidos","grupo":"RECEITAS FINANCEIRAS","tipo":"RECEITA"},{"cod":"2.05","nome":"Aluguel de Imóvel Recebido","grupo":"RECEITAS FINANCEIRAS","tipo":"RECEITA"},{"cod":"2.06","nome":"Cashback / Pontos Revertidos","grupo":"RECEITAS FINANCEIRAS","tipo":"RECEITA"},{"cod":"2.07","nome":"Outras Receitas Financeiras","grupo":"RECEITAS FINANCEIRAS","tipo":"RECEITA"},{"cod":"3.01","nome":"Aluguel","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.02","nome":"Condomínio","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.03","nome":"Energia Elétrica (COPEL/CEMIG)","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.04","nome":"Água e Saneamento","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.05","nome":"Gás Encanado / GLP","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.06","nome":"Internet / Fibra","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.07","nome":"Telefone Fixo","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.08","nome":"TV por Assinatura","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.09","nome":"Manutenção e Reparos","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.10","nome":"IPTU","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.11","nome":"Mobiliário e Decoração","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.12","nome":"Material de Limpeza e Higiene","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.13","nome":"Diarista / Empregada Doméstica","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.14","nome":"Jardineiro / Jardinagem","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.15","nome":"Reformas e Obras","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"4.01","nome":"Supermercado / Mercado","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"4.02","nome":"Hortifruti / Feira","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"4.03","nome":"Açougue / Peixaria","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"4.04","nome":"Padaria / Confeitaria / Salgadeiras","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"4.05","nome":"Restaurante / Lanchonete","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"4.06","nome":"iFood / Delivery","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"4.07","nome":"Café / Cafeteria","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"4.08","nome":"Bebidas / Destilados","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"4.09","nome":"Alimentação","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"5.01","nome":"Combustível (Gasolina/Etanol)","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.02","nome":"Estacionamento","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.03","nome":"Pedágio","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.04","nome":"Manutenção / Revisão Veicular","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.05","nome":"Lavagem de Carro","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.06","nome":"IPVA","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.07","nome":"Licenciamento / Emplacamento","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.08","nome":"Seguro Automóvel","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.09","nome":"Uber / 99 / Taxi","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.10","nome":"Ônibus / Metrô / Trem","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.11","nome":"Consórcio de Veículo","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.12","nome":"Financiamento de Veículo","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"6.01","nome":"Plano de Saúde","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.02","nome":"Consulta Médica / Psicólogo / Esteticista","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.03","nome":"Dentista / Ortodontia","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.04","nome":"Farmácia / Medicamentos","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.05","nome":"Exames e Laboratório","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.06","nome":"Academia / Musculação","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.07","nome":"Fisioterapia / Pilates","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.08","nome":"Nutricionista","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.09","nome":"Suplementos / Vitaminas","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.10","nome":"Cirurgia / Internação","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"7.01","nome":"Escola / Mensalidade","grupo":"EDUCAÇÃO","tipo":"DESPESA"},{"cod":"7.02","nome":"Faculdade / Pós-Graduação","grupo":"EDUCAÇÃO","tipo":"DESPESA"},{"cod":"7.03","nome":"Curso Online / Plataforma EAD","grupo":"EDUCAÇÃO","tipo":"DESPESA"},{"cod":"7.04","nome":"Material Escolar / Livros","grupo":"EDUCAÇÃO","tipo":"DESPESA"},{"cod":"7.05","nome":"Idiomas (inglês, espanhol etc.)","grupo":"EDUCAÇÃO","tipo":"DESPESA"},{"cod":"7.06","nome":"Cursos de Certificação","grupo":"EDUCAÇÃO","tipo":"DESPESA"},{"cod":"7.07","nome":"Mentorias / Coaching","grupo":"EDUCAÇÃO","tipo":"DESPESA"},{"cod":"7.08","nome":"Transporte Escolar","grupo":"EDUCAÇÃO","tipo":"DESPESA"},{"cod":"8.01","nome":"Streaming (Netflix/Spotify/Prime)","grupo":"LAZER","tipo":"DESPESA"},{"cod":"8.02","nome":"Cinema / Teatro / Shows","grupo":"LAZER","tipo":"DESPESA"},{"cod":"8.03","nome":"Viagem / Hospedagem","grupo":"LAZER","tipo":"DESPESA"},{"cod":"8.04","nome":"Esportes (futebol, clube etc.)","grupo":"LAZER","tipo":"DESPESA"},{"cod":"8.05","nome":"Bares / Festas / Balada","grupo":"LAZER","tipo":"DESPESA"},{"cod":"8.06","nome":"Jogos Digitais","grupo":"LAZER","tipo":"DESPESA"},{"cod":"8.07","nome":"Livros / Revistas / Assinaturas","grupo":"LAZER","tipo":"DESPESA"},{"cod":"8.08","nome":"Presentes / Datas Comemorativas","grupo":"LAZER","tipo":"DESPESA"},{"cod":"8.09","nome":"Hobbies Diversos","grupo":"LAZER","tipo":"DESPESA"},{"cod":"9.01","nome":"Roupas / Calçados","grupo":"VESTUÁRIO","tipo":"DESPESA"},{"cod":"9.02","nome":"Acessórios (bolsas, relógios)","grupo":"VESTUÁRIO","tipo":"DESPESA"},{"cod":"9.03","nome":"Barbearia / Salão de Beleza","grupo":"VESTUÁRIO","tipo":"DESPESA"},{"cod":"9.04","nome":"Cosméticos / Perfumaria","grupo":"VESTUÁRIO","tipo":"DESPESA"},{"cod":"9.05","nome":"Manicure / Pedicure","grupo":"VESTUÁRIO","tipo":"DESPESA"},{"cod":"10.01","nome":"Celular / Plano Móvel","grupo":"TECNOLOGIA","tipo":"DESPESA"},{"cod":"10.02","nome":"Equipamentos Eletrônicos","grupo":"TECNOLOGIA","tipo":"DESPESA"},{"cod":"10.03","nome":"Software / Aplicativos Pagos","grupo":"TECNOLOGIA","tipo":"DESPESA"},{"cod":"10.04","nome":"Suporte Técnico / Informática","grupo":"TECNOLOGIA","tipo":"DESPESA"},{"cod":"11.01","nome":"Seguro de Vida","grupo":"SEGUROS","tipo":"DESPESA"},{"cod":"11.02","nome":"Seguro Residencial","grupo":"SEGUROS","tipo":"DESPESA"},{"cod":"11.03","nome":"Seguro Viagem","grupo":"SEGUROS","tipo":"DESPESA"},{"cod":"11.04","nome":"Previdência Privada (PGBL/VGBL)","grupo":"SEGUROS","tipo":"DESPESA"},{"cod":"12.01","nome":"Imposto de Renda (IRPF/DARF)","grupo":"IMPOSTOS","tipo":"DESPESA"},{"cod":"12.02","nome":"INSS Autônomo / MEI","grupo":"IMPOSTOS","tipo":"DESPESA"},{"cod":"12.03","nome":"Outras Taxas e Tributos","grupo":"IMPOSTOS","tipo":"DESPESA"},{"cod":"13.01","nome":"Parcela Financiamento Imóvel","grupo":"FINANCIAMENTOS","tipo":"DESPESA"},{"cod":"13.02","nome":"Parcela Consórcio","grupo":"FINANCIAMENTOS","tipo":"DESPESA"},{"cod":"13.03","nome":"Empréstimo Pessoal / Crédito","grupo":"FINANCIAMENTOS","tipo":"DESPESA"},{"cod":"13.04","nome":"Parcela Crediário / CDC","grupo":"FINANCIAMENTOS","tipo":"DESPESA"},{"cod":"13.05","nome":"Juros e Encargos Bancários","grupo":"FINANCIAMENTOS","tipo":"DESPESA"},{"cod":"14.01","nome":"Fatura Cartão 1 (Inter)","grupo":"CARTÃO CRÉDITO","tipo":"NEUTRA"},{"cod":"14.02","nome":"Fatura Cartão 2 (Bradesco)","grupo":"CARTÃO CRÉDITO","tipo":"NEUTRA"},{"cod":"14.03","nome":"Fatura Cartão 3 (Itaú)","grupo":"CARTÃO CRÉDITO","tipo":"NEUTRA"},{"cod":"14.04","nome":"Fatura Cartão 4","grupo":"CARTÃO CRÉDITO","tipo":"NEUTRA"},{"cod":"15.01","nome":"Aporte em Ações / FIIs","grupo":"INVESTIMENTOS","tipo":"NEUTRA"},{"cod":"15.02","nome":"Aporte em CDB / Tesouro Direto","grupo":"INVESTIMENTOS","tipo":"NEUTRA"},{"cod":"15.03","nome":"Aporte em Poupança","grupo":"INVESTIMENTOS","tipo":"NEUTRA"},{"cod":"15.04","nome":"Aporte em Criptomoedas","grupo":"INVESTIMENTOS","tipo":"NEUTRA"},{"cod":"15.05","nome":"Aporte em Lidere","grupo":"INVESTIMENTOS","tipo":"NEUTRA"},{"cod":"15.06","nome":"Resgate de Investimento","grupo":"INVESTIMENTOS","tipo":"NEUTRA"},{"cod":"16.01","nome":"Transferência entre Contas Próprias","grupo":"TRANSFERÊNCIAS","tipo":"NEUTRA"},{"cod":"16.02","nome":"PIX Enviado","grupo":"TRANSFERÊNCIAS","tipo":"NEUTRA"},{"cod":"16.03","nome":"PIX Recebido","grupo":"TRANSFERÊNCIAS","tipo":"NEUTRA"},{"cod":"16.04","nome":"TED / DOC","grupo":"TRANSFERÊNCIAS","tipo":"NEUTRA"},{"cod":"16.05","nome":"Saque em Dinheiro","grupo":"TRANSFERÊNCIAS","tipo":"NEUTRA"},{"cod":"16.06","nome":"Depósito em Conta","grupo":"TRANSFERÊNCIAS","tipo":"NEUTRA"},{"cod":"17.01","nome":"Ração e Petisco","grupo":"PETS","tipo":"DESPESA"},{"cod":"17.02","nome":"Veterinário / Vacinas","grupo":"PETS","tipo":"DESPESA"},{"cod":"17.03","nome":"Banho e Tosa","grupo":"PETS","tipo":"DESPESA"},{"cod":"17.04","nome":"Acessórios para Pet","grupo":"PETS","tipo":"DESPESA"},{"cod":"18.01","nome":"Doações e Caridade","grupo":"OUTROS","tipo":"DESPESA"},{"cod":"18.02","nome":"Presentes (não classificado)","grupo":"OUTROS","tipo":"DESPESA"},{"cod":"18.03","nome":"Despesas Jurídicas","grupo":"OUTROS","tipo":"DESPESA"},{"cod":"18.04","nome":"Serviços Contábeis","grupo":"OUTROS","tipo":"DESPESA"},{"cod":"18.05","nome":"Despesas Diversas / Não Classificadas","grupo":"OUTROS","tipo":"DESPESA"}],"kws":[{"p":"MERCADO","cod":"4.01"},{"p":"SUPERMERCADO","cod":"4.01"},{"p":"ATACADAO","cod":"4.01"},{"p":"ATACADÃO","cod":"4.01"},{"p":"HORTIFRUTI","cod":"4.02"},{"p":"FEIRA","cod":"4.02"},{"p":"ACOUGUE","cod":"4.03"},{"p":"AÇOUGUE","cod":"4.03"},{"p":"PEIXARIA","cod":"4.03"},{"p":"PADARIA","cod":"4.04"},{"p":"CONFEITARIA","cod":"4.04"},{"p":"RESTAURANTE","cod":"4.05"},{"p":"LANCHONETE","cod":"4.05"},{"p":"LANCHE","cod":"4.05"},{"p":"JANTAR","cod":"4.05"},{"p":"IFOOD","cod":"4.06"},{"p":"DELIVERY","cod":"4.06"},{"p":"RAPPI","cod":"4.06"},{"p":"CAFE","cod":"4.07"},{"p":"CAFÉ","cod":"4.07"},{"p":"CAFETERIA","cod":"4.07"},{"p":"BEBIDA","cod":"4.08"},{"p":"ALCOOL","cod":"4.08"},{"p":"CERVEJA","cod":"4.08"},{"p":"COCA COLA","cod":"4.08"},{"p":"ACAI","cod":"4.08"},{"p":"AÇAÍ","cod":"4.08"},{"p":"GASOLINA","cod":"5.01"},{"p":"COMBUSTIVEL","cod":"5.01"},{"p":"COMBUSTÍVEL","cod":"5.01"},{"p":"ETANOL","cod":"5.01"},{"p":"POSTO","cod":"5.01"},{"p":"SHELL","cod":"5.01"},{"p":"IPIRANGA","cod":"5.01"},{"p":"PETROBRAS","cod":"5.01"},{"p":"ESTACIONAMENTO","cod":"5.02"},{"p":"PEDAGIO","cod":"5.03"},{"p":"PEDÁGIO","cod":"5.03"},{"p":"REVISAO","cod":"5.04"},{"p":"REVISÃO","cod":"5.04"},{"p":"MECANICO","cod":"5.04"},{"p":"MECÂNICO","cod":"5.04"},{"p":"LAVAGEM CARRO","cod":"5.05"},{"p":"IPVA","cod":"5.06"},{"p":"LICENCIAMENTO","cod":"5.07"},{"p":"EMPLACAMENTO","cod":"5.07"},{"p":"SEGURO AUTO","cod":"5.08"},{"p":"UBER","cod":"5.09"},{"p":"99","cod":"5.09"},{"p":"TAXI","cod":"5.09"},{"p":"TÁXI","cod":"5.09"},{"p":"ONIBUS","cod":"5.10"},{"p":"ÔNIBUS","cod":"5.10"},{"p":"METRO","cod":"5.10"},{"p":"METRÔ","cod":"5.10"},{"p":"PLANO SAUDE","cod":"6.01"},{"p":"PLANO SAÚDE","cod":"6.01"},{"p":"UNIMED","cod":"6.01"},{"p":"MEDICO","cod":"6.02"},{"p":"MÉDICO","cod":"6.02"},{"p":"CLINICA","cod":"6.02"},{"p":"CLÍNICA","cod":"6.02"},{"p":"PSICOLOGO","cod":"6.02"},{"p":"PSICÓLOGO","cod":"6.02"},{"p":"DENTISTA","cod":"6.03"},{"p":"ORTODONTIA","cod":"6.03"},{"p":"INVISALIGH","cod":"6.03"},{"p":"FARMACIA","cod":"6.04"},{"p":"FARMÁCIA","cod":"6.04"},{"p":"DROGARIA","cod":"6.04"},{"p":"MEDICAMENTO","cod":"6.04"},{"p":"EXAME","cod":"6.05"},{"p":"LABORATORIO","cod":"6.05"},{"p":"LABORATÓRIO","cod":"6.05"},{"p":"ACADEMIA","cod":"6.06"},{"p":"MUSCULACAO","cod":"6.06"},{"p":"MUSCULAÇÃO","cod":"6.06"},{"p":"FISIOTERAPIA","cod":"6.07"},{"p":"PILATES","cod":"6.07"},{"p":"NUTRI","cod":"6.08"},{"p":"SUPLEMENTO","cod":"6.09"},{"p":"VITAMINA","cod":"6.09"},{"p":"ALUGUEL","cod":"3.01"},{"p":"CONDOMINIO","cod":"3.02"},{"p":"CONDOMÍNIO","cod":"3.02"},{"p":"COPEL","cod":"3.03"},{"p":"CEMIG","cod":"3.03"},{"p":"LUZ","cod":"3.03"},{"p":"ENERGIA","cod":"3.03"},{"p":"SANEPAR","cod":"3.04"},{"p":"SABESP","cod":"3.04"},{"p":"AGUA","cod":"3.04"},{"p":"ÁGUA","cod":"3.04"},{"p":"GAS","cod":"3.05"},{"p":"GÁS","cod":"3.05"},{"p":"INTERNET","cod":"3.06"},{"p":"FIBRA","cod":"3.06"},{"p":"CLARO","cod":"3.06"},{"p":"VIVO","cod":"3.06"},{"p":"TIM","cod":"3.06"},{"p":"TELEFONE FIXO","cod":"3.07"},{"p":"SKY","cod":"3.08"},{"p":"NET","cod":"3.08"},{"p":"CLARO TV","cod":"3.08"},{"p":"MANUTENCAO","cod":"3.09"},{"p":"MANUTENÇÃO","cod":"3.09"},{"p":"REPARO","cod":"3.09"},{"p":"IPTU","cod":"3.10"},{"p":"MOVEL","cod":"3.11"},{"p":"MÓVEL","cod":"3.11"},{"p":"DECORACAO","cod":"3.11"},{"p":"DIARISTA","cod":"3.13"},{"p":"LIMPEZA","cod":"3.13"},{"p":"EMPREGADA","cod":"3.13"},{"p":"JARDINEIRO","cod":"3.14"},{"p":"JARDIM","cod":"3.14"},{"p":"ESCOLA","cod":"7.01"},{"p":"MENSALIDADE","cod":"7.01"},{"p":"COLEGIO","cod":"7.01"},{"p":"COLÉGIO","cod":"7.01"},{"p":"FACULDADE","cod":"7.02"},{"p":"UNIVERSIDADE","cod":"7.02"},{"p":"POS GRAD","cod":"7.02"},{"p":"PÓS GRAD","cod":"7.02"},{"p":"CURSO ONLINE","cod":"7.03"},{"p":"EAD","cod":"7.03"},{"p":"UDEMY","cod":"7.03"},{"p":"HOTMART","cod":"7.03"},{"p":"MATERIAL ESCOLAR","cod":"7.04"},{"p":"LIVRO","cod":"7.04"},{"p":"APOSTILA","cod":"7.04"},{"p":"IDIOMAS","cod":"7.05"},{"p":"INGLES","cod":"7.05"},{"p":"INGLÊS","cod":"7.05"},{"p":"ESPANHOL","cod":"7.05"},{"p":"CERTIFICACAO","cod":"7.06"},{"p":"CERTIFICAÇÃO","cod":"7.06"},{"p":"AWS","cod":"7.06"},{"p":"MENTORIA","cod":"7.07"},{"p":"COACHING","cod":"7.07"},{"p":"TRANSPORTE ESCOLAR","cod":"7.08"},{"p":"VAN ESCOLAR","cod":"7.08"},{"p":"NETFLIX","cod":"8.01"},{"p":"SPOTIFY","cod":"8.01"},{"p":"AMAZON PRIME","cod":"8.01"},{"p":"DISNEY","cod":"8.01"},{"p":"CINEMA","cod":"8.02"},{"p":"TEATRO","cod":"8.02"},{"p":"SHOW","cod":"8.02"},{"p":"INGRESSO","cod":"8.02"},{"p":"VIAGEM","cod":"8.03"},{"p":"HOTEL","cod":"8.03"},{"p":"HOSPEDAGEM","cod":"8.03"},{"p":"AIRBNB","cod":"8.03"},{"p":"FUT","cod":"8.04"},{"p":"FUTEBOL","cod":"8.04"},{"p":"CLUBE","cod":"8.04"},{"p":"ESPORTE","cod":"8.04"},{"p":"BAR","cod":"8.05"},{"p":"FESTA","cod":"8.05"},{"p":"BALADA","cod":"8.05"},{"p":"JOGO","cod":"8.06"},{"p":"GAME","cod":"8.06"},{"p":"PLAYSTATION","cod":"8.06"},{"p":"STEAM","cod":"8.06"},{"p":"PRESENTE","cod":"8.08"},{"p":"ANIVERSARIO","cod":"8.08"},{"p":"ANIVERSÁRIO","cod":"8.08"},{"p":"LAZER","cod":"8.09"},{"p":"ROUPA","cod":"9.01"},{"p":"CALCADO","cod":"9.01"},{"p":"CALÇADO","cod":"9.01"},{"p":"RENNER","cod":"9.01"},{"p":"RIACHUELO","cod":"9.01"},{"p":"HERING","cod":"9.01"},{"p":"BARBEARIA","cod":"9.03"},{"p":"CABELEIREIRO","cod":"9.03"},{"p":"SALAO","cod":"9.03"},{"p":"SALÃO","cod":"9.03"},{"p":"COSMETICO","cod":"9.04"},{"p":"COSMÉTICO","cod":"9.04"},{"p":"PERFUME","cod":"9.04"},{"p":"MANICURE","cod":"9.05"},{"p":"PEDICURE","cod":"9.05"},{"p":"CELULAR","cod":"10.01"},{"p":"PLANO MOVEL","cod":"10.01"},{"p":"PLANO MÓVEL","cod":"10.01"},{"p":"ELETRONICO","cod":"10.02"},{"p":"ELETRÔNICO","cod":"10.02"},{"p":"NOTEBOOK","cod":"10.02"},{"p":"COMPUTADOR","cod":"10.02"},{"p":"SOFTWARE","cod":"10.03"},{"p":"APLICATIVO","cod":"10.03"},{"p":"APP","cod":"10.03"},{"p":"SEGURO DE VIDA","cod":"11.01"},{"p":"PRUDENTIAL","cod":"11.01"},{"p":"METLIFE","cod":"11.01"},{"p":"SEGURO RESID","cod":"11.02"},{"p":"SEGURO RESIDENCIAL","cod":"11.02"},{"p":"PORTO SEGURO","cod":"11.02"},{"p":"ALLIANZ","cod":"11.02"},{"p":"SEGURO VIAGEM","cod":"11.03"},{"p":"PREVIDENCIA","cod":"11.04"},{"p":"PREVIDÊNCIA","cod":"11.04"},{"p":"PGBL","cod":"11.04"},{"p":"VGBL","cod":"11.04"},{"p":"IRPF","cod":"12.01"},{"p":"DARF","cod":"12.01"},{"p":"IMPOSTO RENDA","cod":"12.01"},{"p":"INSS","cod":"12.02"},{"p":"DAS","cod":"12.02"},{"p":"MEI","cod":"12.02"},{"p":"FINANCIAMENTO IMOVEL","cod":"13.01"},{"p":"HIPOTECA","cod":"13.01"},{"p":"CONSORCIO","cod":"13.02"},{"p":"CONSÓRCIO","cod":"13.02"},{"p":"EMPRESTIMO","cod":"13.03"},{"p":"EMPRÉSTIMO","cod":"13.03"},{"p":"CREDITO PESSOAL","cod":"13.03"},{"p":"CREDIARIO","cod":"13.04"},{"p":"CREDIÁRIO","cod":"13.04"},{"p":"JUROS","cod":"13.05"},{"p":"TARIFA BANCARIA","cod":"13.05"},{"p":"TARIFA BANCÁRIA","cod":"13.05"},{"p":"FATURA CARTAO","cod":"14.01"},{"p":"FATURA CARTÃO","cod":"14.01"},{"p":"FATURA INTER","cod":"14.01"},{"p":"FATURA BRADESCO","cod":"14.02"},{"p":"FATURA ITAU","cod":"14.03"},{"p":"FATURA ITAÚ","cod":"14.03"},{"p":"ACOES","cod":"15.01"},{"p":"AÇÕES","cod":"15.01"},{"p":"FII","cod":"15.01"},{"p":"B3","cod":"15.01"},{"p":"CDB","cod":"15.02"},{"p":"TESOURO","cod":"15.02"},{"p":"LCI","cod":"15.02"},{"p":"LCA","cod":"15.02"},{"p":"POUPANCA","cod":"15.03"},{"p":"POUPANÇA","cod":"15.03"},{"p":"CRIPTO","cod":"15.04"},{"p":"BITCOIN","cod":"15.04"},{"p":"ETH","cod":"15.04"},{"p":"RESGATE","cod":"15.06"},{"p":"TRANSFERENCIA ENTRE CONTAS","cod":"16.01"},{"p":"PIX GUSTAVO","cod":"16.02"},{"p":"ENVIADO","cod":"16.02"},{"p":"PIX","cod":"16.03"},{"p":"RECEBIMENTO PIX","cod":"16.03"},{"p":"TED","cod":"16.04"},{"p":"DOC","cod":"16.04"},{"p":"SAQUE","cod":"16.05"},{"p":"DEPOSITO","cod":"16.06"},{"p":"DEPÓSITO","cod":"16.06"},{"p":"RACAO","cod":"17.01"},{"p":"RAÇÃO","cod":"17.01"},{"p":"PETSHOP","cod":"17.01"},{"p":"PETISCO","cod":"17.01"},{"p":"VETERINARIO","cod":"17.02"},{"p":"VETERINÁRIO","cod":"17.02"},{"p":"VACINA","cod":"17.02"},{"p":"BANHO TOSA","cod":"17.03"},{"p":"BANHO E TOSA","cod":"17.03"},{"p":"DOACAO","cod":"18.01"},{"p":"DOAÇÃO","cod":"18.01"},{"p":"CARIDADE","cod":"18.01"},{"p":"DOACOES","cod":"18.01"},{"p":"ADVOCACIA","cod":"18.03"},{"p":"ADVOGADO","cod":"18.03"},{"p":"JUDICIAL","cod":"18.03"},{"p":"CONTADOR","cod":"18.04"},{"p":"CONTABILIDADE","cod":"18.04"}],"grupos":["RECEITAS","RECEITAS FINANCEIRAS","MORADIA","ALIMENTAÇÃO","TRANSPORTE","SAÚDE","EDUCAÇÃO","LAZER","VESTUÁRIO","TECNOLOGIA","SEGUROS","IMPOSTOS","FINANCIAMENTOS","CARTÃO CRÉDITO","INVESTIMENTOS","TRANSFERÊNCIAS","PETS","OUTROS"],"contas":[{"idx":1,"nome":"Banco 1","saldoInicial":0.0,"dataInicial":"2026-05-01"},{"idx":2,"nome":"Banco 2","saldoInicial":0.0,"dataInicial":"2026-05-01"},{"idx":3,"nome":"Banco 3","saldoInicial":0.0,"dataInicial":"2026-05-01"}],"cartoes":[{"idx":1,"nome":"Cartão Inter","limite":0.0,"fechamento":4,"vencimento":10},{"idx":2,"nome":"Cartão Bradesco","limite":0.0,"fechamento":null,"vencimento":10},{"idx":3,"nome":"Cartão Itaú","limite":0.0,"fechamento":null,"vencimento":null}],"lanc":[],"fat":[],"cp":[],"pat":[],"classes":["Renda Fixa","Ações / FIIs","Cripto","Imóveis","Veículos","Fundos","Previdência","Reserva de Emergência","Consórcio"]};
+const SEED = {"plano":[{"cod":"1.01","nome":"Salário / Ordenado","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"1.02","nome":"Pró-Labore","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"1.03","nome":"Freelance / Prestação de Serviço","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"1.04","nome":"Comissões Recebidas","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"1.05","nome":"13º Salário / Férias","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"1.06","nome":"Receita Sec","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"1.07","nome":"Receita proveniente da Faculdade","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"1.08","nome":"Pensão / Alimônia Recebida","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"1.09","nome":"Recebimentos PIX","grupo":"RECEITAS","tipo":"RECEITA"},{"cod":"2.01","nome":"Rendimento CDB/LCI/LCA","grupo":"RECEITAS FINANCEIRAS","tipo":"RECEITA"},{"cod":"2.02","nome":"Dividendos de Ações / FIIs","grupo":"RECEITAS FINANCEIRAS","tipo":"RECEITA"},{"cod":"2.03","nome":"Rendimento Poupança","grupo":"RECEITAS FINANCEIRAS","tipo":"RECEITA"},{"cod":"2.04","nome":"Juros Recebidos","grupo":"RECEITAS FINANCEIRAS","tipo":"RECEITA"},{"cod":"2.05","nome":"Aluguel de Imóvel Recebido","grupo":"RECEITAS FINANCEIRAS","tipo":"RECEITA"},{"cod":"2.06","nome":"Cashback / Pontos Revertidos","grupo":"RECEITAS FINANCEIRAS","tipo":"RECEITA"},{"cod":"2.07","nome":"Outras Receitas Financeiras","grupo":"RECEITAS FINANCEIRAS","tipo":"RECEITA"},{"cod":"3.01","nome":"Aluguel","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.02","nome":"Condomínio","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.03","nome":"Energia Elétrica (COPEL/CEMIG)","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.04","nome":"Água e Saneamento","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.05","nome":"Gás Encanado / GLP","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.06","nome":"Internet / Fibra","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.07","nome":"Telefone Fixo","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.08","nome":"TV por Assinatura","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.09","nome":"Manutenção e Reparos","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.10","nome":"IPTU","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.11","nome":"Mobiliário e Decoração","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.12","nome":"Material de Limpeza e Higiene","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.13","nome":"Diarista / Empregada Doméstica","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.14","nome":"Jardineiro / Jardinagem","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"3.15","nome":"Reformas e Obras","grupo":"MORADIA","tipo":"DESPESA"},{"cod":"4.01","nome":"Supermercado / Mercado","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"4.02","nome":"Hortifruti / Feira","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"4.03","nome":"Açougue / Peixaria","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"4.04","nome":"Padaria / Confeitaria / Salgadeiras","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"4.05","nome":"Restaurante / Lanchonete","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"4.06","nome":"iFood / Delivery","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"4.07","nome":"Café / Cafeteria","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"4.08","nome":"Bebidas / Destilados","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"4.09","nome":"Alimentação","grupo":"ALIMENTAÇÃO","tipo":"DESPESA"},{"cod":"5.01","nome":"Combustível (Gasolina/Etanol)","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.02","nome":"Estacionamento","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.03","nome":"Pedágio","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.04","nome":"Manutenção / Revisão Veicular","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.05","nome":"Lavagem de Carro","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.06","nome":"IPVA","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.07","nome":"Licenciamento / Emplacamento","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.08","nome":"Seguro Automóvel","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.09","nome":"Uber / 99 / Taxi","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.10","nome":"Ônibus / Metrô / Trem","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.11","nome":"Consórcio de Veículo","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"5.12","nome":"Financiamento de Veículo","grupo":"TRANSPORTE","tipo":"DESPESA"},{"cod":"6.01","nome":"Plano de Saúde","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.02","nome":"Consulta Médica / Psicólogo / Esteticista","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.03","nome":"Dentista / Ortodontia","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.04","nome":"Farmácia / Medicamentos","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.05","nome":"Exames e Laboratório","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.06","nome":"Academia / Musculação","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.07","nome":"Fisioterapia / Pilates","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.08","nome":"Nutricionista","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.09","nome":"Suplementos / Vitaminas","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"6.10","nome":"Cirurgia / Internação","grupo":"SAÚDE","tipo":"DESPESA"},{"cod":"7.01","nome":"Escola / Mensalidade","grupo":"EDUCAÇÃO","tipo":"DESPESA"},{"cod":"7.02","nome":"Faculdade / Pós-Graduação","grupo":"EDUCAÇÃO","tipo":"DESPESA"},{"cod":"7.03","nome":"Curso Online / Plataforma EAD","grupo":"EDUCAÇÃO","tipo":"DESPESA"},{"cod":"7.04","nome":"Material Escolar / Livros","grupo":"EDUCAÇÃO","tipo":"DESPESA"},{"cod":"7.05","nome":"Idiomas (inglês, espanhol etc.)","grupo":"EDUCAÇÃO","tipo":"DESPESA"},{"cod":"7.06","nome":"Cursos de Certificação","grupo":"EDUCAÇÃO","tipo":"DESPESA"},{"cod":"7.07","nome":"Mentorias / Coaching","grupo":"EDUCAÇÃO","tipo":"DESPESA"},{"cod":"7.08","nome":"Transporte Escolar","grupo":"EDUCAÇÃO","tipo":"DESPESA"},{"cod":"8.01","nome":"Streaming (Netflix/Spotify/Prime)","grupo":"LAZER","tipo":"DESPESA"},{"cod":"8.02","nome":"Cinema / Teatro / Shows","grupo":"LAZER","tipo":"DESPESA"},{"cod":"8.03","nome":"Viagem / Hospedagem","grupo":"LAZER","tipo":"DESPESA"},{"cod":"8.04","nome":"Esportes (futebol, clube etc.)","grupo":"LAZER","tipo":"DESPESA"},{"cod":"8.05","nome":"Bares / Festas / Balada","grupo":"LAZER","tipo":"DESPESA"},{"cod":"8.06","nome":"Jogos Digitais","grupo":"LAZER","tipo":"DESPESA"},{"cod":"8.07","nome":"Livros / Revistas / Assinaturas","grupo":"LAZER","tipo":"DESPESA"},{"cod":"8.08","nome":"Presentes / Datas Comemorativas","grupo":"LAZER","tipo":"DESPESA"},{"cod":"8.09","nome":"Hobbies Diversos","grupo":"LAZER","tipo":"DESPESA"},{"cod":"9.01","nome":"Roupas / Calçados","grupo":"VESTUÁRIO","tipo":"DESPESA"},{"cod":"9.02","nome":"Acessórios (bolsas, relógios)","grupo":"VESTUÁRIO","tipo":"DESPESA"},{"cod":"9.03","nome":"Barbearia / Salão de Beleza","grupo":"VESTUÁRIO","tipo":"DESPESA"},{"cod":"9.04","nome":"Cosméticos / Perfumaria","grupo":"VESTUÁRIO","tipo":"DESPESA"},{"cod":"9.05","nome":"Manicure / Pedicure","grupo":"VESTUÁRIO","tipo":"DESPESA"},{"cod":"10.01","nome":"Celular / Plano Móvel","grupo":"TECNOLOGIA","tipo":"DESPESA"},{"cod":"10.02","nome":"Equipamentos Eletrônicos","grupo":"TECNOLOGIA","tipo":"DESPESA"},{"cod":"10.03","nome":"Software / Aplicativos Pagos","grupo":"TECNOLOGIA","tipo":"DESPESA"},{"cod":"10.04","nome":"Suporte Técnico / Informática","grupo":"TECNOLOGIA","tipo":"DESPESA"},{"cod":"11.01","nome":"Seguro de Vida","grupo":"SEGUROS","tipo":"DESPESA"},{"cod":"11.02","nome":"Seguro Residencial","grupo":"SEGUROS","tipo":"DESPESA"},{"cod":"11.03","nome":"Seguro Viagem","grupo":"SEGUROS","tipo":"DESPESA"},{"cod":"11.04","nome":"Previdência Privada (PGBL/VGBL)","grupo":"SEGUROS","tipo":"DESPESA"},{"cod":"12.01","nome":"Imposto de Renda (IRPF/DARF)","grupo":"IMPOSTOS","tipo":"DESPESA"},{"cod":"12.02","nome":"INSS Autônomo / MEI","grupo":"IMPOSTOS","tipo":"DESPESA"},{"cod":"12.03","nome":"Outras Taxas e Tributos","grupo":"IMPOSTOS","tipo":"DESPESA"},{"cod":"13.01","nome":"Parcela Financiamento Imóvel","grupo":"FINANCIAMENTOS","tipo":"DESPESA"},{"cod":"13.02","nome":"Parcela Consórcio","grupo":"FINANCIAMENTOS","tipo":"DESPESA"},{"cod":"13.03","nome":"Empréstimo Pessoal / Crédito","grupo":"FINANCIAMENTOS","tipo":"DESPESA"},{"cod":"13.04","nome":"Parcela Crediário / CDC","grupo":"FINANCIAMENTOS","tipo":"DESPESA"},{"cod":"13.05","nome":"Juros e Encargos Bancários","grupo":"FINANCIAMENTOS","tipo":"DESPESA"},{"cod":"14.01","nome":"Fatura Cartão 1 (Inter)","grupo":"CARTÃO CRÉDITO","tipo":"NEUTRA"},{"cod":"14.02","nome":"Fatura Cartão 2 (Bradesco)","grupo":"CARTÃO CRÉDITO","tipo":"NEUTRA"},{"cod":"14.03","nome":"Fatura Cartão 3 (Itaú)","grupo":"CARTÃO CRÉDITO","tipo":"NEUTRA"},{"cod":"14.04","nome":"Fatura Cartão 4","grupo":"CARTÃO CRÉDITO","tipo":"NEUTRA"},{"cod":"15.01","nome":"Aporte em Ações / FIIs","grupo":"INVESTIMENTOS","tipo":"NEUTRA"},{"cod":"15.02","nome":"Aporte em CDB / Tesouro Direto","grupo":"INVESTIMENTOS","tipo":"NEUTRA"},{"cod":"15.03","nome":"Aporte em Poupança","grupo":"INVESTIMENTOS","tipo":"NEUTRA"},{"cod":"15.04","nome":"Aporte em Criptomoedas","grupo":"INVESTIMENTOS","tipo":"NEUTRA"},{"cod":"15.05","nome":"Aporte em Lidere","grupo":"INVESTIMENTOS","tipo":"NEUTRA"},{"cod":"15.06","nome":"Resgate de Investimento","grupo":"INVESTIMENTOS","tipo":"NEUTRA"},{"cod":"15.07","nome":"Compra de Ativo / Bem","grupo":"INVESTIMENTOS","tipo":"NEUTRA"},{"cod":"15.08","nome":"Venda de Ativo / Bem","grupo":"INVESTIMENTOS","tipo":"NEUTRA"},{"cod":"16.01","nome":"Transferência entre Contas Próprias","grupo":"TRANSFERÊNCIAS","tipo":"NEUTRA"},{"cod":"16.02","nome":"PIX Enviado","grupo":"TRANSFERÊNCIAS","tipo":"NEUTRA"},{"cod":"16.03","nome":"PIX Recebido","grupo":"TRANSFERÊNCIAS","tipo":"NEUTRA"},{"cod":"16.04","nome":"TED / DOC","grupo":"TRANSFERÊNCIAS","tipo":"NEUTRA"},{"cod":"16.05","nome":"Saque em Dinheiro","grupo":"TRANSFERÊNCIAS","tipo":"NEUTRA"},{"cod":"16.06","nome":"Depósito em Conta","grupo":"TRANSFERÊNCIAS","tipo":"NEUTRA"},{"cod":"17.01","nome":"Ração e Petisco","grupo":"PETS","tipo":"DESPESA"},{"cod":"17.02","nome":"Veterinário / Vacinas","grupo":"PETS","tipo":"DESPESA"},{"cod":"17.03","nome":"Banho e Tosa","grupo":"PETS","tipo":"DESPESA"},{"cod":"17.04","nome":"Acessórios para Pet","grupo":"PETS","tipo":"DESPESA"},{"cod":"18.01","nome":"Doações e Caridade","grupo":"OUTROS","tipo":"DESPESA"},{"cod":"18.02","nome":"Presentes (não classificado)","grupo":"OUTROS","tipo":"DESPESA"},{"cod":"18.03","nome":"Despesas Jurídicas","grupo":"OUTROS","tipo":"DESPESA"},{"cod":"18.04","nome":"Serviços Contábeis","grupo":"OUTROS","tipo":"DESPESA"},{"cod":"18.05","nome":"Despesas Diversas / Não Classificadas","grupo":"OUTROS","tipo":"DESPESA"}],"kws":[{"p":"MERCADO","cod":"4.01"},{"p":"SUPERMERCADO","cod":"4.01"},{"p":"ATACADAO","cod":"4.01"},{"p":"ATACADÃO","cod":"4.01"},{"p":"HORTIFRUTI","cod":"4.02"},{"p":"FEIRA","cod":"4.02"},{"p":"ACOUGUE","cod":"4.03"},{"p":"AÇOUGUE","cod":"4.03"},{"p":"PEIXARIA","cod":"4.03"},{"p":"PADARIA","cod":"4.04"},{"p":"CONFEITARIA","cod":"4.04"},{"p":"RESTAURANTE","cod":"4.05"},{"p":"LANCHONETE","cod":"4.05"},{"p":"LANCHE","cod":"4.05"},{"p":"JANTAR","cod":"4.05"},{"p":"IFOOD","cod":"4.06"},{"p":"DELIVERY","cod":"4.06"},{"p":"RAPPI","cod":"4.06"},{"p":"CAFE","cod":"4.07"},{"p":"CAFÉ","cod":"4.07"},{"p":"CAFETERIA","cod":"4.07"},{"p":"BEBIDA","cod":"4.08"},{"p":"ALCOOL","cod":"4.08"},{"p":"CERVEJA","cod":"4.08"},{"p":"COCA COLA","cod":"4.08"},{"p":"ACAI","cod":"4.08"},{"p":"AÇAÍ","cod":"4.08"},{"p":"GASOLINA","cod":"5.01"},{"p":"COMBUSTIVEL","cod":"5.01"},{"p":"COMBUSTÍVEL","cod":"5.01"},{"p":"ETANOL","cod":"5.01"},{"p":"POSTO","cod":"5.01"},{"p":"SHELL","cod":"5.01"},{"p":"IPIRANGA","cod":"5.01"},{"p":"PETROBRAS","cod":"5.01"},{"p":"ESTACIONAMENTO","cod":"5.02"},{"p":"PEDAGIO","cod":"5.03"},{"p":"PEDÁGIO","cod":"5.03"},{"p":"REVISAO","cod":"5.04"},{"p":"REVISÃO","cod":"5.04"},{"p":"MECANICO","cod":"5.04"},{"p":"MECÂNICO","cod":"5.04"},{"p":"LAVAGEM CARRO","cod":"5.05"},{"p":"IPVA","cod":"5.06"},{"p":"LICENCIAMENTO","cod":"5.07"},{"p":"EMPLACAMENTO","cod":"5.07"},{"p":"SEGURO AUTO","cod":"5.08"},{"p":"UBER","cod":"5.09"},{"p":"99","cod":"5.09"},{"p":"TAXI","cod":"5.09"},{"p":"TÁXI","cod":"5.09"},{"p":"ONIBUS","cod":"5.10"},{"p":"ÔNIBUS","cod":"5.10"},{"p":"METRO","cod":"5.10"},{"p":"METRÔ","cod":"5.10"},{"p":"PLANO SAUDE","cod":"6.01"},{"p":"PLANO SAÚDE","cod":"6.01"},{"p":"UNIMED","cod":"6.01"},{"p":"MEDICO","cod":"6.02"},{"p":"MÉDICO","cod":"6.02"},{"p":"CLINICA","cod":"6.02"},{"p":"CLÍNICA","cod":"6.02"},{"p":"PSICOLOGO","cod":"6.02"},{"p":"PSICÓLOGO","cod":"6.02"},{"p":"DENTISTA","cod":"6.03"},{"p":"ORTODONTIA","cod":"6.03"},{"p":"INVISALIGH","cod":"6.03"},{"p":"FARMACIA","cod":"6.04"},{"p":"FARMÁCIA","cod":"6.04"},{"p":"DROGARIA","cod":"6.04"},{"p":"MEDICAMENTO","cod":"6.04"},{"p":"EXAME","cod":"6.05"},{"p":"LABORATORIO","cod":"6.05"},{"p":"LABORATÓRIO","cod":"6.05"},{"p":"ACADEMIA","cod":"6.06"},{"p":"MUSCULACAO","cod":"6.06"},{"p":"MUSCULAÇÃO","cod":"6.06"},{"p":"FISIOTERAPIA","cod":"6.07"},{"p":"PILATES","cod":"6.07"},{"p":"NUTRI","cod":"6.08"},{"p":"SUPLEMENTO","cod":"6.09"},{"p":"VITAMINA","cod":"6.09"},{"p":"ALUGUEL","cod":"3.01"},{"p":"CONDOMINIO","cod":"3.02"},{"p":"CONDOMÍNIO","cod":"3.02"},{"p":"COPEL","cod":"3.03"},{"p":"CEMIG","cod":"3.03"},{"p":"LUZ","cod":"3.03"},{"p":"ENERGIA","cod":"3.03"},{"p":"SANEPAR","cod":"3.04"},{"p":"SABESP","cod":"3.04"},{"p":"AGUA","cod":"3.04"},{"p":"ÁGUA","cod":"3.04"},{"p":"GAS","cod":"3.05"},{"p":"GÁS","cod":"3.05"},{"p":"INTERNET","cod":"3.06"},{"p":"FIBRA","cod":"3.06"},{"p":"CLARO","cod":"3.06"},{"p":"VIVO","cod":"3.06"},{"p":"TIM","cod":"3.06"},{"p":"TELEFONE FIXO","cod":"3.07"},{"p":"SKY","cod":"3.08"},{"p":"NET","cod":"3.08"},{"p":"CLARO TV","cod":"3.08"},{"p":"MANUTENCAO","cod":"3.09"},{"p":"MANUTENÇÃO","cod":"3.09"},{"p":"REPARO","cod":"3.09"},{"p":"IPTU","cod":"3.10"},{"p":"MOVEL","cod":"3.11"},{"p":"MÓVEL","cod":"3.11"},{"p":"DECORACAO","cod":"3.11"},{"p":"DIARISTA","cod":"3.13"},{"p":"LIMPEZA","cod":"3.13"},{"p":"EMPREGADA","cod":"3.13"},{"p":"JARDINEIRO","cod":"3.14"},{"p":"JARDIM","cod":"3.14"},{"p":"ESCOLA","cod":"7.01"},{"p":"MENSALIDADE","cod":"7.01"},{"p":"COLEGIO","cod":"7.01"},{"p":"COLÉGIO","cod":"7.01"},{"p":"FACULDADE","cod":"7.02"},{"p":"UNIVERSIDADE","cod":"7.02"},{"p":"POS GRAD","cod":"7.02"},{"p":"PÓS GRAD","cod":"7.02"},{"p":"CURSO ONLINE","cod":"7.03"},{"p":"EAD","cod":"7.03"},{"p":"UDEMY","cod":"7.03"},{"p":"HOTMART","cod":"7.03"},{"p":"MATERIAL ESCOLAR","cod":"7.04"},{"p":"LIVRO","cod":"7.04"},{"p":"APOSTILA","cod":"7.04"},{"p":"IDIOMAS","cod":"7.05"},{"p":"INGLES","cod":"7.05"},{"p":"INGLÊS","cod":"7.05"},{"p":"ESPANHOL","cod":"7.05"},{"p":"CERTIFICACAO","cod":"7.06"},{"p":"CERTIFICAÇÃO","cod":"7.06"},{"p":"AWS","cod":"7.06"},{"p":"MENTORIA","cod":"7.07"},{"p":"COACHING","cod":"7.07"},{"p":"TRANSPORTE ESCOLAR","cod":"7.08"},{"p":"VAN ESCOLAR","cod":"7.08"},{"p":"NETFLIX","cod":"8.01"},{"p":"SPOTIFY","cod":"8.01"},{"p":"AMAZON PRIME","cod":"8.01"},{"p":"DISNEY","cod":"8.01"},{"p":"CINEMA","cod":"8.02"},{"p":"TEATRO","cod":"8.02"},{"p":"SHOW","cod":"8.02"},{"p":"INGRESSO","cod":"8.02"},{"p":"VIAGEM","cod":"8.03"},{"p":"HOTEL","cod":"8.03"},{"p":"HOSPEDAGEM","cod":"8.03"},{"p":"AIRBNB","cod":"8.03"},{"p":"FUT","cod":"8.04"},{"p":"FUTEBOL","cod":"8.04"},{"p":"CLUBE","cod":"8.04"},{"p":"ESPORTE","cod":"8.04"},{"p":"BAR","cod":"8.05"},{"p":"FESTA","cod":"8.05"},{"p":"BALADA","cod":"8.05"},{"p":"JOGO","cod":"8.06"},{"p":"GAME","cod":"8.06"},{"p":"PLAYSTATION","cod":"8.06"},{"p":"STEAM","cod":"8.06"},{"p":"PRESENTE","cod":"8.08"},{"p":"ANIVERSARIO","cod":"8.08"},{"p":"ANIVERSÁRIO","cod":"8.08"},{"p":"LAZER","cod":"8.09"},{"p":"ROUPA","cod":"9.01"},{"p":"CALCADO","cod":"9.01"},{"p":"CALÇADO","cod":"9.01"},{"p":"RENNER","cod":"9.01"},{"p":"RIACHUELO","cod":"9.01"},{"p":"HERING","cod":"9.01"},{"p":"BARBEARIA","cod":"9.03"},{"p":"CABELEIREIRO","cod":"9.03"},{"p":"SALAO","cod":"9.03"},{"p":"SALÃO","cod":"9.03"},{"p":"COSMETICO","cod":"9.04"},{"p":"COSMÉTICO","cod":"9.04"},{"p":"PERFUME","cod":"9.04"},{"p":"MANICURE","cod":"9.05"},{"p":"PEDICURE","cod":"9.05"},{"p":"CELULAR","cod":"10.01"},{"p":"PLANO MOVEL","cod":"10.01"},{"p":"PLANO MÓVEL","cod":"10.01"},{"p":"ELETRONICO","cod":"10.02"},{"p":"ELETRÔNICO","cod":"10.02"},{"p":"NOTEBOOK","cod":"10.02"},{"p":"COMPUTADOR","cod":"10.02"},{"p":"SOFTWARE","cod":"10.03"},{"p":"APLICATIVO","cod":"10.03"},{"p":"APP","cod":"10.03"},{"p":"SEGURO DE VIDA","cod":"11.01"},{"p":"PRUDENTIAL","cod":"11.01"},{"p":"METLIFE","cod":"11.01"},{"p":"SEGURO RESID","cod":"11.02"},{"p":"SEGURO RESIDENCIAL","cod":"11.02"},{"p":"PORTO SEGURO","cod":"11.02"},{"p":"ALLIANZ","cod":"11.02"},{"p":"SEGURO VIAGEM","cod":"11.03"},{"p":"PREVIDENCIA","cod":"11.04"},{"p":"PREVIDÊNCIA","cod":"11.04"},{"p":"PGBL","cod":"11.04"},{"p":"VGBL","cod":"11.04"},{"p":"IRPF","cod":"12.01"},{"p":"DARF","cod":"12.01"},{"p":"IMPOSTO RENDA","cod":"12.01"},{"p":"INSS","cod":"12.02"},{"p":"DAS","cod":"12.02"},{"p":"MEI","cod":"12.02"},{"p":"FINANCIAMENTO IMOVEL","cod":"13.01"},{"p":"HIPOTECA","cod":"13.01"},{"p":"CONSORCIO","cod":"13.02"},{"p":"CONSÓRCIO","cod":"13.02"},{"p":"EMPRESTIMO","cod":"13.03"},{"p":"EMPRÉSTIMO","cod":"13.03"},{"p":"CREDITO PESSOAL","cod":"13.03"},{"p":"CREDIARIO","cod":"13.04"},{"p":"CREDIÁRIO","cod":"13.04"},{"p":"JUROS","cod":"13.05"},{"p":"TARIFA BANCARIA","cod":"13.05"},{"p":"TARIFA BANCÁRIA","cod":"13.05"},{"p":"FATURA CARTAO","cod":"14.01"},{"p":"FATURA CARTÃO","cod":"14.01"},{"p":"FATURA INTER","cod":"14.01"},{"p":"FATURA BRADESCO","cod":"14.02"},{"p":"FATURA ITAU","cod":"14.03"},{"p":"FATURA ITAÚ","cod":"14.03"},{"p":"ACOES","cod":"15.01"},{"p":"AÇÕES","cod":"15.01"},{"p":"FII","cod":"15.01"},{"p":"B3","cod":"15.01"},{"p":"CDB","cod":"15.02"},{"p":"TESOURO","cod":"15.02"},{"p":"LCI","cod":"15.02"},{"p":"LCA","cod":"15.02"},{"p":"POUPANCA","cod":"15.03"},{"p":"POUPANÇA","cod":"15.03"},{"p":"CRIPTO","cod":"15.04"},{"p":"BITCOIN","cod":"15.04"},{"p":"ETH","cod":"15.04"},{"p":"RESGATE","cod":"15.06"},{"p":"TRANSFERENCIA ENTRE CONTAS","cod":"16.01"},{"p":"PIX GUSTAVO","cod":"16.02"},{"p":"ENVIADO","cod":"16.02"},{"p":"PIX","cod":"16.03"},{"p":"RECEBIMENTO PIX","cod":"16.03"},{"p":"TED","cod":"16.04"},{"p":"DOC","cod":"16.04"},{"p":"SAQUE","cod":"16.05"},{"p":"DEPOSITO","cod":"16.06"},{"p":"DEPÓSITO","cod":"16.06"},{"p":"RACAO","cod":"17.01"},{"p":"RAÇÃO","cod":"17.01"},{"p":"PETSHOP","cod":"17.01"},{"p":"PETISCO","cod":"17.01"},{"p":"VETERINARIO","cod":"17.02"},{"p":"VETERINÁRIO","cod":"17.02"},{"p":"VACINA","cod":"17.02"},{"p":"BANHO TOSA","cod":"17.03"},{"p":"BANHO E TOSA","cod":"17.03"},{"p":"DOACAO","cod":"18.01"},{"p":"DOAÇÃO","cod":"18.01"},{"p":"CARIDADE","cod":"18.01"},{"p":"DOACOES","cod":"18.01"},{"p":"ADVOCACIA","cod":"18.03"},{"p":"ADVOGADO","cod":"18.03"},{"p":"JUDICIAL","cod":"18.03"},{"p":"CONTADOR","cod":"18.04"},{"p":"CONTABILIDADE","cod":"18.04"}],"grupos":["RECEITAS","RECEITAS FINANCEIRAS","MORADIA","ALIMENTAÇÃO","TRANSPORTE","SAÚDE","EDUCAÇÃO","LAZER","VESTUÁRIO","TECNOLOGIA","SEGUROS","IMPOSTOS","FINANCIAMENTOS","CARTÃO CRÉDITO","INVESTIMENTOS","TRANSFERÊNCIAS","PETS","OUTROS"],"contas":[{"idx":1,"nome":"Banco 1","saldoInicial":0.0,"dataInicial":"2026-05-01"},{"idx":2,"nome":"Banco 2","saldoInicial":0.0,"dataInicial":"2026-05-01"},{"idx":3,"nome":"Banco 3","saldoInicial":0.0,"dataInicial":"2026-05-01"}],"cartoes":[{"idx":1,"nome":"Cartão Inter","limite":0.0,"fechamento":4,"vencimento":10},{"idx":2,"nome":"Cartão Bradesco","limite":0.0,"fechamento":null,"vencimento":10},{"idx":3,"nome":"Cartão Itaú","limite":0.0,"fechamento":null,"vencimento":null}],"lanc":[],"fat":[],"cp":[],"pat":[],"classes":["Renda Fixa","Ações / FIIs","Cripto","Imóveis","Veículos","Fundos","Previdência","Reserva de Emergência","Consórcio"]};
 /* ===== PRINCÍPIOS ===== */
 const PRINCIPIOS_BASE=[
  {id:'p01',cat:'Dinheiro',txt:'Todo dinheiro que sai tem um nome.',
@@ -1155,7 +1298,8 @@ function renderNav(){
 }
 const TEMAS=[
   {id:'dual',nome:'Turquesa + âmbar',a:'#2ee6c0',b:'#f0b448'},
-  {id:'turquesa',nome:'Turquesa',a:'#2ee6c0',b:'#2ee6c0'},
+  {id:'classico',nome:'Clássico Lidere (escuro)',a:'#d4a840',b:'#0e131d'},
+  {id:'claro',nome:'Lidere claro',a:'#9c7614',b:'#f6f4ee'},
   {id:'ambar',nome:'Âmbar Lidere',a:'#f0b448',b:'#f0b448'},
   {id:'lima',nome:'Lima elétrica',a:'#c2f24d',b:'#c2f24d'},
   {id:'verde',nome:'Verde',a:'#3edc7a',b:'#3edc7a'}
@@ -1540,6 +1684,11 @@ function saveAporte(){
 /* ============================ PRINCÍPIOS ============================ */
 const principiosAtivos=()=>alive(DB.principios||[]);
 let filtroCat='todas';
+/* Cada categoria tem sua cor: a grade passa a ser lida de relance. */
+const PCOR={'Dinheiro':'var(--acc)','Constância':'#8a7cf2','Decisão':'#5eb0ef',
+            'Relação consigo':'#e07ac7'};
+const pcor=c=>PCOR[c]||'var(--meta)';
+
 function viewPrinc(){
   const L=principiosAtivos();
   const cats=[...new Set(L.map(x=>x.cat))];
@@ -1548,24 +1697,27 @@ function viewPrinc(){
   const stats=`<div class="stats">
     <div class="stat"><div class="k">Princípios</div><div class="v">${L.length}</div><div class="sub">${L.filter(x=>x.proprio).length} escritos por você</div></div>
     <div class="stat"><div class="k">Adotados</div><div class="v goldtxt">${adot.length}</div><div class="sub">os que você assumiu como seus</div></div>
-    ${cats.slice(0,3).map(c=>`<div class="stat"><div class="k">${esc(c)}</div><div class="v">${L.filter(x=>x.cat===c&&x.adotado).length}<span class="muted" style="font-size:13px;font-weight:500"> de ${L.filter(x=>x.cat===c).length}</span></div><div class="sub">adotados</div></div>`).join('')}
+    ${cats.slice(0,3).map(c=>`<div class="stat"><div class="k" style="color:${pcor(c)}">${esc(c)}</div><div class="v">${L.filter(x=>x.cat===c&&x.adotado).length}<span class="muted" style="font-size:13px;font-weight:500"> de ${L.filter(x=>x.cat===c).length}</span></div><div class="sub">adotados</div></div>`).join('')}
   </div>`;
-  const card=x=>`<div class="pr-c ${x.adotado?'on':''}">
+  const card=(x,i)=>`<div class="pr-c ${x.adotado?'on':''}"
+      style="--pcor:${pcor(x.cat)};animation-delay:${Math.min(i*34,420)}ms">
     <div class="cab"><span class="cat">${esc(x.cat)}</span>
       ${x.proprio?'<span class="pill">seu</span>':''}
-      <span style="margin-left:auto;display:flex;gap:4px">
-        ${x.proprio?`<button class="iconbtn" onclick="openPrinc('${x.id}')">✎</button>`:''}
+      <span class="acs">
+        ${x.proprio?`<button class="iconbtn" title="Editar" onclick="openPrinc('${x.id}')">✎</button>`:''}
         <button class="iconbtn del" title="Tirar da lista" onclick="delItem('principios','${x.id}')">×</button></span></div>
     <div class="t">${esc(x.txt)}</div>
-    <div class="d">${esc(x.desc)}</div>
-    <div class="ac"><button class="pr-adotar ${x.adotado?'on':''}" onclick="adotar('${x.id}')">${x.adotado?'✓ adotado':'adotar'}</button></div>
+    ${x.desc?`<details><summary>por quê</summary><div class="d">${esc(x.desc)}</div></details>`:''}
+    <div><button class="pr-adotar ${x.adotado?'on':''}" onclick="adotar('${x.id}')">
+      <span class="tick"></span>${x.adotado?'adotado':'adotar'}</button></div>
   </div>`;
   return stats+`
-  <div class="alert"><span>◆</span><div>Princípio não é regra de etiqueta — é atalho de decisão. Você <b>adota</b> os que fazem sentido para a sua vida e ignora o resto. Os adotados aparecem como <b>princípio do dia</b> na Visão geral.</div></div>
+  <div class="alert"><span>✦</span><div>Princípio não é regra de etiqueta — é atalho de decisão. Você <b>adota</b> os que fazem sentido para a sua vida e ignora o resto. Os adotados aparecem como <b>princípio do dia</b> na Visão geral.</div></div>
   <div class="filters">
     <select onchange="filtroCat=this.value;render()">
       <option value="todas" ${filtroCat==='todas'?'selected':''}>Todas as categorias</option>
       ${cats.map(c=>`<option ${filtroCat===c?'selected':''}>${esc(c)}</option>`).join('')}</select>
+    <span class="muted" style="font-size:12px">${vis.filter(x=>x.adotado).length} de ${vis.length} adotados nesta visão</span>
     <button class="btn btn-sm btn-gold right" onclick="openPrinc()">+ Escrever o meu</button>
   </div>
   <div class="pr">${vis.map(card).join('')||'<div class="empty">Nenhum princípio nesta categoria.</div>'}</div>`;
@@ -1635,12 +1787,47 @@ function viewPb(){
   </div>
   <div class="pb">${vis.map(card).join('')}</div>`;
 }
-let pbAberto=null;
+let pbAberto=null, pbPapel=false;
+
+/* O playbook em papel: mesmo texto, desenho das propostas Lidere.
+   Serve para ler no claro e é exatamente o que vai para o PDF. */
+function pbLogoPapel(){
+  return LOGO_SVG.replace(/var\(--acc-s\)/g,'#D4A840')
+                 .replace(/var\(--acc-d\)/g,'#8a6a12')
+                 .replace(/var\(--acc\)/g,'#B8860B')
+                 .replace(/var\(--txt\)/g,'#1a1a1a')
+                 .replace(/var\(--line-f\)/g,'#d8d8d8');
+}
+function pbPapelHTML(p){
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  return `<div class="papel">
+    <div class="cab">
+      <div>${pbLogoPapel()}</div>
+      <div class="cab-dir"><div class="doc">Playbook</div>
+        <p>${esc(p.tema)}</p><p>${p.min} min de leitura</p>
+        <span class="selo">Finanças pessoais</span></div>
+    </div>
+    <h1>${esc(p.titulo)}</h1>
+    <div class="resumo">${esc(p.resumo)}</div>
+    ${p.blocos.map(b=>`<h2>${esc(b.h)}</h2><p>${esc(b.p)}</p>`).join('')}
+    <div class="acao"><b>Aplique hoje</b><p>${esc(p.acao)}</p></div>
+    ${p.nota?`<div class="nota">${esc(p.nota)}</div>`:''}
+    <div class="rodape"><span>LIDERE · Finanças pessoais</span><span>Gerado em ${hoje}</span></div>
+  </div>`;
+}
+function pbTogglePapel(){pbPapel=!pbPapel;abrirPb(pbAberto)}
+function pbPdf(id){
+  const p=PLAYBOOKS.find(x=>x.id===id);if(!p)return;
+  document.getElementById('imprimir').innerHTML=pbPapelHTML(p);
+  /* o navegador abre a caixa de impressão; ali a pessoa escolhe "Salvar em PDF" */
+  setTimeout(()=>{window.print();toast('Na janela de impressão, escolha “Salvar como PDF”')},60);
+}
 function abrirPb(id){
   const p=PLAYBOOKS.find(x=>x.id===id);if(!p)return;
   pbAberto=id;
   const lido=(DB.lidos||{})[id];
-  document.getElementById('pbBody').innerHTML=`<div class="leitura" style="--tcor:${TCOR[p.tema]||'var(--acc)'}">
+  if(pbPapel){document.getElementById('pbBody').innerHTML=pbPapelHTML(p)}
+  else document.getElementById('pbBody').innerHTML=`<div class="leitura" style="--tcor:${TCOR[p.tema]||'var(--acc)'}">
     <div class="tema">${esc(p.tema)} · ${p.min} min de leitura</div>
     <h2>${esc(p.titulo)}</h2>
     <div class="res">${esc(p.resumo)}</div>
@@ -1650,6 +1837,8 @@ function abrirPb(id){
   </div>`;
   document.getElementById('pbFoot').innerHTML=`
     <button class="btn btn-ghost" onclick="closeModal('ovPb')">Fechar</button>
+    <button class="btn" onclick="pbTogglePapel()">${pbPapel?'◐ Ver no tema do app':'◑ Ler em papel'}</button>
+    <button class="btn" onclick="pbPdf('${id}')">⎙ Exportar PDF</button>
     <button class="btn" onclick="pbVirarPendencia('${id}')">Virar pendência</button>
     <button class="btn ${lido?'':'btn-gold'}" onclick="pbLido('${id}')">${lido?'✓ lido — desmarcar':'Marcar como lido'}</button>`;
   document.getElementById('ovPb').classList.add('show');
@@ -1715,6 +1904,20 @@ function heroMeta(){
 }
 
 /* ============================ LANÇAMENTOS ============================ */
+/* Numa transferência, o histórico sozinho não diz nada: o que importa é
+   de onde veio ou para onde foi. */
+function paraOnde(l){
+  if(l.patId){
+    const a=DB.pat.find(x=>x.id===l.patId);
+    return ` <span class="chip chip-n" title="virou patrimônio">⇄ ${esc(a?a.ativo:'patrimônio')}</span>`;
+  }
+  if(l.transfId){
+    const par=DB.lanc.find(x=>x.transfId===l.transfId&&x.id!==l.id&&!x.deletedAt);
+    const seta=l.saida>0?'→':'←';
+    return ` <span class="chip chip-n" title="transferência entre contas">⇄ ${seta} ${esc(par?bcoNome(par.contaId):'outra conta')}</span>`;
+  }
+  return '';
+}
 function viewLanc(){
   const contas=DB.contas;
   let list=lancsDoMes(mesAtual,filtroConta).slice().sort((a,b)=>a.data===b.data?0:(a.data<b.data?-1:1));
@@ -1729,7 +1932,7 @@ function viewLanc(){
     return `<tr>
       <td class="num dim">${fmtBR(l.data)}</td>
       <td class="muted" style="font-size:11px">${diaSem(l.data)}</td>
-      <td><b>${esc(l.desc)}</b>${l.obs?`<div class="muted" style="font-size:11px">${esc(l.obs)}</div>`:''}</td>
+      <td><b>${esc(l.desc)}</b>${paraOnde(l)}${l.obs?`<div class="muted" style="font-size:11px">${esc(l.obs)}</div>`:''}</td>
       <td class="dim" style="font-size:12px">${l.cod&&PM()[l.cod]?esc(nomeConta(l.cod)):'<span class="chip chip-bad">sem conta</span>'}</td>
       <td>${g?`<span class="chip chip-n" style="color:${gCor(g)}">${esc(gLbl(g))}</span>`:''}</td>
       <td class="num pos">${l.entrada?brl(l.entrada):''}</td>
@@ -1746,6 +1949,7 @@ function viewLanc(){
   <div class="panel">
     <div class="panel-head"><h2>Razão · ${mesLabel(mesAtual)}<small>${única?'Saldo inicial da conta: '+brl(saldoInicialMes(filtroConta,mesAtual)):'Todas as contas — selecione uma conta para ver o saldo corrente'}</small></h2>
       <button class="btn btn-sm btn-gold" onclick="openLanc()">＋ Lançamento</button>
+      <button class="btn btn-sm" onclick="openLote()">⇊ Em lote</button>
       <button class="btn btn-sm" onclick="openImport()">⇩ Importar extrato</button>
       <button class="btn btn-sm btn-ghost" onclick="openConta('banco')">＋ Conta</button>
     </div>
@@ -1833,40 +2037,86 @@ function lancarFatura(cid){
 }
 
 /* ============================ CONTAS A PAGAR ============================ */
+let cpAba='abertas';
 function viewPagar(){
   const hoje=iso(new Date());
-  const list=alive(DB.cp).slice().sort((a,b)=>(a.venc||'')<(b.venc||'')?-1:1);
-  const abertas=list.filter(c=>c.situacao!=='Pago');
+  const list=alive(DB.cp);
+  const abertas=list.filter(c=>c.situacao!=='Pago').sort((a,b)=>(a.venc||'')<(b.venc||'')?-1:1);
+  const pagas=list.filter(c=>c.situacao==='Pago');
   const atras=abertas.filter(c=>c.venc&&c.venc<hoje);
-  const rows=list.map(c=>{
-    const late=c.situacao!=='Pago'&&c.venc&&c.venc<hoje;
+  /* uma conta paga pertence ao mês em que o pagamento aconteceu, não ao do vencimento */
+  const mesPago=c=>mesDe(c.pagoEm||c.venc||'');
+  const noMes=pagas.filter(c=>mesPago(c)===mesAtual);
+
+  const linha=(c,paga)=>{
+    const late=!paga&&c.venc&&c.venc<hoje;
     return `<tr>
       <td><b>${esc(c.desc)}</b>${c.obs?`<div class="muted" style="font-size:11px">${esc(c.obs)}</div>`:''}</td>
       <td class="num dim">${fmtBR(c.venc)}</td>
+      ${paga?`<td class="num dim">${fmtBR(c.pagoEm||c.venc)}</td>`:''}
       <td class="num">${brl(c.valor)}</td>
       <td><span class="chip chip-n">${esc(c.recorrencia||'Única')}</span></td>
-      <td>${c.situacao==='Pago'?'<span class="chip chip-ok">pago</span>':(late?'<span class="chip chip-bad">atrasada</span>':'<span class="chip chip-warn">a pagar</span>')}</td>
+      ${paga?'':`<td>${late?'<span class="chip chip-bad">atrasada</span>':'<span class="chip chip-warn">a pagar</span>'}</td>`}
       <td class="num" style="white-space:nowrap">
-        ${c.situacao!=='Pago'?`<button class="btn btn-sm" onclick="pagarCp('${c.id}')">Pagar</button> `:''}
+        ${paga?`<button class="btn btn-sm btn-ghost" onclick="desfazerPag('${c.id}')" title="volta para em aberto">Desfazer</button> `
+              :`<button class="btn btn-sm" onclick="pagarCp('${c.id}')">Pagar</button> `}
         <button class="iconbtn" onclick="openCp('${c.id}')">✎</button> <button class="iconbtn del" onclick="delItem('cp','${c.id}')">🗑</button></td>
-    </tr>`}).join('');
+    </tr>`};
+
+  const tabelaAbertas=`<div class="tbl-scroll"><table>
+    <thead><tr><th>Descrição</th><th class="num">Vencimento</th><th class="num">Valor</th><th>Recorrência</th><th>Situação</th><th></th></tr></thead>
+    <tbody>${abertas.map(c=>linha(c,false)).join('')||'<tr><td colspan="6"><div class="empty">Nada em aberto. 🎉</div></td></tr>'}</tbody></table></div>`;
+
+  /* arquivo: agrupado pelo mês do pagamento, o mais recente em cima */
+  const porMes={};
+  pagas.forEach(c=>{const m=mesPago(c)||'sem data';(porMes[m]=porMes[m]||[]).push(c)});
+  const meses=Object.keys(porMes).sort().reverse();
+  const arquivo=meses.length?meses.map(m=>{
+    const g=porMes[m].sort((a,b)=>(b.pagoEm||b.venc||'').localeCompare(a.pagoEm||a.venc||''));
+    const tot=g.reduce((s,c)=>s+c.valor,0);
+    return `<div class="panel" style="margin-bottom:12px">
+      <div class="panel-head"><h2>${m==='sem data'?'Sem data de pagamento':mesLabel(m)}
+        <small>${g.length} conta(s) quitada(s)</small></h2>
+        <span class="goldtxt" style="font-variant-numeric:tabular-nums;font-weight:700">${brl(tot)}</span></div>
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>Descrição</th><th class="num">Vencimento</th><th class="num">Pago em</th><th class="num">Valor</th><th>Recorrência</th><th></th></tr></thead>
+        <tbody>${g.map(c=>linha(c,true)).join('')}</tbody></table></div></div>`;
+  }).join(''):'<div class="empty">Nenhuma conta paga ainda.</div>';
+
   return `<div class="stats">
     <div class="stat"><div class="k">Em aberto</div><div class="v">${abertas.length}</div><div class="sub">${brl(abertas.reduce((s,c)=>s+c.valor,0))}</div></div>
     <div class="stat"><div class="k">Atrasadas</div><div class="v ${atras.length?'neg':''}">${atras.length}</div><div class="sub">${brl(atras.reduce((s,c)=>s+c.valor,0))}</div></div>
-    <div class="stat"><div class="k">Pagas</div><div class="v pos">${list.filter(c=>c.situacao==='Pago').length}</div><div class="sub">${brl(list.filter(c=>c.situacao==='Pago').reduce((s,c)=>s+c.valor,0))}</div></div>
+    <div class="stat"><div class="k">Pagas em ${mesLabel(mesAtual).split(' ')[0]}</div><div class="v pos">${noMes.length}</div><div class="sub">${brl(noMes.reduce((s,c)=>s+c.valor,0))}</div></div>
+    <div class="stat"><div class="k">Pagas no total</div><div class="v">${pagas.length}</div><div class="sub">${brl(pagas.reduce((s,c)=>s+c.valor,0))}</div></div>
   </div>
-  <div class="panel"><div class="panel-head"><h2>Contas a pagar<small>lembretes de vencimento — “Pagar” já cria o lançamento no razão</small></h2>
-    <button class="btn btn-sm btn-gold" onclick="openCp()">＋ Conta</button>
-    <button class="btn btn-sm" onclick="gerarRecorrentes()">Gerar próximas recorrentes</button></div>
-    <div class="tbl-scroll"><table><thead><tr><th>Descrição</th><th class="num">Vencimento</th><th class="num">Valor</th><th>Recorrência</th><th>Situação</th><th></th></tr></thead>
-    <tbody>${rows||'<tr><td colspan="6"><div class="empty">Nenhuma conta cadastrada.</div></td></tr>'}</tbody></table></div></div>`;
+  <nav class="tabs">
+    <button class="tab ${cpAba==='abertas'?'active':''}" onclick="cpAba='abertas';render()">A pagar <span class="cnt">${abertas.length}</span></button>
+    <button class="tab ${cpAba==='pagas'?'active':''}" onclick="cpAba='pagas';render()">Arquivo de pagas <span class="cnt">${pagas.length}</span></button>
+    <button class="btn btn-sm btn-gold" style="margin-left:auto" onclick="openCp()">＋ Conta</button>
+    ${cpAba==='abertas'?'<button class="btn btn-sm" onclick="gerarRecorrentes()">Gerar próximas recorrentes</button>':''}
+  </nav>
+  ${cpAba==='abertas'
+    ?`<div class="panel"><div class="panel-head"><h2>Contas a pagar<small>lembretes de vencimento — “Pagar” já cria o lançamento no razão</small></h2></div>${tabelaAbertas}</div>`
+    :arquivo}`;
 }
 function pagarCp(id){
   const c=DB.cp.find(x=>x.id===id);if(!c)return;
+  const data=c.venc||iso(new Date());
   c.situacao='Pago';
+  c.pagoEm=c.pagoEm||data;          /* é por esta data que o arquivo agrupa */
   const cod=c.cod||autoCod(c.desc,'S')||'18.05';
-  DB.lanc.push({id:uid(),data:c.venc||iso(new Date()),contaId:DB.contas[0].id,desc:c.desc.toUpperCase(),cod,entrada:0,saida:c.valor,obs:'Baixa de conta a pagar'});
+  const lid=uid();
+  c.lancId=lid;
+  DB.lanc.push({id:lid,data,contaId:DB.contas[0].id,desc:c.desc.toUpperCase(),cod,entrada:0,saida:c.valor,obs:'Baixa de conta a pagar'});
   save();render();toast('Pago e lançado no razão como '+nomeConta(cod));
+}
+/* Marcar como pago é reversível: some o lançamento que a baixa criou. */
+function desfazerPag(id){
+  const c=DB.cp.find(x=>x.id===id);if(!c)return;
+  if(!confirm('Voltar “'+c.desc+'” para em aberto? O lançamento da baixa vai para os Excluídos.'))return;
+  if(c.lancId){const l=DB.lanc.find(x=>x.id===c.lancId);if(l)l.deletedAt=Date.now()}
+  c.situacao='Pendente'; c.pagoEm=null; c.lancId=null;
+  save();render();toast('Voltou para em aberto');
 }
 const PASSO={'Mensal':1,'Bimestral':2,'Trimestral':3,'Semestral':6,'Anual':12};
 function gerarRecorrentes(){
@@ -2008,8 +2258,33 @@ function viewLixo(){
     <button class="iconbtn del" onclick="purgar('${x.t}','${x.id}')">🗑</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Lixeira vazia.</div>'}</div>`;
 }
 const COL={lanc:'lanc',fat:'fat',cp:'cp',pat:'pat',tarefas:'tarefas',metas:'metas',principios:'principios'};
-function delItem(t,id){const o=DB[COL[t]].find(x=>x.id===id);if(!o)return;o.deletedAt=Date.now();save();render();toast('Movido para Excluídos')}
-function restaurar(t,id){const o=DB[COL[t]].find(x=>x.id===id);if(o){o.deletedAt=null;save();render();toast('Restaurado')}}
+function delItem(t,id){
+  const o=DB[COL[t]].find(x=>x.id===id);if(!o)return;
+  let extra='';
+  if(t==='lanc'){
+    /* transferência é um par: os dois lados vão juntos */
+    if(o.transfId){
+      const par=DB.lanc.filter(x=>x.transfId===o.transfId&&!x.deletedAt);
+      par.forEach(x=>x.deletedAt=Date.now());
+      extra=' (os dois lados da transferência)';
+    }
+    /* virou patrimônio: devolve o valor ao ativo */
+    if(o.patId){
+      const a=DB.pat.find(x=>x.id===o.patId);
+      if(a){a.valor=Math.round((a.valor-(o.saida||0))*100)/100;extra=' · '+a.ativo+' voltou a '+brl(a.valor)}
+    }
+  }
+  o.deletedAt=Date.now();save();render();toast('Movido para Excluídos'+extra);
+}
+function restaurar(t,id){
+  const o=DB[COL[t]].find(x=>x.id===id);if(!o)return;
+  if(t==='lanc'){
+    if(o.transfId)DB.lanc.filter(x=>x.transfId===o.transfId).forEach(x=>x.deletedAt=null);
+    if(o.patId){const a=DB.pat.find(x=>x.id===o.patId);
+      if(a)a.valor=Math.round((a.valor+(o.saida||0))*100)/100}
+  }
+  o.deletedAt=null;save();render();toast('Restaurado');
+}
 function purgar(t,id){if(!confirm('Excluir definitivamente?'))return;DB[COL[t]]=DB[COL[t]].filter(x=>x.id!==id);save();render()}
 function esvaziarLixo(){if(!confirm('Excluir definitivamente tudo que está na lixeira?'))return;
   ['lanc','fat','cp','pat','tarefas','metas','principios'].forEach(k=>DB[k]=DB[k].filter(x=>!x.deletedAt));save();render();toast('Lixeira esvaziada')}
@@ -2019,10 +2294,59 @@ function optsPlano(sel,filtro){
   return DB.plano.filter(p=>!filtro||filtro(p)).sort((a,b)=>a.cod.localeCompare(b.cod,undefined,{numeric:true}))
     .map(p=>`<option value="${esc(p.cod)}" ${sel===p.cod?'selected':''}>${esc(p.cod+' — '+p.nome)}</option>`).join('');
 }
-function pickDir(d){curDir=d;document.querySelectorAll('#l_dir .o').forEach(o=>o.classList.toggle('sel',o.dataset.v===d));encheCodLanc()}
+function pickDir(d){
+  curDir=d;
+  document.querySelectorAll('#l_dir .o').forEach(o=>o.classList.toggle('sel',o.dataset.v===d));
+  encheCodLanc(); encheDestino();
+}
 function encheCodLanc(){
   const cur=document.getElementById('l_cod').value;
-  document.getElementById('l_cod').innerHTML='<option value="">— escolher —</option>'+optsPlano(cur,p=>curDir==='E'?p.tipo!=='DESPESA':p.tipo!=='RECEITA');
+  const filtro = curDir==='T' ? (p=>p.grupo==='INVESTIMENTOS'||p.grupo==='TRANSFERÊNCIAS')
+               : curDir==='E' ? (p=>p.tipo!=='DESPESA')
+                              : (p=>p.tipo!=='RECEITA');
+  document.getElementById('l_cod').innerHTML='<option value="">— escolher —</option>'+optsPlano(cur,filtro);
+}
+
+/* ---------- Transferência ----------
+   "Para onde foi o dinheiro" aceita dois tipos de destino:
+   uma CONTA (gera o lançamento espelho) ou um ATIVO do patrimônio
+   (o dinheiro sai do caixa e o bem aumenta — é o caso de reinvestir
+   na Lidere ou comprar um carro: não é despesa, virou patrimônio). */
+function encheDestino(){
+  const box=document.getElementById('l_transfBox');
+  const eT = curDir==='T';
+  box.style.display = eT ? '' : 'none';
+  document.getElementById('l_codBox').style.display = eT ? '' : '';
+  if(!eT) return;
+  const origem=document.getElementById('l_conta').value;
+  const contas=DB.contas.filter(c=>c.id!==origem)
+    .map(c=>`<option value="c:${c.id}">${esc(c.nome)}</option>`).join('');
+  const ativos=alive(DB.pat).sort((a,b)=>a.ativo.localeCompare(b.ativo))
+    .map(a=>`<option value="p:${a.id}">${esc(a.ativo)} · ${esc(a.classe)} — ${brl(a.valor)}</option>`).join('');
+  const sel=document.getElementById('l_destino');
+  const antes=sel.value;
+  sel.innerHTML =
+    (contas?`<optgroup label="Outra conta minha">${contas}</optgroup>`:'')+
+    (ativos?`<optgroup label="Vai virar patrimônio">${ativos}</optgroup>`:'')+
+    `<optgroup label="Criar"><option value="p:novo">➕ novo ativo no patrimônio…</option></optgroup>`;
+  if(antes)sel.value=antes;
+  destinoMudou();
+}
+function destinoMudou(){
+  const v=document.getElementById('l_destino').value||'';
+  const novo=v==='p:novo';
+  document.getElementById('l_novoAtivoBox').style.display=novo?'':'none';
+  if(novo)document.getElementById('l_novaClasse').innerHTML=
+    DB.classes.map(c=>`<option ${c==='Ações / FIIs'?'selected':''}>${esc(c)}</option>`).join('');
+  const hint=document.getElementById('l_transfHint');
+  hint.textContent = v.startsWith('c:')
+    ? 'Sai desta conta e entra na outra, no mesmo valor e na mesma data.'
+    : 'Sai do caixa e soma no patrimônio. Não conta como despesa no DRE.';
+  /* conta do plano coerente com o destino */
+  const sel=document.getElementById('l_cod');
+  if(!sel.dataset.tocado){
+    sel.value = v.startsWith('c:') ? '16.01' : '15.07';
+  }
 }
 function sugereConta(){
   const d=document.getElementById('l_desc').value;
@@ -2034,18 +2358,30 @@ function sugereConta(){
 }
 function openLanc(id){
   const l=id?DB.lanc.find(x=>x.id===id):null;
+  const eTransf=!!(l&&l.transfId), ePat=!!(l&&l.patId);
   document.getElementById('lancTitle').textContent=l?'Editar lançamento':'Novo lançamento';
   document.getElementById('l_id').value=l?l.id:'';
-  curDir=l?(l.entrada>0?'E':'S'):'S';
+  curDir=l?((eTransf||ePat)?'T':(l.entrada>0?'E':'S')):'S';
   document.querySelectorAll('#l_dir .o').forEach(o=>o.classList.toggle('sel',o.dataset.v===curDir));
   document.getElementById('l_conta').innerHTML=DB.contas.map(c=>`<option value="${c.id}" ${l&&l.contaId===c.id?'selected':''}>${esc(c.nome)}</option>`).join('');
   document.getElementById('l_data').value=l?l.data:(mesAtual+'-'+pad(Math.min(new Date().getDate(),diasNoMes(mesAtual))));
   document.getElementById('l_desc').value=l?l.desc:'';
   document.getElementById('l_valor').value=l?n0(l.entrada||l.saida):'';
   document.getElementById('l_obs').value=l?(l.obs||''):'';
-  const sel=document.getElementById('l_cod');sel.dataset.auto='';
+  const sel=document.getElementById('l_cod');sel.dataset.auto='';sel.dataset.tocado='';
   encheCodLanc();sel.value=l?l.cod:'';
   document.getElementById('l_codHint').textContent='';
+  /* transferência já existente: mostra o destino e trava a troca de tipo */
+  encheDestino();
+  const dsel=document.getElementById('l_destino');
+  if(eTransf){
+    const par=DB.lanc.find(x=>x.transfId===l.transfId&&x.id!==l.id&&!x.deletedAt);
+    if(par)dsel.value='c:'+par.contaId;
+  } else if(ePat) dsel.value='p:'+l.patId;
+  document.getElementById('l_dir').style.pointerEvents=(eTransf||ePat)?'none':'';
+  document.getElementById('l_dir').style.opacity=(eTransf||ePat)?'.6':'';
+  document.getElementById('l_transfAviso').style.display=eTransf?'':'none';
+  if(eTransf||ePat)destinoMudou();
   document.getElementById('ovLanc').classList.add('show');
   setTimeout(()=>document.getElementById('l_desc').focus(),60);
 }
@@ -2054,15 +2390,69 @@ function saveLanc(){
   const valor=parseNum(document.getElementById('l_valor').value);
   const data=document.getElementById('l_data').value;
   const cod=document.getElementById('l_cod').value;
+  const contaId=document.getElementById('l_conta').value;
+  const obs=document.getElementById('l_obs').value.trim();
   if(!desc)return toast('Informe o histórico');
   if(!valor)return toast('Informe o valor');
   if(!data)return toast('Informe a data');
-  const o={data,contaId:document.getElementById('l_conta').value,desc,cod,
-    entrada:curDir==='E'?valor:0,saida:curDir==='S'?valor:0,obs:document.getElementById('l_obs').value.trim()};
   const id=document.getElementById('l_id').value;
+
+  if(curDir==='T')return saveTransf({id,data,contaId,desc,cod,valor,obs});
+
+  const o={data,contaId,desc,cod,entrada:curDir==='E'?valor:0,saida:curDir==='S'?valor:0,obs};
   if(id)Object.assign(DB.lanc.find(x=>x.id===id),o); else DB.lanc.push({id:uid(),...o});
   if(mesDe(data)!==mesAtual)mesAtual=mesDe(data);
   save();closeModal('ovLanc');render();toast('Lançamento salvo');
+}
+
+/* Uma transferência é sempre um par: ou dois lançamentos (conta → conta),
+   ou um lançamento + um ativo que sobe (conta → patrimônio). */
+function saveTransf({id,data,contaId,desc,cod,valor,obs}){
+  const destino=document.getElementById('l_destino').value||'';
+  if(!destino)return toast('Escolha para onde o dinheiro foi');
+
+  /* editar: mexe nos dois lados e devolve o valor antigo ao patrimônio */
+  if(id){
+    const l=DB.lanc.find(x=>x.id===id);
+    if(l.patId){
+      const a=DB.pat.find(x=>x.id===l.patId);
+      if(a)a.valor=Math.round((a.valor-l.saida+valor)*100)/100;
+    }
+    Object.assign(l,{data,desc,cod,obs,saida:valor,entrada:0});
+    if(l.transfId)DB.lanc.filter(x=>x.transfId===l.transfId&&x.id!==id)
+      .forEach(x=>Object.assign(x,{data,desc,cod,obs,entrada:valor,saida:0}));
+    if(mesDe(data)!==mesAtual)mesAtual=mesDe(data);
+    save();closeModal('ovLanc');render();toast('Transferência atualizada');
+    return;
+  }
+
+  if(destino.startsWith('c:')){
+    const destId=destino.slice(2);
+    const tid=uid();
+    DB.lanc.push({id:uid(),transfId:tid,data,contaId,desc,cod:cod||'16.01',entrada:0,saida:valor,obs});
+    DB.lanc.push({id:uid(),transfId:tid,data,contaId:destId,desc,cod:cod||'16.01',entrada:valor,saida:0,obs});
+    if(mesDe(data)!==mesAtual)mesAtual=mesDe(data);
+    save();closeModal('ovLanc');render();
+    toast('Transferência para '+bcoNome(destId));
+    return;
+  }
+
+  /* destino = patrimônio */
+  let patId=destino.slice(2);
+  if(patId==='novo'){
+    const nome=document.getElementById('l_novoAtivo').value.trim();
+    if(!nome)return toast('Dê um nome ao ativo');
+    patId=uid();
+    DB.pat.push({id:patId,data,classe:document.getElementById('l_novaClasse').value,ativo:nome,valor:0});
+  }
+  const a=DB.pat.find(x=>x.id===patId);
+  if(!a)return toast('Ativo não encontrado');
+  a.valor=Math.round((a.valor+valor)*100)/100;
+  a.data=data;
+  DB.lanc.push({id:uid(),patId,data,contaId,desc,cod:cod||'15.07',entrada:0,saida:valor,obs});
+  if(mesDe(data)!==mesAtual)mesAtual=mesDe(data);
+  save();closeModal('ovLanc');render();
+  toast('Virou patrimônio: '+a.ativo+' agora vale '+brl(a.valor));
 }
 function autoClassificar(){
   let n=0;
@@ -2127,6 +2517,7 @@ function openCp(id){
   document.getElementById('p_valor').value=c?n0(c.valor):'';
   document.getElementById('p_venc').value=c?c.venc:(mesAtual+'-'+pad(Math.min(new Date().getDate(),diasNoMes(mesAtual))));
   document.getElementById('p_st').value=c?c.situacao:'Pendente';
+  document.getElementById('p_pagoEm').value=c?(c.pagoEm||''):'';
   document.getElementById('p_rec').value=c?c.recorrencia:'Única';
   document.getElementById('p_obs').value=c?(c.obs||''):'';
   document.getElementById('p_cod').innerHTML='<option value="">— automático pela palavra-chave —</option>'+optsPlano(c?c.cod:'',p=>p.tipo!=='RECEITA');
@@ -2138,7 +2529,12 @@ function saveCp(){
   const valor=parseNum(document.getElementById('p_valor').value);
   if(!desc)return toast('Informe a descrição');
   if(!valor)return toast('Informe o valor');
-  const o={desc,valor,venc:document.getElementById('p_venc').value,situacao:document.getElementById('p_st').value,
+  const st=document.getElementById('p_st').value;
+  const pagoEm=document.getElementById('p_pagoEm').value;
+  const venc=document.getElementById('p_venc').value;
+  const o={desc,valor,venc,situacao:st,
+    /* paga sem data informada cai no mês do vencimento */
+    pagoEm:st==='Pago'?(pagoEm||venc||iso(new Date())):null,
     recorrencia:document.getElementById('p_rec').value,obs:document.getElementById('p_obs').value.trim(),cod:document.getElementById('p_cod').value};
   const id=document.getElementById('p_id').value;
   if(id)Object.assign(DB.cp.find(x=>x.id===id),o); else DB.cp.push({id:uid(),...o});
@@ -2258,6 +2654,83 @@ function saveOrc(){
   save();closeModal('ovOrc');render();toast('Orçamento salvo');
 }
 
+
+/* ============================================================
+   LANÇAMENTOS EM LOTE
+   Mesma conta e mesma classificação para todos; muda só data,
+   histórico e valor. É o jeito rápido de digitar um extrato.
+   ============================================================ */
+let loteLinhas=[];
+
+function openLote(){
+  loteLinhas=[{data:'',desc:'',valor:''},{data:'',desc:'',valor:''},{data:'',desc:'',valor:''}];
+  curDirLote='S';
+  document.getElementById('lo_conta').innerHTML=DB.contas.map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join('');
+  document.getElementById('lo_mes').value=mesAtual;
+  encheCodLote();
+  document.querySelectorAll('#lo_dir .o').forEach(o=>o.classList.toggle('sel',o.dataset.v==='S'));
+  renderLote();
+  document.getElementById('ovLote').classList.add('show');
+  setTimeout(()=>{const e=document.querySelector('#loteBody input');if(e)e.focus()},80);
+}
+let curDirLote='S';
+function pickDirLote(d){
+  curDirLote=d;
+  document.querySelectorAll('#lo_dir .o').forEach(o=>o.classList.toggle('sel',o.dataset.v===d));
+  encheCodLote();
+}
+function encheCodLote(){
+  const cur=document.getElementById('lo_cod').value;
+  document.getElementById('lo_cod').innerHTML='<option value="">— escolher —</option>'+
+    optsPlano(cur,p=>curDirLote==='E'?p.tipo!=='DESPESA':p.tipo!=='RECEITA');
+}
+function loteSet(i,campo,v){loteLinhas[i][campo]=v;if(campo==='valor')loteTotal()}
+function loteAdd(){loteLinhas.push({data:'',desc:'',valor:''});renderLote();
+  setTimeout(()=>{const ins=document.querySelectorAll('#loteBody tr:last-child input');if(ins[1])ins[1].focus()},40)}
+function loteDel(i){loteLinhas.splice(i,1);if(!loteLinhas.length)loteLinhas.push({data:'',desc:'',valor:''});renderLote()}
+function loteTotal(){
+  const t=loteLinhas.reduce((s,l)=>s+parseNum(l.valor),0);
+  const n=loteLinhas.filter(l=>l.desc.trim()&&parseNum(l.valor)).length;
+  const el=document.getElementById('loteTotal');
+  if(el)el.textContent=n+' linha(s) preenchida(s) · '+brl(t);
+}
+/* Enter na última coluna cria a próxima linha: dá para digitar sem tocar no mouse */
+function loteTecla(e,i){
+  if(e.key!=='Enter')return;
+  e.preventDefault();
+  if(i===loteLinhas.length-1)loteAdd();
+  else{const ins=document.querySelectorAll('#loteBody tr')[i+1].querySelectorAll('input');if(ins[1])ins[1].focus()}
+}
+function renderLote(){
+  const dia=mesAtual+'-01';
+  document.getElementById('loteBody').innerHTML=loteLinhas.map((l,i)=>`<tr>
+    <td style="width:132px"><input type="date" value="${esc(l.data||dia)}"
+        onchange="loteSet(${i},'data',this.value)"></td>
+    <td><input placeholder="histórico" value="${esc(l.desc)}"
+        oninput="loteSet(${i},'desc',this.value)" onkeydown="loteTecla(event,${i})"></td>
+    <td style="width:118px"><input inputmode="decimal" placeholder="0,00" value="${esc(l.valor)}"
+        oninput="loteSet(${i},'valor',this.value)" onkeydown="loteTecla(event,${i})" class="num"></td>
+    <td style="width:34px"><button class="iconbtn del" onclick="loteDel(${i})">×</button></td>
+  </tr>`).join('');
+  loteTotal();
+}
+function saveLote(){
+  const contaId=document.getElementById('lo_conta').value;
+  const cod=document.getElementById('lo_cod').value;
+  const mes=document.getElementById('lo_mes').value||mesAtual;
+  const validas=loteLinhas.filter(l=>l.desc.trim()&&parseNum(l.valor));
+  if(!validas.length)return toast('Preencha ao menos uma linha com histórico e valor');
+  if(!cod&&!confirm(validas.length+' lançamento(s) sem conta do plano. Entram assim mesmo?'))return;
+  validas.forEach(l=>{
+    const valor=parseNum(l.valor);
+    DB.lanc.push({id:uid(),data:l.data||(mes+'-01'),contaId,desc:l.desc.trim().toUpperCase(),
+      cod:cod||autoCod(l.desc,curDirLote),
+      entrada:curDirLote==='E'?valor:0,saida:curDirLote==='S'?valor:0,obs:'em lote'});
+  });
+  mesAtual=mes;
+  save();closeModal('ovLote');render();
+  toast(validas.length+' lançamento(s) criados');
+}
 /* ============================ IMPORTAÇÃO DE EXTRATO ============================ */
 /* Aceita OFX, CSV/TSV, texto colado e PDF. O PDF é lido aqui mesmo, sem biblioteca
    externa: descompacta os streams com DecompressionStream (nativo do navegador),

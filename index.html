@@ -197,7 +197,7 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .alert b{color:var(--txt)}
 
 /* ---------- Barras horizontais ---------- */
-.bar-row{display:grid;grid-template-columns:148px 1fr 96px 46px;gap:12px;align-items:center;margin-bottom:9px;font-size:12px}
+.bar-row{display:grid;grid-template-columns:168px 1fr 96px 78px;gap:12px;align-items:center;margin-bottom:9px;font-size:12px}
 @media(max-width:700px){.bar-row{grid-template-columns:96px 1fr 80px 38px;font-size:11px;gap:8px}}
 .bar-row .lbl{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar-track{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden}
@@ -1345,21 +1345,43 @@ function viewDash(){
 
   const alerta=r.semConta.length?`<div class="alert bad"><span>⚠️</span><div><b>${r.semConta.length} lançamento(s) sem conta do plano</b> — ficam de fora do DRE e dos gráficos. ${r.semConta.slice(0,3).map(x=>esc(x.desc)).join(', ')}${r.semConta.length>3?'…':''}. <button class="btn btn-sm" style="margin-left:6px" onclick="go('lancamentos')">Resolver</button></div></div>`:'';
 
-  const desp=GRUPOS_DESP.map(g=>[g,r.despesas[g]||0]).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  /* Gastos por grupo e orçamento no mesmo lugar: a barra mede o teto
+     quando existe teto, e o peso no total quando não existe. */
+  const comTeto=g=>(DB.orc[g]||0)>0;
+  const desp=GRUPOS_DESP.map(g=>[g,r.despesas[g]||0])
+    .filter(([g,v])=>v>0||comTeto(g))
+    .sort((a,b)=>{
+      const ea=comTeto(a[0])&&a[1]>DB.orc[a[0]], eb=comTeto(b[0])&&b[1]>DB.orc[b[0]];
+      if(ea!==eb)return ea?-1:1;                 /* estourado sobe */
+      if(comTeto(a[0])!==comTeto(b[0]))return comTeto(a[0])?-1:1;
+      return b[1]-a[1];
+    });
   const maxD=Math.max(1,...desp.map(d=>d[1]));
+  const tetoTot=GRUPOS_DESP.filter(comTeto).reduce((s,g)=>s+DB.orc[g],0);
+  const gastoComTeto=GRUPOS_DESP.filter(comTeto).reduce((s,g)=>s+(r.despesas[g]||0),0);
+  const nEstourados=GRUPOS_DESP.filter(g=>comTeto(g)&&(r.despesas[g]||0)>DB.orc[g]).length;
+
   const barras=desp.length?desp.map(([g,v])=>{
     const teto=DB.orc[g]||0, over=teto>0&&v>teto;
+    const larg=teto>0?Math.min(100,v/teto*100):(v/maxD*100);
+    const dir=teto>0
+      ? `<div class="num ${over?'neg':'muted'}" title="teto do mês">${over?'+'+n0(v-teto):'de '+n0(teto)}</div>`
+      : `<div class="num muted" title="peso no total de despesas">${r.totDesp?((v/r.totDesp)*100).toFixed(0)+'%':'—'}</div>`;
     return `<div class="bar-row"><div class="lbl" title="${esc(gLbl(g))}">${esc(gLbl(g))}</div>
-      <div class="bar-track ${over?'over':''}"><i data-w="${(v/maxD*100).toFixed(1)}" style="width:0;background:${gCor(g)}"></i></div>
-      <div class="num">${brl(v)}</div><div class="num muted">${r.totDesp?((v/r.totDesp)*100).toFixed(0)+'%':'—'}</div></div>`;
+      <div class="bar-track ${over?'over':''}"><i data-w="${larg.toFixed(1)}" style="width:0;background:${teto>0&&!over?'linear-gradient(90deg,'+gCor(g)+'aa,'+gCor(g)+')':gCor(g)}"></i></div>
+      <div class="num">${brl(v)}</div>${dir}</div>`;
   }).join(''):'<div class="empty">Nenhuma despesa categorizada neste mês.</div>';
 
-  const orcRows=GRUPOS_DESP.filter(g=>DB.orc[g]>0).map(g=>{
-    const v=r.despesas[g]||0, teto=DB.orc[g], p=Math.min(100,v/teto*100), over=v>teto;
-    return `<div class="bar-row"><div class="lbl">${esc(gLbl(g))}</div>
-      <div class="bar-track ${over?'over':''}"><i data-w="${p.toFixed(1)}" style="width:0;background:${over?'linear-gradient(90deg,#ef6b6b,#ff9b9b)':'linear-gradient(90deg,#22c05e,#6bf29b)'}"></i></div>
-      <div class="num ${over?'neg':''}">${brl(v)}</div><div class="num muted">de ${n0(teto)}</div></div>`;
-  }).join('');
+  const resumoOrc=tetoTot?`<div class="bar-row" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px">
+      <div class="lbl"><b>Dentro do orçamento</b></div>
+      <div class="bar-track ${gastoComTeto>tetoTot?'over':''}"><i data-w="${Math.min(100,gastoComTeto/tetoTot*100).toFixed(1)}" style="width:0;background:linear-gradient(90deg,var(--acc-d),var(--acc))"></i></div>
+      <div class="num"><b>${brl(gastoComTeto)}</b></div>
+      <div class="num muted">de ${n0(tetoTot)}</div></div>
+    <div class="muted" style="font-size:11.5px;margin-top:9px">${
+      nEstourados?`<span class="neg">${nEstourados} grupo(s) acima do teto.</span> `:'Nenhum grupo estourou o teto. '
+    }Os grupos sem teto aparecem pelo peso no total.</div>`
+    :`<div class="muted" style="font-size:11.5px;margin-top:10px">Sem teto definido — as barras mostram o peso de cada grupo no total do mês.
+       <button class="btn btn-sm" style="margin-left:6px" onclick="openOrc()">Definir orçamento</button></div>`;
 
   const meses=[];for(let i=5;i>=0;i--)meses.push(addMes(mesAtual,-i));
   const serie=meses.map(m=>{const x=resumo(m);return {m,e:x.entradas,s:x.saidas}});
@@ -1398,8 +1420,8 @@ function viewDash(){
 
   return statsHtml+alerta+`
   <div class="grid2">
-    <div class="panel"><div class="panel-head"><h2>Gastos por grupo<small>Razão + cartões, no mês selecionado</small></h2>
-      <button class="btn btn-sm" onclick="openOrc()">Definir orçamento</button></div>${barras}</div>
+    <div class="panel"><div class="panel-head"><h2>Gastos por grupo<small>Razão + cartões · barra cheia = teto do mês</small></h2>
+      <button class="btn btn-sm" onclick="openOrc()">${tetoTot?'Editar orçamento':'Definir orçamento'}</button></div>${barras}${resumoOrc}</div>
     <div class="panel"><div class="panel-head"><h2>Fluxo de caixa<small>${mesLabel(mesAtual)}</small></h2></div>${fluxo}</div>
   </div>
   <div class="grid2">
@@ -1408,10 +1430,7 @@ function viewDash(){
       <div class="bar-row" style="margin-top:10px;border-top:1px solid var(--line);padding-top:11px"><div class="lbl"><b>Total</b></div><div></div><div class="num"><b>${brl(r.totCartoes)}</b></div><div></div></div></div>
     <div class="panel"><div class="panel-head"><h2>Evolução — 6 meses</h2></div>${mini}</div>
   </div>
-  <div class="grid2">
-    <div class="panel"><div class="panel-head"><h2>Contas a pagar em aberto</h2><button class="btn btn-sm" onclick="go('pagar')">Ver todas</button></div>${proxHtml}</div>
-    ${orcRows?`<div class="panel"><div class="panel-head"><h2>Orçamento do mês<small>quanto já foi consumido de cada teto</small></h2><button class="btn btn-sm" onclick="openOrc()">Editar</button></div>${orcRows}</div>`:'<div></div>'}
-  </div>
+  <div class="panel"><div class="panel-head"><h2>Contas a pagar em aberto</h2><button class="btn btn-sm" onclick="go('pagar')">Ver todas</button></div>${proxHtml}</div>
   `+ritmo();
 }
 

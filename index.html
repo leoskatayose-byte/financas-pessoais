@@ -527,6 +527,23 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
   .papel p{orphans:3;widows:3}
   .papel .acao{break-inside:avoid}
 }
+
+/* ---------- Boas-vindas do painel ---------- */
+.ola{display:flex;align-items:center;gap:16px;margin:2px 0 18px}
+.ola-txt h2{margin:0;font-size:25px;font-weight:700;letter-spacing:-.6px;
+  line-height:1.2;color:var(--txt)}
+.ola-txt p{margin:5px 0 0;font-size:12.5px;color:var(--mut);
+  text-transform:lowercase;letter-spacing:.2px}
+.ola-nome{background:none;border:none;padding:0;font:inherit;color:var(--acc);
+  cursor:pointer;border-bottom:1px dashed transparent;transition:border-color .16s}
+.ola-nome:hover{border-bottom-color:var(--acc)}
+.ola-txt p .ola-nome{font-size:12.5px;color:var(--mut)}
+.ola-txt p .ola-nome:hover{color:var(--acc)}
+.ola-input{background:var(--panel2);border:1px solid var(--acc);color:var(--txt);
+  font:inherit;font-size:25px;font-weight:700;letter-spacing:-.6px;
+  padding:1px 9px;border-radius:8px;max-width:11ch}
+.ola-input:focus{outline:none;box-shadow:0 0 0 3px var(--glow)}
+@media(max-width:600px){.ola-txt h2{font-size:21px}.ola-input{font-size:21px}}
 </style>
 
 <div class="gate" id="gate"></div>
@@ -1134,6 +1151,7 @@ function migraDB(){
   DB.tarefas=DB.tarefas||[]; DB.metas=DB.metas||[];
   DB.tema=DB.tema||'dual'; aplicaTema(DB.tema);
   DB.lidos=DB.lidos||{};
+  DB.usuario=DB.usuario||{nome:''};
   if(!DB.principios||!DB.principios.length)DB.principios=PRINCIPIOS_BASE.map(x=>({...x,adotado:false}));
   else{ /* princípios novos entram sem apagar os seus */
     PRINCIPIOS_BASE.forEach(b=>{if(!DB.principios.some(x=>x.id===b.id))DB.principios.push({...b,adotado:false})});
@@ -1339,6 +1357,44 @@ function render(){
 }
 
 /* ============================ DASHBOARD ============================ */
+/* A saudação muda com a hora e chama a pessoa pelo nome. Clicar troca o
+   nome ali mesmo — sem modal para uma coisa de uma palavra só. */
+const MESES_EXT=['janeiro','fevereiro','março','abril','maio','junho','julho',
+                 'agosto','setembro','outubro','novembro','dezembro'];
+const DIAS_EXT=['domingo','segunda-feira','terça-feira','quarta-feira',
+                'quinta-feira','sexta-feira','sábado'];
+function saudacao(){
+  const h=new Date().getHours();
+  return h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
+}
+function hojePorExtenso(){
+  const d=new Date();
+  return DIAS_EXT[d.getDay()]+', '+d.getDate()+' de '+MESES_EXT[d.getMonth()];
+}
+function boasVindas(){
+  const nome=((DB.usuario&&DB.usuario.nome)||'').trim();
+  return `<div class="ola">
+    <div class="ola-txt">
+      <h2>${saudacao()}${nome?', <button class="ola-nome" onclick="editaNome()" title="trocar o nome">'+esc(nome)+'</button>':''}.</h2>
+      <p>${hojePorExtenso()}${nome?'':' · <button class="ola-nome" onclick="editaNome()">como posso te chamar?</button>'}</p>
+    </div>
+  </div>`;
+}
+function editaNome(){
+  const el=document.querySelector('.ola-txt');
+  if(!el)return;
+  const atual=((DB.usuario&&DB.usuario.nome)||'');
+  el.innerHTML=`<h2>${saudacao()}, <input class="ola-input" id="olaNome" value="${esc(atual)}"
+      maxlength="24" placeholder="seu nome" onkeydown="if(event.key==='Enter')salvaNome();if(event.key==='Escape')render()">.</h2>
+    <p>Enter para salvar</p>`;
+  const i=document.getElementById('olaNome');i.focus();i.select();
+}
+function salvaNome(){
+  const v=(document.getElementById('olaNome').value||'').trim();
+  DB.usuario=DB.usuario||{};DB.usuario.nome=v;
+  save();render();
+  if(v)toast('Prazer, '+v+'!');
+}
 function viewDash(){
   const r=resumo(mesAtual);
   const stats=[
@@ -1349,7 +1405,7 @@ function viewDash(){
     ['Gasto nos cartões',brl(r.totCartoes),'',r.F.length+' compras na fatura'],
     ['Custo médio/dia',brl(r.totDesp/diasNoMes(mesAtual)),'','sobre '+diasNoMes(mesAtual)+' dias']
   ];
-  const statsHtml=principioDoDia()+heroMeta()+`<div class="stats">${stats.map(([k,v,c,s])=>`<div class="stat"><div class="k">${k}</div><div class="v ${c||''}">${v}</div><div class="sub">${s}</div></div>`).join('')}</div>`;
+  const statsHtml=boasVindas()+principioDoDia()+heroMeta()+`<div class="stats">${stats.map(([k,v,c,s])=>`<div class="stat"><div class="k">${k}</div><div class="v ${c||''}">${v}</div><div class="sub">${s}</div></div>`).join('')}</div>`;
 
   const alerta=r.semConta.length?`<div class="alert bad"><span>⚠️</span><div><b>${r.semConta.length} lançamento(s) sem conta do plano</b> — ficam de fora do DRE e dos gráficos. ${r.semConta.slice(0,3).map(x=>esc(x.desc)).join(', ')}${r.semConta.length>3?'…':''}. <button class="btn btn-sm" style="margin-left:6px" onclick="go('lancamentos')">Resolver</button></div></div>`:'';
 

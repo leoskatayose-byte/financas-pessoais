@@ -544,6 +544,29 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
   padding:1px 9px;border-radius:8px;max-width:11ch}
 .ola-input:focus{outline:none;box-shadow:0 0 0 3px var(--glow)}
 @media(max-width:600px){.ola-txt h2{font-size:21px}.ola-input{font-size:21px}}
+
+/* ---------- Busca no plano de contas ---------- */
+.combo{position:relative}
+.combo-oculto{display:none!important}
+.combo-in{width:100%;background:var(--bg2);border:1px solid var(--line-f);color:var(--txt);
+  padding:10px 34px 10px 12px;border-radius:9px;font-size:13px}
+.combo-in:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--glow)}
+.combo.tem .combo-in{color:var(--txt);font-weight:600}
+.combo-x{position:absolute;right:6px;top:6px;width:26px;height:26px;border:none;
+  background:none;color:var(--mut);font-size:17px;line-height:1;border-radius:6px;display:none}
+.combo.tem .combo-x{display:block}
+.combo-x:hover{color:var(--neg);background:var(--panel2)}
+.combo-lista{position:absolute;z-index:70;left:0;right:0;top:calc(100% + 5px);
+  max-height:290px;overflow-y:auto;background:var(--panel);border:1px solid var(--line-f);
+  border-radius:11px;box-shadow:0 18px 44px rgba(0,0,0,.45);padding:5px}
+.combo-g{display:flex;align-items:center;gap:7px;font-size:9px;letter-spacing:1.3px;
+  text-transform:uppercase;color:var(--mut);font-weight:800;padding:9px 9px 5px}
+.combo-g span{width:8px;height:8px;border-radius:2px;flex:0 0 8px}
+.combo-it{display:block;width:100%;text-align:left;background:none;border:none;
+  color:var(--dim);font-size:12.5px;padding:7px 10px;border-radius:7px;line-height:1.4}
+.combo-it b{color:var(--acc);font-variant-numeric:tabular-nums;margin-right:7px}
+.combo-it:hover,.combo-it.on{background:var(--panel2);color:var(--txt)}
+.combo-vazio{padding:16px 12px;font-size:12px;color:var(--mut);text-align:center}
 </style>
 
 <div class="gate" id="gate"></div>
@@ -602,7 +625,7 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
     <div class="field"><label>Histórico / descrição *</label><input id="l_desc" placeholder="Ex.: SUPERMERCADO CONDOR" oninput="sugereConta()"></div>
     <div class="fgrid">
       <div class="field"><label>Valor (R$) *</label><input id="l_valor" inputmode="decimal" placeholder="0,00"></div>
-      <div class="field" id="l_codBox"><label>Conta do plano *</label><select id="l_cod" onchange="this.dataset.tocado='1'"></select><div class="hint" id="l_codHint"></div></div>
+      <div class="field" id="l_codBox"><label>Conta do plano *</label><select data-combo id="l_cod" onchange="this.dataset.tocado='1'"></select><div class="hint" id="l_codHint"></div></div>
     </div>
     <div class="field"><label>Observação</label><input id="l_obs" placeholder="opcional"></div>
   </div>
@@ -621,7 +644,7 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
     <div class="field"><label>Estabelecimento *</label><input id="f_desc" placeholder="Ex.: UBER" oninput="sugereFat()"></div>
     <div class="fgrid">
       <div class="field"><label>Valor da parcela (R$) *</label><input id="f_valor" inputmode="decimal" placeholder="0,00"></div>
-      <div class="field"><label>Conta do plano *</label><select id="f_cod"></select></div>
+      <div class="field"><label>Conta do plano *</label><select data-combo id="f_cod"></select></div>
     </div>
     <div class="fgrid">
       <div class="field"><label>Fatura (mês de referência) *</label><input type="month" id="f_mes"></div>
@@ -655,7 +678,7 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
         <div class="hint">É por esta data que a conta aparece no arquivo.</div></div>
       <div class="field"><label>Recorrência</label><select id="p_rec"><option>Única</option><option>Mensal</option><option>Bimestral</option><option>Trimestral</option><option>Semestral</option><option>Anual</option></select></div>
     </div>
-    <div class="field"><label>Conta do plano (para lançar quando pagar)</label><select id="p_cod"></select></div>
+    <div class="field"><label>Conta do plano (para lançar quando pagar)</label><select data-combo id="p_cod"></select></div>
     <div class="field"><label>Observação</label><input id="p_obs" placeholder="opcional"></div>
   </div>
   <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('ovCp')">Cancelar</button><button class="btn btn-gold" onclick="saveCp()">Salvar</button></div>
@@ -698,7 +721,7 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
         <div class="field"><label>Dia do fechamento</label><input type="number" id="c_fech" min="1" max="31" placeholder="ex.: 4"></div>
         <div class="field"><label>Dia do vencimento</label><input type="number" id="c_venc" min="1" max="31" placeholder="ex.: 10"></div>
       </div>
-      <div class="field"><label>Conta do plano para a fatura</label><select id="c_codFat"></select></div>
+      <div class="field"><label>Conta do plano para a fatura</label><select data-combo id="c_codFat"></select></div>
     </div>
   </div>
   <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('ovConta')">Cancelar</button><button class="btn btn-gold" onclick="saveConta()">Salvar</button></div>
@@ -725,7 +748,7 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
   <div class="modal-body">
     <input type="hidden" id="kw_orig">
     <div class="field"><label>Palavra-chave *</label><input id="kw_p" placeholder="ex.: CONDOR" oninput="this.value=this.value.toUpperCase()"><div class="hint">Se o histórico do lançamento contiver este texto, a conta abaixo é sugerida automaticamente.</div></div>
-    <div class="field"><label>Conta do plano *</label><select id="kw_cod"></select></div>
+    <div class="field"><label>Conta do plano *</label><select data-combo id="kw_cod"></select></div>
     <div class="field"><label>Aplicar em</label><select id="kw_dir"><option value="">Entradas e saídas</option><option value="E">Só entradas</option><option value="S">Só saídas</option></select></div>
   </div>
   <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('ovKw')">Cancelar</button><button class="btn btn-gold" onclick="saveKw()">Salvar</button></div>
@@ -801,7 +824,7 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
     </div>
     <div class="fgrid">
       <div class="field"><label>Conta de origem</label><select id="ap_conta"></select></div>
-      <div class="field"><label>Conta do plano</label><select id="ap_cod"></select></div>
+      <div class="field"><label>Conta do plano</label><select data-combo id="ap_cod"></select></div>
     </div>
     <div class="field"><label>Observação</label><input id="ap_obs" placeholder="opcional"></div>
   </div>
@@ -848,7 +871,7 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
     <div class="field"><label>Tipo</label><div class="seg" id="lo_dir">
       <div class="o sel" data-v="S" onclick="pickDirLote('S')">↓ Saída</div>
       <div class="o" data-v="E" onclick="pickDirLote('E')">↑ Entrada</div></div></div>
-    <div class="field"><label>Conta do plano (para todas)</label><select id="lo_cod"></select>
+    <div class="field"><label>Conta do plano (para todas)</label><select data-combo id="lo_cod"></select>
       <div class="hint">Deixe em branco para o app classificar cada linha pela palavra-chave.</div></div>
     <div class="tbl-scroll" style="max-height:40vh;overflow-y:auto">
       <table><thead><tr><th>Data</th><th>Histórico</th><th class="num">Valor</th><th></th></tr></thead>
@@ -2392,6 +2415,7 @@ function encheCodLanc(){
                : curDir==='E' ? (p=>p.tipo!=='DESPESA')
                               : (p=>p.tipo!=='RECEITA');
   document.getElementById('l_cod').innerHTML='<option value="">— escolher —</option>'+optsPlano(cur,filtro);
+  ligaCombos();comboSyncAll();
 }
 
 /* ---------- Transferência ----------
@@ -2433,6 +2457,7 @@ function destinoMudou(){
   const sel=document.getElementById('l_cod');
   if(!sel.dataset.tocado){
     sel.value = v.startsWith('c:') ? '16.01' : '15.07';
+    comboSync(sel);
   }
 }
 function sugereConta(){
@@ -2442,6 +2467,7 @@ function sugereConta(){
   const hint=document.getElementById('l_codHint');
   if(c&&(!sel.value||sel.dataset.auto==='1')){sel.value=c;sel.dataset.auto='1';hint.innerHTML='<span class="goldtxt">sugerido automaticamente</span>'}
   else if(!c&&sel.dataset.auto==='1'){sel.value='';hint.textContent=''}
+  comboSync(sel);
 }
 function openLanc(id){
   const l=id?DB.lanc.find(x=>x.id===id):null;
@@ -2551,7 +2577,7 @@ function autoClassificar(){
 function sugereFat(){
   const c=autoCod(document.getElementById('f_desc').value,'S');
   const sel=document.getElementById('f_cod');
-  if(c&&(!sel.value||sel.dataset.auto==='1')){sel.value=c;sel.dataset.auto='1'}
+  if(c&&(!sel.value||sel.dataset.auto==='1')){sel.value=c;sel.dataset.auto='1';comboSync(sel)}
 }
 function openFat(id){
   const f=id?DB.fat.find(x=>x.id===id):null;
@@ -2818,6 +2844,123 @@ function saveLote(){
   save();closeModal('ovLote');render();
   toast(validas.length+' lançamento(s) criados');
 }
+
+/* ============================================================
+   BUSCA NO PLANO DE CONTAS
+   O <select> continua sendo a fonte do valor (nada no resto do
+   app muda). Por cima dele fica um campo de busca que filtra por
+   código, nome ou grupo, e lista agrupado por categoria.
+   ============================================================ */
+let comboAberto=null, comboIdx=-1;
+
+function ligaCombos(){
+  document.querySelectorAll('select[data-combo]').forEach(sel=>{
+    if(sel.dataset.ligado)return;
+    sel.dataset.ligado='1';
+    const cx=document.createElement('div');
+    cx.className='combo';
+    cx.innerHTML=`<input class="combo-in" type="text" autocomplete="off" spellcheck="false"
+        placeholder="digite para buscar (ex.: mercado, uber, 4.01)">
+      <button class="combo-x" type="button" title="limpar">×</button>
+      <div class="combo-lista" hidden></div>`;
+    sel.parentNode.insertBefore(cx,sel);
+    sel.classList.add('combo-oculto');
+    const inp=cx.querySelector('.combo-in');
+    inp.addEventListener('focus',()=>comboAbre(sel,cx));
+    inp.addEventListener('input',()=>comboAbre(sel,cx));
+    inp.addEventListener('keydown',e=>comboTecla(e,sel,cx));
+    cx.querySelector('.combo-x').addEventListener('click',()=>{
+      sel.value='';sel.dispatchEvent(new Event('change'));comboSync(sel);inp.focus()});
+    comboSync(sel);
+  });
+}
+const comboCx=sel=>sel.previousElementSibling;
+
+/* Mostra no campo a conta escolhida; vazio quando não há escolha. */
+function comboSync(sel){
+  const cx=comboCx(sel); if(!cx||!cx.classList.contains('combo'))return;
+  const inp=cx.querySelector('.combo-in');
+  const o=sel.options[sel.selectedIndex];
+  const v=sel.value?(o?o.textContent.trim():sel.value):'';
+  inp.value=v;
+  cx.classList.toggle('tem',!!sel.value);
+  cx.querySelector('.combo-lista').hidden=true;
+}
+function comboSyncAll(){document.querySelectorAll('select[data-combo]').forEach(comboSync)}
+
+function comboAbre(sel,cx){
+  const inp=cx.querySelector('.combo-in'), lista=cx.querySelector('.combo-lista');
+  const q=(inp.value||'').trim().toLowerCase();
+  /* quando o campo mostra a conta já escolhida, o primeiro clique lista tudo */
+  const busca=(q&&q===(sel.options[sel.selectedIndex]||{}).textContent?.trim().toLowerCase())?'':q;
+  const opts=[...sel.options].filter(o=>o.value);
+  const achou=opts.filter(o=>{
+    if(!busca)return true;
+    const p=PM()[o.value]||{};
+    return (o.textContent+' '+gLbl(p.grupo||'')).toLowerCase().includes(busca);
+  });
+  /* agrupado por categoria, na ordem do plano */
+  const porGrupo={};
+  achou.forEach(o=>{const g=(PM()[o.value]||{}).grupo||'—';(porGrupo[g]=porGrupo[g]||[]).push(o)});
+  const ordem=Object.keys(porGrupo).sort((a,b)=>((GRUPOS[a]||{}).ord||99)-((GRUPOS[b]||{}).ord||99));
+  lista.innerHTML = achou.length
+    ? ordem.map(g=>`<div class="combo-g"><span style="background:${gCor(g)}"></span>${esc(gLbl(g))}</div>`+
+        porGrupo[g].map(o=>{
+          const p=PM()[o.value]||{};
+          return `<button type="button" class="combo-it" data-v="${esc(o.value)}">
+            <b>${esc(o.value)}</b> ${esc(p.nome||o.textContent)}</button>`}).join('')).join('')
+    : `<div class="combo-vazio">Nada com “${esc(busca)}”. Tente parte do nome ou o código.</div>`;
+  lista.hidden=false;
+  comboAberto=cx; comboIdx=-1;
+  lista.querySelectorAll('.combo-it').forEach(b=>b.onclick=()=>comboEscolhe(sel,b.dataset.v));
+}
+function comboEscolhe(sel,v){
+  sel.value=v; sel.dataset.tocado='1';
+  sel.dispatchEvent(new Event('change'));
+  comboSync(sel);
+}
+function comboTecla(e,sel,cx){
+  const lista=cx.querySelector('.combo-lista');
+  const its=[...lista.querySelectorAll('.combo-it')];
+  if(e.key==='Escape'){lista.hidden=true;return}
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();
+    if(lista.hidden)comboAbre(sel,cx);
+    comboIdx=Math.max(0,Math.min(its.length-1,comboIdx+(e.key==='ArrowDown'?1:-1)));
+    its.forEach((b,i)=>b.classList.toggle('on',i===comboIdx));
+    if(its[comboIdx])its[comboIdx].scrollIntoView({block:'nearest'});
+    return;
+  }
+  if(e.key==='Enter'){
+    e.preventDefault();
+    const alvo=its[comboIdx>=0?comboIdx:0];
+    if(alvo)comboEscolhe(sel,alvo.dataset.v);
+  }
+}
+document.addEventListener('click',e=>{
+  if(comboAberto&&!comboAberto.contains(e.target)){
+    comboAberto.querySelector('.combo-lista').hidden=true;
+    const sel=comboAberto.nextElementSibling;
+    if(sel&&sel.tagName==='SELECT')comboSync(sel);   /* desistiu: volta ao que estava */
+    comboAberto=null;
+  }
+});
+/* O campo de data abre o calendário ao clicar em qualquer ponto. */
+document.addEventListener('click',e=>{
+  const i=e.target;
+  if(i.tagName==='INPUT'&&i.type==='date'&&i.showPicker){try{i.showPicker()}catch(_){}}
+});
+
+
+/* Um observador só: sempre que um modal abre, os combos são religados e
+   sincronizados. Evita espalhar chamadas por cada open*(). */
+new MutationObserver(ms=>{
+  for(const m of ms){
+    if(m.target.classList&&m.target.classList.contains('show')){
+      ligaCombos(); comboSyncAll(); break;
+    }
+  }
+}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']});
 /* ============================ IMPORTAÇÃO DE EXTRATO ============================ */
 /* Aceita OFX, CSV/TSV, texto colado e PDF. O PDF é lido aqui mesmo, sem biblioteca
    externa: descompacta os streams com DecompressionStream (nativo do navegador),

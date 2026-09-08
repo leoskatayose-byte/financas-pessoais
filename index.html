@@ -596,6 +596,57 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .combo-it b{color:var(--acc);font-variant-numeric:tabular-nums;margin-right:7px}
 .combo-it:hover,.combo-it.on{background:var(--panel2);color:var(--txt)}
 .combo-vazio{padding:16px 12px;font-size:12px;color:var(--mut);text-align:center}
+/* conta que o app escolheu sozinho pela palavra-chave */
+.combo.auto .combo-in{border-style:dashed;color:var(--acc-s,var(--acc))}
+
+/* ---------- Lançamento em lote ---------- */
+.lote-pad{display:grid;grid-template-columns:220px 1fr auto;gap:12px;align-items:end;
+  padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);margin-bottom:14px}
+.lote-hd,.lote-l{display:grid;grid-template-columns:136px 104px minmax(150px,1fr) minmax(180px,1.1fr) 112px 30px;gap:8px;align-items:center}
+.lote-hd{font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--mut);font-weight:800;padding:0 9px 7px}
+.lote-l{padding:8px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);margin-bottom:7px}
+.lote-l:focus-within{border-color:var(--line-f)}
+.lote-l input,.lote-l select{width:100%;background:var(--bg2);border:1px solid var(--line-f);color:var(--txt);
+  padding:9px 10px;border-radius:8px;font-size:12.5px}
+.lote-l input:focus,.lote-l select:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--glow)}
+.lote-l .combo-in{padding:9px 30px 9px 10px;font-size:12.5px}
+.lote-l .combo-x{top:5px}
+.lote-l .num{text-align:right;font-variant-numeric:tabular-nums}
+@media(max-width:920px){
+  .lote-pad{grid-template-columns:1fr}
+  .lote-hd{display:none}
+  .lote-l{grid-template-columns:1fr 1fr;padding:11px}
+  .lote-l .lote-desc,.lote-l .combo,.lote-l select[data-combo]{grid-column:1/-1}
+}
+
+/* ---------- Prévia da conta a pagar ---------- */
+.cp-prev{display:none}
+.cp-prev.on{display:block;margin:0 0 14px;padding:12px 14px;border:1px solid var(--acc);
+  border-left-width:3px;border-radius:10px;background:color-mix(in srgb,var(--acc) 8%,transparent);
+  font-size:12.5px;line-height:1.55;color:var(--txt)}
+.cp-prev b{color:var(--acc-s,var(--acc))}
+.cp-prev div{color:var(--dim);margin-top:4px}
+.cp-prev .cp-prev-x{color:var(--mut);font-size:11.5px;margin-top:6px}
+
+/* ---------- Parcelamentos ---------- */
+.parc-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px;padding-bottom:18px}
+.parc{border:1px solid var(--line);border-left:2px solid var(--acc);border-radius:0 11px 11px 0;
+  background:var(--panel2);padding:14px 15px;transition:.15s}
+.parc:hover{border-color:var(--line-f);border-left-color:var(--acc-s,var(--acc))}
+.parc-t{font-size:13.5px;font-weight:700;line-height:1.35}
+.parc-o{font-size:11.5px;color:var(--mut);margin-top:3px}
+.parc-n{display:flex;align-items:baseline;gap:7px;margin:11px 0 3px}
+.parc-n b{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--acc)}
+.parc-n span{font-size:11.5px;color:var(--mut)}
+.parc-bar{height:6px;background:var(--raise);border-radius:3px;overflow:hidden;margin:10px 0 7px}
+.parc-bar > i{display:block;height:100%;background:var(--acc);border-radius:3px}
+.parc-lin{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;color:var(--mut);
+  padding:5px 0;border-top:1px solid var(--line)}
+.parc-lin b{color:var(--txt);font-variant-numeric:tabular-nums}
+.parc-av{margin-top:11px;padding:9px 11px;border-radius:8px;font-size:11.5px;line-height:1.45;
+  background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn)}
+.parc-ft{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+.parc-ft .btn{flex:1 1 130px}
 </style>
 
 <div class="gate" id="gate"></div>
@@ -696,22 +747,44 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
   <div class="modal-head"><h3 id="cpTitle">Nova conta a pagar</h3><button class="modal-x" onclick="closeModal('ovCp')">×</button></div>
   <div class="modal-body">
     <input type="hidden" id="p_id">
-    <div class="field"><label>Descrição *</label><input id="p_desc" placeholder="Ex.: PRUDENTIAL"></div>
-    <div class="fgrid">
-      <div class="field"><label>Valor (R$) *</label><input id="p_valor" inputmode="decimal" placeholder="0,00"></div>
-      <div class="field"><label>Vencimento *</label><input type="date" id="p_venc"></div>
+    <div class="field"><label>Descrição *</label><input id="p_desc" placeholder="Ex.: PRUDENTIAL" oninput="cpPreve()"></div>
+
+    <div id="p_modoBox">
+      <div class="field"><label>Como você vai pagar</label>
+        <div class="seg" id="p_modo">
+          <div class="o sel" data-v="1" onclick="cpModo('1')">Uma vez só</div>
+          <div class="o" data-v="R" onclick="cpModo('R')">Todo mês (recorrente)</div>
+          <div class="o" data-v="P" onclick="cpModo('P')">Parcelado</div>
+        </div></div>
     </div>
+
     <div class="fgrid">
+      <div class="field"><label id="p_valorLbl">Valor (R$) *</label><input id="p_valor" inputmode="decimal" placeholder="0,00" oninput="cpPreve()"></div>
+      <div class="field"><label id="p_vencLbl">Vencimento *</label><input type="date" id="p_venc" onchange="cpPreve()"></div>
+    </div>
+
+    <div id="p_parcBox" style="display:none">
+      <div class="fgrid">
+        <div class="field"><label>Quantas parcelas *</label><input id="p_parc" type="number" min="2" max="120" value="2" onchange="cpPreve()" oninput="cpPreve()"></div>
+        <div class="field"><label>Onde vai cair</label><select id="p_forma" onchange="cpPreve()"></select></div>
+      </div>
+      <div class="field"><label>O valor acima é</label>
+        <div class="seg" id="p_base">
+          <div class="o sel" data-v="parcela" onclick="cpBase('parcela')">de cada parcela</div>
+          <div class="o" data-v="total" onclick="cpBase('total')">o total, para dividir</div>
+        </div></div>
+    </div>
+
+    <div class="cp-prev" id="p_prev"></div>
+
+    <div class="fgrid" id="p_recBox">
+      <div class="field"><label>Repete a cada</label><select id="p_rec" onchange="cpPreve()"><option>Única</option><option>Mensal</option><option>Bimestral</option><option>Trimestral</option><option>Semestral</option><option>Anual</option></select></div>
+      <div class="field"></div>
+    </div>
+    <div class="fgrid" id="p_stBox">
       <div class="field"><label>Situação</label><select id="p_st"><option>Pendente</option><option>Pago</option></select></div>
       <div class="field"><label>Pago em</label><input type="date" id="p_pagoEm">
         <div class="hint">É por esta data que a conta aparece no arquivo.</div></div>
-      <div class="field"><label>Recorrência</label><select id="p_rec"><option>Única</option><option>Mensal</option><option>Bimestral</option><option>Trimestral</option><option>Semestral</option><option>Anual</option></select></div>
-    </div>
-    <div class="fgrid" id="p_parcBox">
-      <div class="field"><label>Forma de pagamento</label><select id="p_forma" onchange="cpFormaMudou()"></select>
-        <div class="hint" id="p_formaHint">Sai do caixa quando você clicar em “Pagar”.</div></div>
-      <div class="field"><label>Parcelas</label><input id="p_parc" inputmode="numeric" placeholder="1" value="1">
-        <div class="hint">Ex.: 16 do dentista. O app cria as 16, uma por mês, de uma vez só.</div></div>
     </div>
     <div class="field"><label>Conta do plano (para lançar quando pagar)</label><select data-combo id="p_cod"></select></div>
     <div class="field"><label>Observação</label><input id="p_obs" placeholder="opcional"></div>
@@ -894,24 +967,28 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 
 
 <!-- Modal: lançamentos em lote -->
-<div class="overlay" id="ovLote"><div class="modal wide" style="max-width:760px">
+<div class="overlay" id="ovLote"><div class="modal wide">
   <div class="modal-head"><h3>Lançar em lote</h3><button class="modal-x" onclick="closeModal('ovLote')">×</button></div>
   <div class="modal-body">
-    <div class="alert"><span>⌨</span><div>Conta e classificação valem para <b>todas</b> as linhas.
-      Use <b>Enter</b> no valor para abrir a próxima.</div></div>
+    <div class="alert"><span>⌨</span><div>Cada linha tem a <b>sua</b> data, tipo, conta do plano e valor.
+      O histórico já sugere a conta sozinho. <b>Enter</b> no valor abre a próxima linha.</div></div>
     <div class="fgrid">
-      <div class="field"><label>Conta *</label><select id="lo_conta"></select></div>
-      <div class="field"><label>Mês de referência</label><input type="month" id="lo_mes"></div>
+      <div class="field"><label>Conta do dinheiro *</label><select id="lo_conta"></select>
+        <div class="hint">Vale para todas as linhas: é de onde sai e para onde entra.</div></div>
+      <div class="field"><label>Mês de referência</label><input type="month" id="lo_mes" onchange="renderLote()">
+        <div class="hint">Só preenche a data das linhas em branco.</div></div>
     </div>
-    <div class="field"><label>Tipo</label><div class="seg" id="lo_dir">
-      <div class="o sel" data-v="S" onclick="pickDirLote('S')">↓ Saída</div>
-      <div class="o" data-v="E" onclick="pickDirLote('E')">↑ Entrada</div></div></div>
-    <div class="field"><label>Conta do plano (para todas)</label><select data-combo id="lo_cod"></select>
-      <div class="hint">Deixe em branco para o app classificar cada linha pela palavra-chave.</div></div>
-    <div class="tbl-scroll" style="max-height:40vh;overflow-y:auto">
-      <table><thead><tr><th>Data</th><th>Histórico</th><th class="num">Valor</th><th></th></tr></thead>
-      <tbody id="loteBody"></tbody></table>
+    <div class="lote-pad">
+      <div class="field" style="margin:0"><label>Padrão das novas linhas</label>
+        <div class="seg" id="lo_dir">
+          <div class="o sel" data-v="S" onclick="pickDirLote('S')">↓ Saída</div>
+          <div class="o" data-v="E" onclick="pickDirLote('E')">↑ Entrada</div></div></div>
+      <div class="field" style="margin:0"><label>Conta do plano padrão</label><select data-combo id="lo_cod"></select></div>
+      <button class="btn btn-sm" onclick="loteAplicaTodas()" title="copia o padrão acima para todas as linhas">Aplicar a todas</button>
     </div>
+    <div class="lote-hd">
+      <span>Data</span><span>Tipo</span><span>Histórico</span><span>Conta do plano</span><span class="num">Valor</span><span></span></div>
+    <div id="loteBody"></div>
     <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">
       <button class="btn btn-sm" onclick="loteAdd()">＋ linha</button>
       <span class="muted right" id="loteTotal" style="font-size:12px"></span>
@@ -2412,6 +2489,7 @@ function parcelamentos(){
      da contagem de linhas, e o fim sai da conta (1ª parcela + tot − 1). */
   return Object.keys(g).map(k=>{
     const s=g[k];
+    s.chave=k;
     s.itens.sort((a,b)=>(a.parcela||0)-(b.parcela||0));
     s.valor=s.itens[0]?s.itens[0].valor:0;
     s.total=Math.round(s.valor*s.tot*100)/100;
@@ -2423,33 +2501,83 @@ function parcelamentos(){
     const p1=s.itens[0];
     s.fim=p1?addMes(p1.mk,s.tot-(p1.parcela||1)):'';
     s.noMes=s.itens.filter(x=>x.mk===mesAtual);
+    /* série que veio da planilha traz só as parcelas daquele arquivo: o resto
+       ainda não existe em lugar nenhum, e por isso não cai em mês nenhum */
+    const ult=s.itens[s.itens.length-1];
+    s.ultParc=ult?(ult.parcela||s.itens.length):0;
+    s.ultMk=ult?ult.mk:'';
+    s.faltamLancar=Math.max(0,s.tot-s.ultParc);
     return s;
   }).filter(s=>s.pagas<s.tot).sort((a,b)=>(b.falta-a.falta));
 }
+/* Completa a série até a última parcela: continua do último mês lançado,
+   um mês por parcela. Só cria o que falta para a frente, nunca reescreve o
+   que já está lá. */
+function gerarFaltantes(chave){
+  const s=parcelamentos().find(x=>x.chave===chave);
+  if(!s||!s.faltamLancar)return toast('Esta série já está completa');
+  if(!confirm('Lançar '+s.faltamLancar+' parcela(s) de '+brl(s.valor)+' de "'+s.desc+'", uma por mês, até '+mesLabel(s.fim)+'?'))return;
+  const modelo=s.tipo==='cartao'
+    ? fatAtivos().find(f=>f.mesRef===s.ultMk&&(f.parcela||1)===s.ultParc&&f.cartaoId===s.cartaoId&&f.desc===s.desc)
+    : alive(DB.cp).find(c=>mesDe(c.venc)===s.ultMk&&(c.parcela||1)===s.ultParc);
+  if(!modelo)return toast('Não achei a última parcela para continuar de lá');
+  const serie=modelo.serie||uid();
+  for(let p=s.ultParc+1;p<=s.tot;p++){
+    const mk=addMes(s.ultMk,p-s.ultParc);
+    if(s.tipo==='cartao')
+      DB.fat.push({...modelo,id:uid(),mesRef:mk,parcela:p,totparc:s.tot,serie,deletedAt:null});
+    else{
+      const dia=+modelo.venc.slice(8);
+      DB.cp.push({...modelo,id:uid(),desc:s.desc+' ('+p+'/'+s.tot+')',
+        venc:mk+'-'+pad(Math.min(dia,diasNoMes(mk))),
+        situacao:'Pendente',pagoEm:null,lancId:null,parcela:p,totparc:s.tot,serie,deletedAt:null});
+    }
+  }
+  if(!modelo.serie)modelo.serie=serie;
+  save();render();toast(s.faltamLancar+' parcela(s) lançadas até '+mesLabel(s.fim));
+}
 function painelParcelas(){
   const L=parcelamentos();
-  if(!L.length)return `<div class="panel"><div class="panel-head"><h2>Parcelamentos<small>compras em série no cartão e contas criadas parceladas</small></h2></div>
-    <div class="empty">Nenhum parcelamento aberto. Crie um em “＋ Conta”, escolhendo o cartão e o número de parcelas.</div></div>`;
-  const linhas=L.map(s=>{
-    const pctP=Math.round(100*s.pagas/s.tot);
+  const faltaTot=L.reduce((a,s)=>a+s.falta,0);
+  const mesTot=L.reduce((a,s)=>a+s.noMes.reduce((b,x)=>b+x.valor,0),0);
+  const mesCurto=mesLabel(mesAtual).split(' ')[0];
+  const topo=`<div class="stats">
+    <div class="stat"><div class="k">Séries abertas</div><div class="v">${L.length}</div><div class="sub">parcelamentos em andamento</div></div>
+    <div class="stat"><div class="k">Compromisso em ${mesCurto}</div><div class="v goldtxt">${brl(mesTot)}</div><div class="sub">soma das parcelas do mês</div></div>
+    <div class="stat"><div class="k">Falta pagar</div><div class="v ${faltaTot?'neg':'pos'}">${brl(faltaTot)}</div><div class="sub">até a última parcela</div></div>
+  </div>`;
+  if(!L.length)return `<div class="panel"><div class="panel-head"><h2>Parcelamentos
+      <small>cadastre uma vez; a parcela do mês aparece sozinha daqui para a frente</small></h2></div>
+    <div class="empty">Nenhum parcelamento aberto.<br>Clique em <b>＋ Conta</b>, escolha <b>Parcelado</b> e diga em quantas vezes.</div></div>`;
+  const cards=L.map(s=>{
+    const feita=Math.min(s.pagas,s.tot), pctP=Math.round(100*feita/s.tot);
     const noMes=s.noMes.reduce((a,x)=>a+x.valor,0);
-    return `<tr>
-      <td><b>${esc(s.desc)}</b><div class="muted" style="font-size:11px">${s.tipo==='cartao'?'💳 '+esc(nomeCartao(s.cartaoId)||'cartão'):'conta a pagar'} · termina em ${mesLabel(s.fim)}</div></td>
-      <td class="num">${brl(s.valor)}</td>
-      <td><div style="display:flex;align-items:center;gap:8px"><div class="bar-track" style="flex:1;min-width:60px"><i style="width:${pctP}%"></i></div>
-        <span class="muted" style="font-size:11px;white-space:nowrap">${s.pagas}/${s.tot}</span></div></td>
-      <td class="num ${noMes?'goldtxt':'muted'}">${noMes?brl(noMes):'—'}</td>
-      <td class="num">${brl(s.falta)}</td>
-      <td class="num">${brl(s.total)}</td>
-      <td class="num">${s.tipo==='cartao'?`<button class="btn btn-sm btn-ghost" onclick="filtroCartao='${s.cartaoId}';go('cartoes')">Ver fatura</button>`:''}</td>
-    </tr>`}).join('');
-  const faltaTot=L.reduce((a,s)=>a+s.falta,0), mesTot=L.reduce((a,s)=>a+s.noMes.reduce((b,x)=>b+x.valor,0),0);
-  return `<div class="panel"><div class="panel-head"><h2>Parcelamentos
-      <small>cadastre uma vez; a parcela aparece sozinha todo mês</small></h2>
+    const prox=s.noMes.length?s.noMes[0].parcela:feita+1;
+    const onde=s.tipo==='cartao'?'💳 fatura do '+(nomeCartao(s.cartaoId)||'cartão'):'📄 contas a pagar';
+    return `<div class="parc">
+      <div class="parc-t">${esc(s.desc)}</div>
+      <div class="parc-o">${esc(onde)}</div>
+      <div class="parc-n"><b>${brl(s.valor)}</b><span>por mês</span></div>
+      <div class="parc-bar"><i style="width:${pctP}%"></i></div>
+      <div class="parc-o">Parcela <b style="color:var(--txt)">${Math.min(prox,s.tot)} de ${s.tot}</b> · ${feita} já ${feita===1?'paga':'pagas'}</div>
+      <div style="margin-top:11px">
+        <div class="parc-lin"><span>Cai em ${mesCurto}</span><b class="${noMes?'goldtxt':'muted'}">${noMes?brl(noMes):'nada'}</b></div>
+        <div class="parc-lin"><span>Falta pagar</span><b>${brl(s.falta)}</b></div>
+        <div class="parc-lin"><span>Total da compra</span><b>${brl(s.total)}</b></div>
+        <div class="parc-lin"><span>Última parcela</span><b>${mesLabel(s.fim)}</b></div>
+      </div>
+      ${s.faltamLancar?`<div class="parc-av">Só ${s.ultParc} de ${s.tot} parcelas estão lançadas.
+        As outras ${s.faltamLancar} ainda não existem em mês nenhum.</div>`:''}
+      <div class="parc-ft">
+        ${s.faltamLancar?`<button class="btn btn-sm btn-gold" style="flex:1;justify-content:center"
+          onclick="gerarFaltantes('${esc(s.chave)}')">Lançar as ${s.faltamLancar} que faltam</button>`:''}
+        ${s.tipo==='cartao'?`<button class="btn btn-sm btn-ghost" style="flex:1;justify-content:center"
+          onclick="filtroCartao='${s.cartaoId}';go('cartoes')">Ver na fatura</button>`:''}</div>
+    </div>`}).join('');
+  return topo+`<div class="panel"><div class="panel-head"><h2>Parcelamentos
+      <small>cadastre uma vez; a parcela do mês aparece sozinha daqui para a frente</small></h2>
       <span class="goldtxt" style="font-variant-numeric:tabular-nums;font-weight:700">${brl(faltaTot)} a vencer</span></div>
-    <div class="tbl-scroll"><table>
-      <thead><tr><th>Parcelamento</th><th class="num">Parcela</th><th>Andamento</th><th class="num">Em ${mesLabel(mesAtual).split(' ')[0]}</th><th class="num">Falta</th><th class="num">Total</th><th></th></tr></thead>
-      <tbody>${linhas}<tr><td><b>Total</b></td><td></td><td></td><td class="num"><b>${brl(mesTot)}</b></td><td class="num"><b>${brl(faltaTot)}</b></td><td></td><td></td></tr></tbody></table></div></div>`;
+    <div class="parc-g">${cards}</div></div>`;
 }
 function pagarCp(id){
   const c=DB.cp.find(x=>x.id===id);if(!c)return;
@@ -2925,6 +3053,12 @@ function saveFat(){
   save();closeModal('ovFat');render();
 }
 
+/* ---------- Conta a pagar ----------
+   Três modos, e a tela só mostra o que faz sentido em cada um:
+   "Uma vez só" (a conta e a baixa), "Todo mês" (recorrência) e
+   "Parcelado" (a série inteira nasce de uma vez). O quadro de
+   prévia diz em português o que vai acontecer ao salvar. */
+let cpModoAtual='1', cpBaseAtual='parcela';
 function openCp(id){
   const c=id?DB.cp.find(x=>x.id===id):null;
   document.getElementById('cpTitle').textContent=c?'Editar conta a pagar':'Nova conta a pagar';
@@ -2937,70 +3071,115 @@ function openCp(id){
   document.getElementById('p_rec').value=c?c.recorrencia:'Única';
   document.getElementById('p_obs').value=c?(c.obs||''):'';
   document.getElementById('p_cod').innerHTML='<option value="">— automático pela palavra-chave —</option>'+optsPlano(c?c.cod:'',p=>p.tipo!=='RECEITA');
-  /* Parcelar e escolher cartão só faz sentido na criação: editar mexeria numa
-     parcela só, e a série já existe. */
-  document.getElementById('p_forma').innerHTML='<option value="">Dinheiro / conta bancária</option>'
-    +DB.cartoes.map(k=>`<option value="${k.id}">Cartão ${esc(k.nome)}</option>`).join('');
-  document.getElementById('p_parc').value=1;
-  document.getElementById('p_parcBox').style.display=c?'none':'';
-  cpFormaMudou();
+  document.getElementById('p_forma').innerHTML='<option value="">Contas a pagar (dinheiro / conta)</option>'
+    +DB.cartoes.map(k=>`<option value="${k.id}">Fatura do ${esc(k.nome)}</option>`).join('');
+  document.getElementById('p_parc').value=2;
+  /* editar mexe numa parcela só: a série já existe, então some com os modos */
+  document.getElementById('p_modoBox').style.display=c?'none':'';
+  cpBaseAtual='parcela';
+  document.querySelectorAll('#p_base .o').forEach(o=>o.classList.toggle('sel',o.dataset.v==='parcela'));
+  cpModo(c?(c.recorrencia&&c.recorrencia!=='Única'?'R':'1'):'1');
   document.getElementById('ovCp').classList.add('show');
   setTimeout(()=>document.getElementById('p_desc').focus(),60);
 }
-function cpFormaMudou(){
-  const cid=document.getElementById('p_forma').value;
-  document.getElementById('p_formaHint').textContent=cid
-    ?'A parcela entra na fatura desse cartão todo mês. Você paga a fatura, não cada parcela.'
-    :'Sai do caixa quando você clicar em “Pagar”.';
+function cpModo(m){
+  cpModoAtual=m;
+  document.querySelectorAll('#p_modo .o').forEach(o=>o.classList.toggle('sel',o.dataset.v===m));
+  const parcelado=m==='P';
+  document.getElementById('p_parcBox').style.display=parcelado?'':'none';
+  document.getElementById('p_recBox').style.display=m==='R'?'':'none';
+  /* na série parcelada não existe "já paguei": cada parcela nasce em aberto */
+  document.getElementById('p_stBox').style.display=parcelado?'none':'';
+  document.getElementById('p_valorLbl').textContent=parcelado?'Valor (R$) *':'Valor (R$) *';
+  document.getElementById('p_vencLbl').textContent=parcelado?'Vencimento da 1ª parcela *':'Vencimento *';
+  if(m!=='R')document.getElementById('p_rec').value='Única';
+  else if(document.getElementById('p_rec').value==='Única')document.getElementById('p_rec').value='Mensal';
+  cpPreve();
+}
+function cpBase(b){
+  cpBaseAtual=b;
+  document.querySelectorAll('#p_base .o').forEach(o=>o.classList.toggle('sel',o.dataset.v===b));
+  cpPreve();
+}
+/* valor de cada parcela e valor total, a partir do que o usuário digitou */
+function cpValores(){
+  const bruto=parseNum(document.getElementById('p_valor').value);
+  const n=Math.max(2,Math.min(120,+document.getElementById('p_parc').value||2));
+  if(cpModoAtual!=='P')return {n:1,parcela:bruto,total:bruto};
+  const parcela=cpBaseAtual==='total'?Math.round(bruto/n*100)/100:bruto;
+  return {n,parcela,total:Math.round(parcela*n*100)/100};
+}
+function cpPreve(){
+  const el=document.getElementById('p_prev');if(!el)return;
+  const desc=document.getElementById('p_desc').value.trim()||'esta conta';
+  const venc=document.getElementById('p_venc').value;
+  const v=cpValores();
+  if(!v.parcela||!venc){el.className='cp-prev';el.innerHTML='';return}
+  el.className='cp-prev on';
+  if(cpModoAtual==='P'){
+    const cid=document.getElementById('p_forma').value;
+    const fim=addMes(mesDe(venc),v.n-1);
+    el.innerHTML=`<b>${v.n}× de ${brl(v.parcela)}</b>, de ${mesLabel(mesDe(venc))} a ${mesLabel(fim)}.
+      <div>Total ${brl(v.total)}. ${cid
+        ?'Cada parcela entra na <b>fatura do '+esc(nomeCartao(cid))+'</b>: você paga a fatura, não parcela por parcela.'
+        :'Vira <b>'+v.n+' contas a pagar</b>, uma por mês, todas em aberto.'}</div>
+      <div class="cp-prev-x">Cadastre uma vez. A parcela do mês aparece sozinha daqui para a frente.</div>`;
+    return;
+  }
+  if(cpModoAtual==='R'){
+    const r=document.getElementById('p_rec').value;
+    el.innerHTML=`<b>${brl(v.parcela)}</b> vencendo em ${fmtBR(venc)}.
+      <div>Repete <b>${r.toLowerCase()}</b>. Use “Gerar próximas recorrentes” para criar o próximo vencimento.</div>`;
+    return;
+  }
+  el.innerHTML=`<b>${brl(v.parcela)}</b> vencendo em ${fmtBR(venc)}.
+    <div>Uma conta só. Quando clicar em “Pagar”, ${esc(desc)} vira lançamento no razão.</div>`;
 }
 function saveCp(){
   const desc=document.getElementById('p_desc').value.trim();
-  const valor=parseNum(document.getElementById('p_valor').value);
   if(!desc)return toast('Informe a descrição');
-  if(!valor)return toast('Informe o valor');
-  const st=document.getElementById('p_st').value;
-  const pagoEm=document.getElementById('p_pagoEm').value;
   const venc=document.getElementById('p_venc').value;
+  const v=cpValores();
+  if(!v.parcela)return toast('Informe o valor');
+  if(!venc)return toast(cpModoAtual==='P'?'Informe o vencimento da 1ª parcela':'Informe o vencimento');
   const id=document.getElementById('p_id').value;
-  const novo=!id;
-  const cartaoId=novo?document.getElementById('p_forma').value:'';
-  const parc=novo?Math.max(1,Math.min(120,+document.getElementById('p_parc').value||1)):1;
   const cod=document.getElementById('p_cod').value;
   const obs=document.getElementById('p_obs').value.trim();
+  const st=document.getElementById('p_st').value;
+  const pagoEm=document.getElementById('p_pagoEm').value;
 
-  /* No cartão, a parcela não é uma conta a pagar: ela entra na fatura, e a
-     fatura é que sai do caixa. Por isso vira compra do cartão. */
-  if(cartaoId){
-    if(!venc)return toast('Informe a data da primeira parcela');
-    const mesRef=mesDe(venc);
-    const serie=uid();
-    for(let p=1;p<=parc;p++)
-      DB.fat.push({id:uid(),cartaoId,data:venc,mesRef:addMes(mesRef,p-1),desc:desc.toUpperCase(),valor,
-                   parcela:p,totparc:parc,cod:cod||autoCod(desc,'S')||'',obs,serie});
-    filtroCartao=cartaoId;
+  /* Parcelado no cartão: a parcela não é conta a pagar, é compra na fatura.
+     Quem sai do caixa é a fatura, uma vez por mês. */
+  if(!id&&cpModoAtual==='P'&&document.getElementById('p_forma').value){
+    const cartaoId=document.getElementById('p_forma').value;
+    const mesRef=mesDe(venc), serie=uid();
+    for(let p=1;p<=v.n;p++)
+      DB.fat.push({id:uid(),cartaoId,data:venc,mesRef:addMes(mesRef,p-1),desc:desc.toUpperCase(),valor:v.parcela,
+                   parcela:p,totparc:v.n,cod:cod||autoCod(desc,'S')||'',obs,serie});
+    filtroCartao=cartaoId; cpAba='parcelas';
     save();closeModal('ovCp');render();
-    toast(parc>1?parc+' parcelas lançadas na fatura de '+nomeCartao(cartaoId):'Compra lançada na fatura de '+nomeCartao(cartaoId));
-    return;
+    return toast(v.n+' parcelas de '+brl(v.parcela)+' na fatura do '+nomeCartao(cartaoId));
   }
 
-  const o={desc,valor,venc,situacao:st,
+  const base={desc,valor:v.parcela,venc,situacao:st,
     /* paga sem data informada cai no mês do vencimento */
     pagoEm:st==='Pago'?(pagoEm||venc||iso(new Date())):null,
     recorrencia:document.getElementById('p_rec').value,obs,cod};
-  if(id){Object.assign(DB.cp.find(x=>x.id===id),o);save();closeModal('ovCp');render();return toast('Conta salva')}
-  if(parc>1){
-    if(!venc)return toast('Informe o vencimento da primeira parcela');
+  if(id){Object.assign(DB.cp.find(x=>x.id===id),base);save();closeModal('ovCp');render();return toast('Conta salva')}
+
+  if(cpModoAtual==='P'){
     const serie=uid(), dia=+venc.slice(8);
-    for(let p=1;p<=parc;p++){
+    for(let p=1;p<=v.n;p++){
       const mk=addMes(mesDe(venc),p-1);
-      DB.cp.push({id:uid(),...o,desc:desc+' ('+p+'/'+parc+')',
+      DB.cp.push({id:uid(),...base,desc:desc+' ('+p+'/'+v.n+')',
         venc:mk+'-'+pad(Math.min(dia,diasNoMes(mk))),
-        situacao:p===1?st:'Pendente', pagoEm:p===1?o.pagoEm:null,
-        recorrencia:'Única', parcela:p, totparc:parc, serie});
+        situacao:'Pendente',pagoEm:null,recorrencia:'Única',parcela:p,totparc:v.n,serie});
     }
-    save();closeModal('ovCp');render();return toast(parc+' parcelas criadas, uma por mês');
+    cpAba='parcelas';
+    save();closeModal('ovCp');render();
+    return toast(v.n+' parcelas de '+brl(v.parcela)+' criadas, uma por mês');
   }
-  DB.cp.push({id:uid(),...o});
+  DB.cp.push({id:uid(),...base});
   save();closeModal('ovCp');render();toast('Conta salva');
 }
 
@@ -3120,75 +3299,125 @@ function saveOrc(){
 
 /* ============================================================
    LANÇAMENTOS EM LOTE
-   Mesma conta e mesma classificação para todos; muda só data,
-   histórico e valor. É o jeito rápido de digitar um extrato.
+   Cada linha é um lançamento inteiro: data, tipo, histórico,
+   conta do plano e valor. A conta bancária vale para todas, e o
+   padrão do topo só preenche as linhas novas. Digitar o
+   histórico já sugere a conta pela palavra-chave.
    ============================================================ */
-let loteLinhas=[];
+let loteLinhas=[], curDirLote='S';
+const loteVazia=()=>({data:'',dir:curDirLote,desc:'',cod:document.getElementById('lo_cod')?document.getElementById('lo_cod').value:'',valor:'',tocado:false});
 
 function openLote(){
-  loteLinhas=[{data:'',desc:'',valor:''},{data:'',desc:'',valor:''},{data:'',desc:'',valor:''}];
   curDirLote='S';
   document.getElementById('lo_conta').innerHTML=DB.contas.map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join('');
   document.getElementById('lo_mes').value=mesAtual;
-  encheCodLote();
   document.querySelectorAll('#lo_dir .o').forEach(o=>o.classList.toggle('sel',o.dataset.v==='S'));
+  encheCodLote();
+  document.getElementById('lo_cod').value='';
+  loteLinhas=[loteVazia(),loteVazia(),loteVazia()];
   renderLote();
   document.getElementById('ovLote').classList.add('show');
-  setTimeout(()=>{const e=document.querySelector('#loteBody input');if(e)e.focus()},80);
+  setTimeout(()=>{const e=document.querySelector('#loteBody .lote-desc');if(e)e.focus()},120);
 }
-let curDirLote='S';
 function pickDirLote(d){
   curDirLote=d;
   document.querySelectorAll('#lo_dir .o').forEach(o=>o.classList.toggle('sel',o.dataset.v===d));
   encheCodLote();
 }
 function encheCodLote(){
-  const cur=document.getElementById('lo_cod').value;
-  document.getElementById('lo_cod').innerHTML='<option value="">— escolher —</option>'+
+  const sel=document.getElementById('lo_cod');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— nenhuma: cada linha escolhe a sua —</option>'+
     optsPlano(cur,p=>curDirLote==='E'?p.tipo!=='DESPESA':p.tipo!=='RECEITA');
+  ligaCombos();comboSync(sel);
 }
-function loteSet(i,campo,v){loteLinhas[i][campo]=v;if(campo==='valor')loteTotal()}
-function loteAdd(){loteLinhas.push({data:'',desc:'',valor:''});renderLote();
-  setTimeout(()=>{const ins=document.querySelectorAll('#loteBody tr:last-child input');if(ins[1])ins[1].focus()},40)}
-function loteDel(i){loteLinhas.splice(i,1);if(!loteLinhas.length)loteLinhas.push({data:'',desc:'',valor:''});renderLote()}
+/* copia o padrão do topo para todas as linhas, inclusive as já digitadas */
+function loteAplicaTodas(){
+  const cod=document.getElementById('lo_cod').value;
+  loteLinhas.forEach(l=>{l.dir=curDirLote;if(cod){l.cod=cod;l.tocado=true}});
+  renderLote();
+  toast(cod?'Conta aplicada nas '+loteLinhas.length+' linhas':'Tipo aplicado nas '+loteLinhas.length+' linhas');
+}
+function loteSet(i,campo,v){
+  const l=loteLinhas[i];l[campo]=v;
+  if(campo==='cod')l.tocado=true;
+  if(campo==='desc'&&!l.tocado){
+    const c=autoCod(v,l.dir);
+    if(c&&c!==l.cod){l.cod=c;loteAtualizaCod(i)}
+  }
+  if(campo==='dir'){
+    loteRecarregaCod(i);
+    if(!l.tocado){const c=autoCod(l.desc,l.dir);l.cod=c||'';loteAtualizaCod(i)}
+  }
+  if(campo==='valor')loteTotal();
+}
+/* mexe só no <select> daquela linha: refazer a lista inteira tiraria o foco */
+function loteAtualizaCod(i){
+  const sel=document.getElementById('lo_cod_'+i);
+  if(!sel)return;
+  sel.value=loteLinhas[i].cod||'';
+  comboSync(sel);
+  const cx=sel.previousElementSibling;
+  if(cx&&cx.classList.contains('combo'))cx.classList.toggle('auto',!loteLinhas[i].tocado&&!!sel.value);
+}
+function loteRecarregaCod(i){
+  const sel=document.getElementById('lo_cod_'+i);
+  if(!sel)return;
+  sel.innerHTML='<option value="">— escolher —</option>'+
+    optsPlano(loteLinhas[i].cod,p=>loteLinhas[i].dir==='E'?p.tipo!=='DESPESA':p.tipo!=='RECEITA');
+  comboSync(sel);
+}
+function loteAdd(){
+  loteLinhas.push(loteVazia());renderLote();
+  setTimeout(()=>{const e=document.querySelector('#loteBody .lote-l:last-child .lote-desc');if(e)e.focus()},40);
+}
+function loteDel(i){loteLinhas.splice(i,1);if(!loteLinhas.length)loteLinhas.push(loteVazia());renderLote()}
 function loteTotal(){
-  const t=loteLinhas.reduce((s,l)=>s+parseNum(l.valor),0);
-  const n=loteLinhas.filter(l=>l.desc.trim()&&parseNum(l.valor)).length;
+  const cheias=loteLinhas.filter(l=>l.desc.trim()&&parseNum(l.valor));
+  const e=cheias.filter(l=>l.dir==='E').reduce((s,l)=>s+parseNum(l.valor),0);
+  const s=cheias.filter(l=>l.dir==='S').reduce((s,l)=>s+parseNum(l.valor),0);
   const el=document.getElementById('loteTotal');
-  if(el)el.textContent=n+' linha(s) preenchida(s) · '+brl(t);
+  if(el)el.innerHTML=cheias.length+' linha(s) prontas · '+
+    (e?`<span class="pos">↑ ${brl(e)}</span> `:'')+(s?`<span class="neg">↓ ${brl(s)}</span>`:'');
 }
-/* Enter na última coluna cria a próxima linha: dá para digitar sem tocar no mouse */
+/* Enter no valor abre a próxima linha: dá para digitar sem tocar no mouse */
 function loteTecla(e,i){
   if(e.key!=='Enter')return;
   e.preventDefault();
   if(i===loteLinhas.length-1)loteAdd();
-  else{const ins=document.querySelectorAll('#loteBody tr')[i+1].querySelectorAll('input');if(ins[1])ins[1].focus()}
+  else{const el=document.querySelectorAll('#loteBody .lote-l')[i+1].querySelector('.lote-desc');if(el)el.focus()}
 }
 function renderLote(){
-  const dia=mesAtual+'-01';
-  document.getElementById('loteBody').innerHTML=loteLinhas.map((l,i)=>`<tr>
-    <td style="width:132px"><input type="date" value="${esc(l.data||dia)}"
-        onchange="loteSet(${i},'data',this.value)"></td>
-    <td><input placeholder="histórico" value="${esc(l.desc)}"
-        oninput="loteSet(${i},'desc',this.value)" onkeydown="loteTecla(event,${i})"></td>
-    <td style="width:118px"><input inputmode="decimal" placeholder="0,00" value="${esc(l.valor)}"
-        oninput="loteSet(${i},'valor',this.value)" onkeydown="loteTecla(event,${i})" class="num"></td>
-    <td style="width:34px"><button class="iconbtn del" onclick="loteDel(${i})">×</button></td>
-  </tr>`).join('');
+  const dia=(document.getElementById('lo_mes').value||mesAtual)+'-01';
+  document.getElementById('loteBody').innerHTML=loteLinhas.map((l,i)=>`<div class="lote-l">
+    <input type="date" value="${esc(l.data||dia)}" onchange="loteSet(${i},'data',this.value)">
+    <select onchange="loteSet(${i},'dir',this.value)">
+      <option value="S" ${l.dir==='S'?'selected':''}>↓ Saída</option>
+      <option value="E" ${l.dir==='E'?'selected':''}>↑ Entrada</option></select>
+    <input class="lote-desc" placeholder="histórico (ex.: UBER)" value="${esc(l.desc)}"
+      oninput="loteSet(${i},'desc',this.value)" onkeydown="loteTecla(event,${i})">
+    <select data-combo id="lo_cod_${i}" onchange="loteSet(${i},'cod',this.value)">
+      <option value="">— escolher —</option>${optsPlano(l.cod,p=>l.dir==='E'?p.tipo!=='DESPESA':p.tipo!=='RECEITA')}</select>
+    <input inputmode="decimal" placeholder="0,00" value="${esc(l.valor)}" class="num"
+      oninput="loteSet(${i},'valor',this.value)" onkeydown="loteTecla(event,${i})">
+    <button class="iconbtn del" title="tirar a linha" onclick="loteDel(${i})">×</button>
+  </div>`).join('');
+  ligaCombos();
+  loteLinhas.forEach((l,i)=>loteAtualizaCod(i));
   loteTotal();
 }
 function saveLote(){
   const contaId=document.getElementById('lo_conta').value;
-  const cod=document.getElementById('lo_cod').value;
   const mes=document.getElementById('lo_mes').value||mesAtual;
   const validas=loteLinhas.filter(l=>l.desc.trim()&&parseNum(l.valor));
   if(!validas.length)return toast('Preencha ao menos uma linha com histórico e valor');
-  if(!cod&&!confirm(validas.length+' lançamento(s) sem conta do plano. Entram assim mesmo?'))return;
+  const semConta=validas.filter(l=>!l.cod).length;
+  if(semConta&&!confirm(semConta+' linha(s) sem conta do plano. Entram assim mesmo?'))return;
   validas.forEach(l=>{
     const valor=parseNum(l.valor);
     DB.lanc.push({id:uid(),data:l.data||(mes+'-01'),contaId,desc:l.desc.trim().toUpperCase(),
-      cod:cod||autoCod(l.desc,curDirLote),
-      entrada:curDirLote==='E'?valor:0,saida:curDirLote==='S'?valor:0,obs:'em lote'});
+      cod:l.cod||autoCod(l.desc,l.dir)||'',
+      entrada:l.dir==='E'?valor:0,saida:l.dir==='S'?valor:0,obs:'em lote'});
   });
   mesAtual=mes;
   save();closeModal('ovLote');render();

@@ -286,13 +286,16 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .kb-card:hover{border-color:var(--line-f);border-left-color:var(--acc);background:var(--raise)}
 .kb-card:active{cursor:grabbing}
 .kb-card.drag{opacity:.3}
-.kb-card .t{font-size:13px;font-weight:600;line-height:1.4;padding-right:48px}
+.kb-card .t{font-size:13px;font-weight:600;line-height:1.4}
 .kb-card .d{font-size:11.5px;color:var(--mut);margin-top:5px;line-height:1.45}
 .kb-card .m{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;align-items:center}
 .kb-card.done{opacity:.62}.kb-card.done .t{text-decoration:line-through;color:var(--mut)}
 .kb-card.late{border-left-color:var(--neg)}
-.kb-card .acts{position:absolute;top:9px;right:9px;display:flex;gap:4px;opacity:0;transition:.15s}
+/* subir, descer, editar e excluir vivem no rodapé do cartão: são quatro botões,
+   não cabem sobrepostos ao título sem espremer o texto */
+.kb-card .acts{display:flex;gap:4px;justify-content:flex-end;margin-top:9px;opacity:.4;transition:.15s}
 .kb-card:hover .acts{opacity:1}
+.kb-card .acts .iconbtn{width:24px;height:24px;font-size:11px}
 .kb-add{width:100%;background:transparent;border:1px dashed var(--line-f);color:var(--mut);padding:9px;border-radius:8px;
   font-size:12px;font-weight:600;transition:.15s}
 .kb-add:hover{border-color:var(--acc);color:var(--acc)}
@@ -319,6 +322,32 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .cal .ev.c{background:var(--raise);color:var(--warn);border-left-color:var(--warn)}
 .cal .ev.f{background:var(--raise);color:var(--meta);border-left-color:var(--meta)}
 .cal .mais{font-size:9px;color:var(--mut);margin-top:3px}
+.cal .d.sel{outline:2px solid var(--acc);outline-offset:-2px;z-index:1}
+.cal .d .cnt{position:absolute;top:6px;right:7px;font-size:9px;font-weight:800;color:var(--mut);
+  background:var(--raise);border-radius:9px;padding:1px 6px}
+.cal .dots{display:flex;gap:4px;margin-top:9px;flex-wrap:wrap}
+.cal .dots i{width:6px;height:6px;border-radius:50%;display:inline-block;flex:0 0 auto}
+.cal .val{font-size:9.5px;font-weight:700;margin-top:6px;font-variant-numeric:tabular-nums}
+
+/* ---------- Painel do dia (calendário) ---------- */
+.split2{display:grid;grid-template-columns:1fr 320px;gap:14px;align-items:start}
+@media(max-width:1080px){.split2{grid-template-columns:1fr}}
+.chk{width:22px;height:22px;flex:0 0 22px;border-radius:6px;border:1.5px solid var(--line-f);background:transparent;
+  color:transparent;cursor:pointer;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;transition:.14s}
+.chk:hover{border-color:var(--acc)}
+.chk.on{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.dia-sec{font-size:9px;letter-spacing:1.3px;text-transform:uppercase;color:var(--mut);font-weight:800;margin:14px 0 8px}
+.dia-i{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;margin-bottom:7px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:9px;transition:.15s}
+.dia-i:hover{border-color:var(--line-f)}
+.dia-i .bd{flex:1;min-width:0}
+.dia-i .tt{font-size:12.5px;font-weight:600;line-height:1.35}
+.dia-i .ob{font-size:11.5px;color:var(--mut);margin-top:4px;line-height:1.45}
+.dia-i .mt{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center}
+.dia-i .vl{font-weight:700;font-size:12.5px;font-variant-numeric:tabular-nums}
+.dia-i.ok .tt{text-decoration:line-through;color:var(--mut)}
+.chip-date{background:var(--raise);color:var(--dim)}
+.chip-date.over{background:color-mix(in srgb,var(--neg) 18%,transparent);color:var(--neg)}
 
 /* ---------- Filtros, formulários, modais ---------- */
 .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
@@ -677,6 +706,12 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
       <div class="field"><label>Pago em</label><input type="date" id="p_pagoEm">
         <div class="hint">É por esta data que a conta aparece no arquivo.</div></div>
       <div class="field"><label>Recorrência</label><select id="p_rec"><option>Única</option><option>Mensal</option><option>Bimestral</option><option>Trimestral</option><option>Semestral</option><option>Anual</option></select></div>
+    </div>
+    <div class="fgrid" id="p_parcBox">
+      <div class="field"><label>Forma de pagamento</label><select id="p_forma" onchange="cpFormaMudou()"></select>
+        <div class="hint" id="p_formaHint">Sai do caixa quando você clicar em “Pagar”.</div></div>
+      <div class="field"><label>Parcelas</label><input id="p_parc" inputmode="numeric" placeholder="1" value="1">
+        <div class="hint">Ex.: 16 do dentista. O app cria as 16, uma por mês, de uma vez só.</div></div>
     </div>
     <div class="field"><label>Conta do plano (para lançar quando pagar)</label><select data-combo id="p_cod"></select></div>
     <div class="field"><label>Observação</label><input id="p_obs" placeholder="opcional"></div>
@@ -1179,6 +1214,13 @@ function migraDB(){
   else{ /* princípios novos entram sem apagar os seus */
     PRINCIPIOS_BASE.forEach(b=>{if(!DB.principios.some(x=>x.id===b.id))DB.principios.push({...b,adotado:false})});
   }
+  /* a ordem manual do kanban nasceu depois: base antiga entra na ordem em que ja esta */
+  if(DB.tarefas.some(t=>t.ordem==null))
+    ['todo','doing','done'].forEach(col=>{
+      DB.tarefas.filter(t=>t.col===col)
+        .sort((a,b)=>((a.ordem==null?1e9:a.ordem)-(b.ordem==null?1e9:b.ordem)))
+        .forEach((t,k)=>{t.ordem=k});
+    });
   DB.metas.forEach(m=>{m.aportes=m.aportes||[];m.etapas=m.etapas||[]});
 }
 function load(){
@@ -1201,6 +1243,7 @@ function invalidaPlano(){_pm=null}
 const contaDe=cod=>PM()[cod]||null;
 const grupoDe=cod=>{const p=PM()[cod];return p?p.grupo:''};
 const tipoDe=cod=>{const p=PM()[cod];return p?p.tipo:''};
+const nomeCartao=id=>{const c=DB.cartoes.find(x=>x.id===id);return c?c.nome:''};
 const nomeConta=cod=>{const p=PM()[cod];return p?p.cod+' — '+p.nome:(cod||'')};
 const bcoNome=id=>{const c=DB.contas.find(x=>x.id===id);return c?c.nome:'—'};
 const crtNome=id=>{const c=DB.cartoes.find(x=>x.id===id);return c?c.nome:'—'};
@@ -1529,14 +1572,55 @@ function viewDash(){
 /* ============================ PENDÊNCIAS (Kanban + Calendário) ============================ */
 const COLS=[{id:'todo',lbl:'A fazer',cor:'#63786c'},{id:'doing',lbl:'Fazendo',cor:'#e0b64a'},{id:'done',lbl:'Concluído',cor:'#3edc7a'}];
 const tarefasAtivas=()=>alive(DB.tarefas);
+const PEND_SORTS=[['manual','Ordem manual (arrastar)'],['pri_desc','Prioridade: mais importante primeiro'],
+  ['pri_asc','Prioridade: menos importante primeiro'],['data_asc','Data: mais próxima primeiro'],
+  ['data_desc','Data: mais distante primeiro']];
+const PEND_PRI={alta:3,media:2,baixa:1};
+const PEND_LBL={alta:'ALTA',media:'MÉDIA',baixa:'BAIXA'};
+const PEND_QUANDO=[['','Qualquer data'],['atraso','Atrasadas'],['hoje','Para hoje'],['semana','Próximos 7 dias'],['sem','Sem data']];
+let pendSort=(function(){try{return localStorage.getItem('fp_pend_sort')||'manual'}catch(e){return 'manual'}})();
+let pendBusca='', pendPrio='', pendQuando='', pendSel=null;
+function setPendSort(v){pendSort=v;try{localStorage.setItem('fp_pend_sort',v)}catch(e){}render()}
+function limpaFiltroPend(){pendBusca='';pendPrio='';pendQuando='';render()}
+const pendFiltroLigado=()=>!!(pendBusca||pendPrio||pendQuando);
+/* A posição gravada manda; empate cai no título, senão a lista dança a cada render. */
+const pendPorOrdem=(x,y)=>((x.ordem||0)-(y.ordem||0))||String(x.titulo||'').localeCompare(String(y.titulo||''),'pt-BR');
+function pendOrdena(items){
+  const arr=items.slice();
+  const porData=dir=>(x,y)=>{const a=x.data||'',b=y.data||'';
+    if(!a&&!b)return pendPorOrdem(x,y); if(!a)return 1; if(!b)return -1;
+    return a===b?pendPorOrdem(x,y):(a<b?-dir:dir)};
+  if(pendSort==='pri_desc')arr.sort((x,y)=>((PEND_PRI[y.prio]||0)-(PEND_PRI[x.prio]||0))||pendPorOrdem(x,y));
+  else if(pendSort==='pri_asc')arr.sort((x,y)=>((PEND_PRI[x.prio]||0)-(PEND_PRI[y.prio]||0))||pendPorOrdem(x,y));
+  else if(pendSort==='data_asc')arr.sort(porData(1));
+  else if(pendSort==='data_desc')arr.sort(porData(-1));
+  else arr.sort(pendPorOrdem);
+  return arr;
+}
+/* Busca no título e na observação, prioridade e recorte de prazo. */
+function pendFiltradas(){
+  const hoje=iso(new Date());
+  let L=tarefasAtivas();
+  if(pendBusca){const q=pendBusca.toUpperCase();
+    L=L.filter(t=>(t.titulo||'').toUpperCase().includes(q)||(t.desc||'').toUpperCase().includes(q))}
+  if(pendPrio)L=L.filter(t=>(t.prio||'media')===pendPrio);
+  if(pendQuando==='atraso')L=L.filter(t=>t.col!=='done'&&t.data&&t.data<hoje);
+  else if(pendQuando==='hoje')L=L.filter(t=>t.data===hoje);
+  else if(pendQuando==='semana'){const f=new Date();f.setDate(f.getDate()+7);const lim=iso(f);
+    L=L.filter(t=>t.data&&t.data>=hoje&&t.data<=lim)}
+  else if(pendQuando==='sem')L=L.filter(t=>!t.data);
+  return L;
+}
 function viewPend(){
   const hoje=iso(new Date());
   const T=tarefasAtivas();
   const abertas=T.filter(t=>t.col!=='done'), atrasadas=abertas.filter(t=>t.data&&t.data<hoje);
+  const altas=abertas.filter(t=>t.prio==='alta').length;
   const feitasMes=T.filter(t=>t.col==='done'&&t.feitoEm&&mesDe(t.feitoEm)===mesAtual).length;
   const stats=`<div class="stats">
     <div class="stat"><div class="k">Em aberto</div><div class="v">${abertas.length}</div><div class="sub">${T.filter(t=>t.col==='doing').length} em andamento</div></div>
     <div class="stat"><div class="k">Atrasadas</div><div class="v ${atrasadas.length?'neg':'pos'}">${atrasadas.length}</div><div class="sub">${atrasadas.length?'venceram e seguem abertas':'nada vencido'}</div></div>
+    <div class="stat"><div class="k">Alta prioridade</div><div class="v ${altas?'neg':'pos'}">${altas}</div><div class="sub">olhe primeiro</div></div>
     <div class="stat"><div class="k">Concluídas em ${mesLabel(mesAtual).split(' ')[0]}</div><div class="v pos">${feitasMes}</div><div class="sub">no mês selecionado</div></div>
     <div class="stat"><div class="k">Para hoje</div><div class="v goldtxt">${abertas.filter(t=>t.data===hoje).length}</div><div class="sub">${fmtBR(hoje)}</div></div>
   </div>`;
@@ -1546,70 +1630,168 @@ function viewPend(){
       <div class="o ${pendView==='cal'?'sel':''}" onclick="pendView='cal';render()">▤ Calendário</div>
     </div>
     <button class="btn btn-sm btn-gold right" onclick="openTarefa()">＋ Pendência</button></div>`;
-  return stats+toggle+(pendView==='kanban'?kanban():calendario());
+  const filtros=`<div class="filters">
+    <input id="pf_busca" placeholder="Buscar título ou observação…" value="${esc(pendBusca)}" oninput="pendBusca=this.value;rerenderPend()" style="min-width:200px">
+    <select onchange="pendPrio=this.value;render()"><option value="">Qualquer prioridade</option>
+      ${['alta','media','baixa'].map(p=>`<option value="${p}" ${pendPrio===p?'selected':''}>${PEND_LBL[p]}</option>`).join('')}</select>
+    <select onchange="pendQuando=this.value;render()">
+      ${PEND_QUANDO.map(function(o){return `<option value="${o[0]}" ${pendQuando===o[0]?'selected':''}>${o[1]}</option>`}).join('')}</select>
+    ${pendView==='kanban'?`<select onchange="setPendSort(this.value)">
+      ${PEND_SORTS.map(function(o){return `<option value="${o[0]}" ${pendSort===o[0]?'selected':''}>${o[1]}</option>`}).join('')}</select>`:''}
+    ${pendFiltroLigado()?`<button class="btn btn-sm" onclick="limpaFiltroPend()">Limpar filtros</button>
+      <span class="muted" style="font-size:11.5px">${pendFiltradas().length} de ${T.length}</span>`:''}</div>`;
+  return stats+toggle+filtros+(pendView==='kanban'?kanban():calendario());
 }
-function cardHTML(t){
+/* Redesenha sem tirar o cursor de quem está digitando na busca. */
+function rerenderPend(){
+  const el=document.getElementById('pf_busca');const pos=el?el.selectionStart:0;
+  document.getElementById('views').innerHTML=viewPend();
+  const el2=document.getElementById('pf_busca');if(el2){el2.focus();el2.setSelectionRange(pos,pos)}
+  fxAfterRender();
+}
+function cardHTML(t,manual){
   const hoje=iso(new Date());
   const late=t.col!=='done'&&t.data&&t.data<hoje;
+  const p=t.prio||'media';
   return `<div class="kb-card ${t.col==='done'?'done':''} ${late?'late':''}" draggable="true" data-id="${t.id}"
       ondragstart="dragStart(event,'${t.id}')" ondragend="dragEnd(event)">
-    <div class="acts"><button class="iconbtn" style="width:24px;height:24px" onclick="event.stopPropagation();openTarefa('${t.id}')">✎</button>
-      <button class="iconbtn del" style="width:24px;height:24px" onclick="event.stopPropagation();delItem('tarefas','${t.id}')">🗑</button></div>
     <div class="t">${esc(t.titulo)}</div>
     ${t.desc?`<div class="d">${esc(t.desc)}</div>`:''}
-    <div class="m"><span class="pchip ${t.prio||'media'}">${(t.prio||'media')==='alta'?'ALTA':(t.prio==='baixa'?'BAIXA':'MÉDIA')}</span>
-      ${t.data?`<span class="chip ${late?'chip-bad':'chip-n'}">${late?'venceu ':''}${fmtBR(t.data)}</span>`:''}</div>
+    <div class="m"><span class="pchip ${p}">${PEND_LBL[p]}</span>
+      ${t.data?`<span class="chip chip-date ${late?'over':''}">${late?'venceu ':''}${fmtBR(t.data)}</span>`:'<span class="chip chip-n">sem data</span>'}</div>
+    <div class="acts">${manual?`<button class="iconbtn" title="Subir" onclick="event.stopPropagation();moveCard('${t.id}',-1)">▲</button><button class="iconbtn" title="Descer" onclick="event.stopPropagation();moveCard('${t.id}',1)">▼</button>`:''}<button class="iconbtn" title="Editar" onclick="event.stopPropagation();openTarefa('${t.id}')">✎</button><button class="iconbtn del" title="Excluir" onclick="event.stopPropagation();delItem('tarefas','${t.id}')">🗑</button></div>
   </div>`;
 }
 function kanban(){
+  const manual=pendSort==='manual'&&!pendFiltroLigado();
+  const L=pendFiltradas();
   return `<div class="kb">${COLS.map(c=>{
-    const its=tarefasAtivas().filter(t=>t.col===c.id).sort((a,b)=>(a.data||'9999')<(b.data||'9999')?-1:1);
+    const its=pendOrdena(L.filter(t=>t.col===c.id));
     return `<div class="kb-col" data-col="${c.id}" ondragover="dragOver(event,this)" ondragleave="this.classList.remove('over')" ondrop="dropCol(event,this,'${c.id}')">
       <div class="kb-h"><span class="dot" style="background:${c.cor}"></span>${c.lbl}<span class="cnt">${its.length}</span></div>
-      ${its.map(cardHTML).join('')}
+      ${its.map(t=>cardHTML(t,manual)).join('')}
       <button class="kb-add" onclick="openTarefa(null,'${c.id}')">＋ adicionar</button></div>`}).join('')}</div>
-  <div class="muted" style="font-size:11.5px;margin-top:10px;text-align:center">Arraste os cartões entre as colunas — no celular, use o lápis para trocar a coluna.</div>`;
+  <div class="muted" style="font-size:11.5px;margin-top:10px;text-align:center">${manual
+    ?'Arraste o cartão para a posição que quiser, ou use ▲ ▼ para subir e descer.'
+    :'Ordenação automática ligada. Volte para “Ordem manual” e limpe os filtros para reposicionar à mão.'}</div>`;
 }
 function dragStart(e,id){dragId=id;e.currentTarget.classList.add('drag');try{e.dataTransfer.setData('text/plain',id);e.dataTransfer.effectAllowed='move'}catch(_){}}
 function dragEnd(e){e.currentTarget.classList.remove('drag');document.querySelectorAll('.kb-col.over').forEach(c=>c.classList.remove('over'))}
 function dragOver(e,el){e.preventDefault();el.classList.add('over')}
+/* Onde o cartão entra: acima do primeiro cujo meio ficou abaixo do ponteiro. */
+function pendDropIndex(colEl,y){
+  const cards=[].slice.call(colEl.querySelectorAll('.kb-card:not(.drag)'));
+  for(let i=0;i<cards.length;i++){const r=cards[i].getBoundingClientRect();if(y<r.top+r.height/2)return i}
+  return cards.length;
+}
 function dropCol(e,el,col){
   e.preventDefault();el.classList.remove('over');
   const id=dragId||(e.dataTransfer&&e.dataTransfer.getData('text/plain'));
-  moveTarefa(id,col);
+  const idx=(pendSort==='manual'&&!pendFiltroLigado())?pendDropIndex(el,e.clientY):null;
+  moveTarefa(id,col,idx);
 }
-function moveTarefa(id,col){
-  const t=DB.tarefas.find(x=>x.id===id);if(!t||t.col===col)return;
+function pendColuna(col){return tarefasAtivas().filter(t=>t.col===col).sort(pendPorOrdem)}
+function pendGravaOrdem(arr){arr.forEach((t,k)=>{t.ordem=k})}
+function moveCard(id,dir){
+  const t=DB.tarefas.find(x=>x.id===id);if(!t)return;
+  const arr=pendColuna(t.col);const i=arr.findIndex(x=>x.id===id),j=i+dir;
+  if(i<0||j<0||j>=arr.length)return;
+  arr.splice(j,0,arr.splice(i,1)[0]);
+  pendGravaOrdem(arr);save();render();
+}
+function moveTarefa(id,col,idx){
+  const t=DB.tarefas.find(x=>x.id===id);if(!t)return;
+  const mudouCol=t.col!==col;
   t.col=col; t.feitoEm=col==='done'?iso(new Date()):null;
+  const arr=pendColuna(col).filter(x=>x.id!==id);
+  arr.splice((idx==null||idx<0||idx>arr.length)?arr.length:idx,0,t);
+  pendGravaOrdem(arr);
   save();render();
-  if(col==='done'){const ab=tarefasAtivas().filter(x=>x.col!=='done').length;toast(ab?'Concluída 👏':'Tudo concluído!');if(!ab)confetti()}
+  if(mudouCol&&col==='done'){const ab=tarefasAtivas().filter(x=>x.col!=='done').length;toast(ab?'Concluída 👏':'Tudo concluído!');if(!ab)confetti()}
+}
+function toggleTarefa(id){
+  const t=DB.tarefas.find(x=>x.id===id);if(!t)return;
+  moveTarefa(id,t.col==='done'?'todo':'done');
 }
 function calendario(){
   const [y,m]=mesAtual.split('-').map(Number);
   const prim=new Date(y,m-1,1), ini=new Date(prim); ini.setDate(1-prim.getDay());
   const hoje=iso(new Date());
-  const T=tarefasAtivas();
+  const T=pendFiltradas();
   const cps=alive(DB.cp);
   const cells=[];
   for(let i=0;i<42;i++){
     const d=new Date(ini);d.setDate(ini.getDate()+i);const dk=iso(d);
     const fora=d.getMonth()!==m-1;
-    const evs=[];
-    T.filter(t=>t.data===dk).forEach(t=>evs.push({c:'t'+(t.col==='done'?' ok':(dk<hoje?' late':'')),txt:t.titulo,go:`openTarefa('${t.id}')`}));
-    cps.filter(c=>c.venc===dk).forEach(c=>evs.push({c:'c',txt:'💸 '+c.desc+' · '+brl(c.valor),go:`openCp('${c.id}')`}));
-    DB.cartoes.forEach(c=>{if(c.venc&&!fora&&d.getDate()===c.venc){const tt=fatDoMes(mesAtual,c.id).reduce((a,f)=>a+f.valor,0);
-      if(tt>0)evs.push({c:'f',txt:'💳 '+c.nome+' · '+brl(tt),go:`filtroCartao='${c.id}';go('cartoes')`})}});
-    cells.push(`<div class="d ${fora?'out':''} ${dk===hoje?'hoje':''}" ondblclick="openTarefa(null,'todo','${dk}')" title="Clique duas vezes para criar uma pendência em ${fmtBR(dk)}">
-      <div class="n">${d.getDate()}</div>
-      ${evs.slice(0,3).map(e=>`<span class="ev ${e.c}" onclick="event.stopPropagation();${e.go}">${esc(e.txt)}</span>`).join('')}
-      ${evs.length>3?`<div class="mais">+${evs.length-3} mais</div>`:''}</div>`);
+    const tar=T.filter(t=>t.data===dk);
+    const cc=cps.filter(c=>c.venc===dk);
+    const fats=fora?[]:fatDoDia(dk);
+    const total=tar.length+cc.length+fats.length;
+    const soma=cc.reduce((s,c)=>s+c.valor,0);
+    const venc=cc.some(c=>c.situacao!=='Pago'&&dk<hoje);
+    const dots=[tar.length&&'<i style="background:var(--acc)"></i>',
+                cc.length&&'<i style="background:var(--warn)"></i>',
+                fats.length&&'<i style="background:var(--meta)"></i>'].filter(Boolean).join('');
+    cells.push(`<div class="d ${fora?'out':''} ${dk===hoje?'hoje':''} ${pendSel===dk?'sel':''}"
+        onclick="pendSel='${dk}';render()" ondblclick="openTarefa(null,'todo','${dk}')" title="Clique para abrir o dia">
+      <div class="n">${d.getDate()}</div>${total?`<span class="cnt">${total}</span>`:''}
+      <div class="dots">${dots}</div>
+      ${soma?`<div class="val ${venc?'neg':'warn'}">${brl(soma)}</div>`:''}</div>`);
   }
-  return `<div class="panel"><div class="panel-head"><h2>${mesLabel(mesAtual)}<small>pendências, contas a pagar e vencimento das faturas — clique duas vezes num dia para criar</small></h2></div>
-    <div class="cal">${['dom','seg','ter','qua','qui','sex','sáb'].map(d=>`<div class="hd">${d}</div>`).join('')}${cells.join('')}</div>
-    <div style="display:flex;gap:14px;font-size:11px;color:var(--mut);margin-top:12px;flex-wrap:wrap">
-      <span><span class="ev t" style="display:inline-block;padding:1px 7px">pendência</span></span>
-      <span><span class="ev c" style="display:inline-block;padding:1px 7px">conta a pagar</span></span>
-      <span><span class="ev f" style="display:inline-block;padding:1px 7px">fatura do cartão</span></span></div></div>`;
+  const sw=(cor,lab)=>`<span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cor};margin-right:5px"></i>${lab}</span>`;
+  return `<div class="panel"><div class="panel-head"><h2>${mesLabel(mesAtual)}<small>clique num dia para abrir a lista ao lado; dois cliques criam uma pendência</small></h2></div>
+    <div style="display:flex;gap:14px;font-size:11.5px;color:var(--mut);margin-bottom:12px;flex-wrap:wrap">
+      ${sw('var(--acc)','Pendências')} ${sw('var(--warn)','Contas a pagar')} ${sw('var(--meta)','Faturas do cartão')}</div>
+    <div class="split2">
+      <div class="cal">${['dom','seg','ter','qua','qui','sex','sáb'].map(d=>`<div class="hd">${d}</div>`).join('')}${cells.join('')}</div>
+      <div>${pendSel?diaHTML(pendSel):'<div class="empty">Clique num dia para ver o que tem.</div>'}</div>
+    </div></div>`;
+}
+/* Faturas que vencem nesse dia, dentro do mês que está na tela. */
+function fatDoDia(dk){
+  if(mesDe(dk)!==mesAtual)return [];
+  const dia=Number(dk.slice(8));
+  return DB.cartoes.filter(c=>Number(c.venc)===dia)
+    .map(c=>({c,tt:fatDoMes(mesAtual,c.id).reduce((a,f)=>a+f.valor,0)})).filter(x=>x.tt>0);
+}
+function diaHTML(dk){
+  const hoje=iso(new Date());
+  const d=new Date(dk+'T12:00:00');
+  const tar=pendOrdena(pendFiltradas().filter(t=>t.data===dk));
+  const cc=alive(DB.cp).filter(c=>c.venc===dk);
+  const fats=fatDoDia(dk);
+  const sec=(t,n)=>`<div class="dia-sec">${t} (${n})</div>`;
+  let h='';
+  if(tar.length)h+=sec('Pendências',tar.length)+tar.map(t=>{
+    const late=t.col!=='done'&&t.data<hoje, p=t.prio||'media';
+    return `<div class="dia-i ${t.col==='done'?'ok':''}">
+      <button class="chk ${t.col==='done'?'on':''}" title="Marcar como concluída" onclick="toggleTarefa('${t.id}')">✓</button>
+      <div class="bd" style="cursor:pointer" onclick="openTarefa('${t.id}')">
+        <div class="tt">${esc(t.titulo)}</div>
+        ${t.desc?`<div class="ob">${esc(t.desc)}</div>`:''}
+        <div class="mt"><span class="pchip ${p}">${PEND_LBL[p]}</span>
+          <span class="chip chip-date ${late?'over':''}">${late?'venceu ':''}${fmtBR(dk)}</span>
+          <span class="chip chip-n">${(COLS.find(c=>c.id===t.col)||{}).lbl||''}</span></div>
+      </div></div>`}).join('');
+  if(cc.length)h+=sec('Contas a pagar',cc.length)+cc.map(c=>{
+    const pago=c.situacao==='Pago';
+    return `<div class="dia-i" style="cursor:pointer" onclick="openCp('${c.id}')">
+      <div class="bd"><div class="tt">${esc(c.desc)}</div>
+        <div class="mt"><span class="chip ${pago?'chip-ok':(dk<hoje?'chip-bad':'chip-warn')}">${pago?'pago':(dk<hoje?'vencido':'a vencer')}</span>
+          ${c.cod?`<span class="chip chip-n">${esc(nomeConta(c.cod))}</span>`:''}</div></div>
+      <div class="vl">${brl(c.valor)}</div></div>`}).join('');
+  if(fats.length)h+=sec('Faturas do cartão',fats.length)+fats.map(x=>
+    `<div class="dia-i" style="cursor:pointer" onclick="filtroCartao='${x.c.id}';go('cartoes')">
+      <div class="bd"><div class="tt">💳 ${esc(x.c.nome)}</div>
+        <div class="mt"><span class="chip chip-n">vencimento da fatura</span></div></div>
+      <div class="vl">${brl(x.tt)}</div></div>`).join('');
+  const vazio=(tar.length+cc.length+fats.length)?'':'<div class="empty">Nada marcado para este dia.</div>';
+  return `<div class="panel" style="margin-bottom:0"><div class="panel-head"><h2 style="text-transform:none">${fmtBR(dk)}
+    <small style="text-transform:capitalize">${d.toLocaleDateString('pt-BR',{weekday:'long'})}${dk===hoje?' · hoje':''}</small></h2></div>
+    ${h}${vazio}
+    <div style="display:flex;gap:8px;margin:12px 0 4px">
+      <button class="btn btn-sm btn-gold" style="flex:1;justify-content:center" onclick="openTarefa(null,'todo','${dk}')">＋ Pendência</button>
+      <button class="btn btn-sm" style="flex:1;justify-content:center" onclick="openCp(null);document.getElementById('p_venc').value='${dk}'">＋ Conta</button></div></div>`;
 }
 function pickPrio(p){curPrio=p;document.querySelectorAll('#t_prio .o').forEach(o=>o.classList.toggle('sel',o.dataset.v===p))}
 function openTarefa(id,col,data){
@@ -2202,12 +2384,72 @@ function viewPagar(){
   <nav class="tabs">
     <button class="tab ${cpAba==='abertas'?'active':''}" onclick="cpAba='abertas';render()">A pagar <span class="cnt">${abertas.length}</span></button>
     <button class="tab ${cpAba==='pagas'?'active':''}" onclick="cpAba='pagas';render()">Arquivo de pagas <span class="cnt">${pagas.length}</span></button>
+    <button class="tab ${cpAba==='parcelas'?'active':''}" onclick="cpAba='parcelas';render()">Parcelamentos <span class="cnt">${parcelamentos().length}</span></button>
     <button class="btn btn-sm btn-gold" style="margin-left:auto" onclick="openCp()">＋ Conta</button>
     ${cpAba==='abertas'?'<button class="btn btn-sm" onclick="gerarRecorrentes()">Gerar próximas recorrentes</button>':''}
   </nav>
   ${cpAba==='abertas'
     ?`<div class="panel"><div class="panel-head"><h2>Contas a pagar<small>lembretes de vencimento — “Pagar” já cria o lançamento no razão</small></h2></div>${tabelaAbertas}</div>`
-    :arquivo}`;
+    :cpAba==='parcelas'?painelParcelas():arquivo}`;
+}
+/* Parcelamentos em andamento: as compras do cartão em série (o dentista em 16x)
+   e as contas a pagar que foram criadas parceladas. Cada série vira uma linha,
+   não dezesseis. */
+function parcelamentos(){
+  const g={};
+  const chave=(x,pre)=>x.serie||(pre+'|'+(x.cartaoId||'')+'|'+String(x.desc||'').replace(/\s*\(\d+\/\d+\)\s*$/,'')+'|'+x.totparc);
+  fatAtivos().filter(f=>(f.totparc||1)>1).forEach(f=>{
+    const k=chave(f,'fat');
+    (g[k]=g[k]||{tipo:'cartao',cartaoId:f.cartaoId,desc:f.desc,tot:f.totparc,itens:[]}).itens.push({mk:f.mesRef,valor:f.valor,parcela:f.parcela});
+  });
+  alive(DB.cp).filter(c=>(c.totparc||1)>1).forEach(c=>{
+    const k=chave(c,'cp');
+    (g[k]=g[k]||{tipo:'conta',cartaoId:'',desc:String(c.desc).replace(/\s*\(\d+\/\d+\)\s*$/,''),tot:c.totparc,itens:[]})
+      .itens.push({mk:mesDe(c.venc),valor:c.valor,parcela:c.parcela,pago:c.situacao==='Pago'});
+  });
+  /* A série importada da planilha costuma vir pela metade: só as parcelas que
+     estavam naquele arquivo. Então o andamento sai do NÚMERO da parcela, não
+     da contagem de linhas, e o fim sai da conta (1ª parcela + tot − 1). */
+  return Object.keys(g).map(k=>{
+    const s=g[k];
+    s.itens.sort((a,b)=>(a.parcela||0)-(b.parcela||0));
+    s.valor=s.itens[0]?s.itens[0].valor:0;
+    s.total=Math.round(s.valor*s.tot*100)/100;
+    if(s.tipo==='cartao'){
+      const passadas=s.itens.filter(x=>x.mk<mesAtual).map(x=>x.parcela||0);
+      s.pagas=Math.min(s.tot,passadas.length?Math.max.apply(null,passadas):0);
+    } else s.pagas=s.itens.filter(x=>x.pago).length;
+    s.falta=Math.round(s.valor*Math.max(0,s.tot-s.pagas)*100)/100;
+    const p1=s.itens[0];
+    s.fim=p1?addMes(p1.mk,s.tot-(p1.parcela||1)):'';
+    s.noMes=s.itens.filter(x=>x.mk===mesAtual);
+    return s;
+  }).filter(s=>s.pagas<s.tot).sort((a,b)=>(b.falta-a.falta));
+}
+function painelParcelas(){
+  const L=parcelamentos();
+  if(!L.length)return `<div class="panel"><div class="panel-head"><h2>Parcelamentos<small>compras em série no cartão e contas criadas parceladas</small></h2></div>
+    <div class="empty">Nenhum parcelamento aberto. Crie um em “＋ Conta”, escolhendo o cartão e o número de parcelas.</div></div>`;
+  const linhas=L.map(s=>{
+    const pctP=Math.round(100*s.pagas/s.tot);
+    const noMes=s.noMes.reduce((a,x)=>a+x.valor,0);
+    return `<tr>
+      <td><b>${esc(s.desc)}</b><div class="muted" style="font-size:11px">${s.tipo==='cartao'?'💳 '+esc(nomeCartao(s.cartaoId)||'cartão'):'conta a pagar'} · termina em ${mesLabel(s.fim)}</div></td>
+      <td class="num">${brl(s.valor)}</td>
+      <td><div style="display:flex;align-items:center;gap:8px"><div class="bar-track" style="flex:1;min-width:60px"><i style="width:${pctP}%"></i></div>
+        <span class="muted" style="font-size:11px;white-space:nowrap">${s.pagas}/${s.tot}</span></div></td>
+      <td class="num ${noMes?'goldtxt':'muted'}">${noMes?brl(noMes):'—'}</td>
+      <td class="num">${brl(s.falta)}</td>
+      <td class="num">${brl(s.total)}</td>
+      <td class="num">${s.tipo==='cartao'?`<button class="btn btn-sm btn-ghost" onclick="filtroCartao='${s.cartaoId}';go('cartoes')">Ver fatura</button>`:''}</td>
+    </tr>`}).join('');
+  const faltaTot=L.reduce((a,s)=>a+s.falta,0), mesTot=L.reduce((a,s)=>a+s.noMes.reduce((b,x)=>b+x.valor,0),0);
+  return `<div class="panel"><div class="panel-head"><h2>Parcelamentos
+      <small>cadastre uma vez; a parcela aparece sozinha todo mês</small></h2>
+      <span class="goldtxt" style="font-variant-numeric:tabular-nums;font-weight:700">${brl(faltaTot)} a vencer</span></div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Parcelamento</th><th class="num">Parcela</th><th>Andamento</th><th class="num">Em ${mesLabel(mesAtual).split(' ')[0]}</th><th class="num">Falta</th><th class="num">Total</th><th></th></tr></thead>
+      <tbody>${linhas}<tr><td><b>Total</b></td><td></td><td></td><td class="num"><b>${brl(mesTot)}</b></td><td class="num"><b>${brl(faltaTot)}</b></td><td></td><td></td></tr></tbody></table></div></div>`;
 }
 function pagarCp(id){
   const c=DB.cp.find(x=>x.id===id);if(!c)return;
@@ -2243,6 +2485,67 @@ function gerarRecorrentes(){
 }
 
 /* ============================ DRE ============================ */
+/* ---------- Movimentações patrimoniais ----------
+   O dinheiro que trocou de lugar em vez de virar despesa: transferência entre
+   contas, aporte que virou patrimônio (ações da Lidere, consórcio, carro) e
+   investimento pelo grupo do plano. Fica fora do resultado de propósito, mas
+   precisa aparecer, senão some do relatório. */
+function movPatrimoniais(mk){
+  const L=lancsDoMes(mk), out=[];
+  const nomeAtivo=id=>{const a=(DB.pat||[]).find(x=>x.id===id);return a?a.ativo:'ativo excluído'};
+  const vistos={};
+  L.forEach(l=>{
+    if(l.patId){
+      const a=(DB.pat||[]).find(x=>x.id===l.patId);
+      out.push({data:l.data,desc:l.desc,tipo:'Virou patrimônio',
+                de:bcoNome(l.contaId),para:nomeAtivo(l.patId)+(a?' · '+a.classe:''),
+                valor:l.saida||0,sinal:-1,id:l.id});
+      return;
+    }
+    if(l.transfId){
+      if(vistos[l.transfId])return; vistos[l.transfId]=1;
+      const par=L.find(x=>x.transfId===l.transfId&&x.id!==l.id);
+      const saiu=l.saida>0?l:par, entrou=l.saida>0?par:l;
+      out.push({data:l.data,desc:l.desc,tipo:'Entre contas',
+                de:saiu?bcoNome(saiu.contaId):'—',para:entrou?bcoNome(entrou.contaId):'—',
+                valor:(saiu&&saiu.saida)||(entrou&&entrou.entrada)||0,sinal:0,id:l.id});
+      return;
+    }
+    /* aporte ou resgate lançado direto na conta de investimento do plano */
+    if(l.cod&&PM()[l.cod]&&grupoDe(l.cod)==='INVESTIMENTOS'){
+      const ap=(l.saida||0)>0;
+      out.push({data:l.data,desc:l.desc,tipo:ap?'Aporte':'Resgate',
+                de:ap?bcoNome(l.contaId):nomeConta(l.cod),
+                para:ap?nomeConta(l.cod):bcoNome(l.contaId),
+                valor:ap?l.saida:l.entrada,sinal:ap?-1:1,id:l.id});
+    }
+  });
+  return out.sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+}
+function painelMovPat(mk){
+  const M=movPatrimoniais(mk);
+  const saiu=M.filter(m=>m.sinal<0).reduce((s,m)=>s+m.valor,0);
+  const voltou=M.filter(m=>m.sinal>0).reduce((s,m)=>s+m.valor,0);
+  const entre=M.filter(m=>m.sinal===0).reduce((s,m)=>s+m.valor,0);
+  const corpo=M.length?M.map(m=>`<tr>
+      <td class="num dim" style="white-space:nowrap">${fmtBR(m.data)}</td>
+      <td><b>${esc(m.desc)}</b><div class="muted" style="font-size:11px">${esc(m.de)} → ${esc(m.para)}</div></td>
+      <td><span class="chip ${m.sinal<0?'chip-warn':m.sinal>0?'chip-ok':'chip-n'}">${m.tipo}</span></td>
+      <td class="num">${brl(m.valor)}</td>
+      <td class="num"><button class="iconbtn" onclick="openLanc('${m.id}')">✎</button></td></tr>`).join('')
+    :'<tr><td colspan="5"><div class="empty">Nenhuma movimentação patrimonial neste mês.</div></td></tr>';
+  return `<div class="panel">
+    <div class="panel-head"><h2>Movimentações patrimoniais<small>${mesLabel(mk)} · dinheiro que mudou de lugar, não é despesa nem receita</small></h2></div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th class="num">Data</th><th>Histórico</th><th>Tipo</th><th class="num">Valor (R$)</th><th></th></tr></thead>
+      <tbody>${corpo}
+        <tr class="dre-tot"><td></td><td>Saiu do caixa e virou patrimônio</td><td></td><td class="num neg">${brl(saiu)}</td><td></td></tr>
+        <tr class="dre-tot"><td></td><td>Voltou do patrimônio para o caixa</td><td></td><td class="num pos">${brl(voltou)}</td><td></td></tr>
+        <tr class="dre-tot"><td></td><td>Trocou de conta, sem sair do bolso</td><td></td><td class="num">${brl(entre)}</td><td></td></tr>
+      </tbody></table></div>
+    <div class="muted" style="font-size:11.5px;padding-bottom:16px">Nada aqui entra no resultado do mês. O que saiu do caixa está somado no seu Patrimônio.</div></div>`;
+}
+
 function viewDre(){
   const r=resumo(mesAtual);
   const recRows=['RECEITAS','RECEITAS FINANCEIRAS'].map(g=>`<tr><td style="padding-left:24px">${gLbl(g)}</td><td class="num">${brl(r.receitas[g]||0)}</td><td class="num muted">${r.totRec?pct((r.receitas[g]||0)/r.totRec):'—'}</td></tr>`).join('');
@@ -2273,6 +2576,7 @@ function viewDre(){
         <tr class="dre-tot"><td>(=) RESULTADO LÍQUIDO DO PERÍODO</td><td class="num ${r.resultado>=0?'pos':'neg'}">${brl(r.resultado)}</td><td class="num">${r.totRec?pct(r.resultado/r.totRec):'—'}</td></tr>
       </tbody></table></div>
   </div>
+  `+painelMovPat(mesAtual)+`
   <div class="grid2">
     <div class="panel"><div class="panel-head"><h2>Referência — totais dos cartões</h2></div>
       <table><tbody>${r.porCartao.map(c=>`<tr><td>${esc(c.nome)}</td><td class="num">${brl(c.total)}</td></tr>`).join('')}
@@ -2427,7 +2731,8 @@ function encheDestino(){
   const box=document.getElementById('l_transfBox');
   const eT = curDir==='T';
   box.style.display = eT ? '' : 'none';
-  document.getElementById('l_codBox').style.display = eT ? '' : '';
+  /* transferencia nao pede conta do plano: o app escolhe sozinho pelo destino */
+  document.getElementById('l_codBox').style.display = eT ? 'none' : '';
   if(!eT) return;
   const origem=document.getElementById('l_conta').value;
   const contas=DB.contas.filter(c=>c.id!==origem)
@@ -2453,12 +2758,10 @@ function destinoMudou(){
   hint.textContent = v.startsWith('c:')
     ? 'Sai desta conta e entra na outra, no mesmo valor e na mesma data.'
     : 'Sai do caixa e soma no patrimônio. Não conta como despesa no DRE.';
-  /* conta do plano coerente com o destino */
+  /* o campo esta escondido: a conta do plano vem do destino, sempre */
   const sel=document.getElementById('l_cod');
-  if(!sel.dataset.tocado){
-    sel.value = v.startsWith('c:') ? '16.01' : '15.07';
-    comboSync(sel);
-  }
+  sel.value = v.startsWith('c:') ? '16.01' : '15.07';
+  comboSync(sel);
 }
 function sugereConta(){
   const d=document.getElementById('l_desc').value;
@@ -2634,8 +2937,21 @@ function openCp(id){
   document.getElementById('p_rec').value=c?c.recorrencia:'Única';
   document.getElementById('p_obs').value=c?(c.obs||''):'';
   document.getElementById('p_cod').innerHTML='<option value="">— automático pela palavra-chave —</option>'+optsPlano(c?c.cod:'',p=>p.tipo!=='RECEITA');
+  /* Parcelar e escolher cartão só faz sentido na criação: editar mexeria numa
+     parcela só, e a série já existe. */
+  document.getElementById('p_forma').innerHTML='<option value="">Dinheiro / conta bancária</option>'
+    +DB.cartoes.map(k=>`<option value="${k.id}">Cartão ${esc(k.nome)}</option>`).join('');
+  document.getElementById('p_parc').value=1;
+  document.getElementById('p_parcBox').style.display=c?'none':'';
+  cpFormaMudou();
   document.getElementById('ovCp').classList.add('show');
   setTimeout(()=>document.getElementById('p_desc').focus(),60);
+}
+function cpFormaMudou(){
+  const cid=document.getElementById('p_forma').value;
+  document.getElementById('p_formaHint').textContent=cid
+    ?'A parcela entra na fatura desse cartão todo mês. Você paga a fatura, não cada parcela.'
+    :'Sai do caixa quando você clicar em “Pagar”.';
 }
 function saveCp(){
   const desc=document.getElementById('p_desc').value.trim();
@@ -2645,12 +2961,46 @@ function saveCp(){
   const st=document.getElementById('p_st').value;
   const pagoEm=document.getElementById('p_pagoEm').value;
   const venc=document.getElementById('p_venc').value;
+  const id=document.getElementById('p_id').value;
+  const novo=!id;
+  const cartaoId=novo?document.getElementById('p_forma').value:'';
+  const parc=novo?Math.max(1,Math.min(120,+document.getElementById('p_parc').value||1)):1;
+  const cod=document.getElementById('p_cod').value;
+  const obs=document.getElementById('p_obs').value.trim();
+
+  /* No cartão, a parcela não é uma conta a pagar: ela entra na fatura, e a
+     fatura é que sai do caixa. Por isso vira compra do cartão. */
+  if(cartaoId){
+    if(!venc)return toast('Informe a data da primeira parcela');
+    const mesRef=mesDe(venc);
+    const serie=uid();
+    for(let p=1;p<=parc;p++)
+      DB.fat.push({id:uid(),cartaoId,data:venc,mesRef:addMes(mesRef,p-1),desc:desc.toUpperCase(),valor,
+                   parcela:p,totparc:parc,cod:cod||autoCod(desc,'S')||'',obs,serie});
+    filtroCartao=cartaoId;
+    save();closeModal('ovCp');render();
+    toast(parc>1?parc+' parcelas lançadas na fatura de '+nomeCartao(cartaoId):'Compra lançada na fatura de '+nomeCartao(cartaoId));
+    return;
+  }
+
   const o={desc,valor,venc,situacao:st,
     /* paga sem data informada cai no mês do vencimento */
     pagoEm:st==='Pago'?(pagoEm||venc||iso(new Date())):null,
-    recorrencia:document.getElementById('p_rec').value,obs:document.getElementById('p_obs').value.trim(),cod:document.getElementById('p_cod').value};
-  const id=document.getElementById('p_id').value;
-  if(id)Object.assign(DB.cp.find(x=>x.id===id),o); else DB.cp.push({id:uid(),...o});
+    recorrencia:document.getElementById('p_rec').value,obs,cod};
+  if(id){Object.assign(DB.cp.find(x=>x.id===id),o);save();closeModal('ovCp');render();return toast('Conta salva')}
+  if(parc>1){
+    if(!venc)return toast('Informe o vencimento da primeira parcela');
+    const serie=uid(), dia=+venc.slice(8);
+    for(let p=1;p<=parc;p++){
+      const mk=addMes(mesDe(venc),p-1);
+      DB.cp.push({id:uid(),...o,desc:desc+' ('+p+'/'+parc+')',
+        venc:mk+'-'+pad(Math.min(dia,diasNoMes(mk))),
+        situacao:p===1?st:'Pendente', pagoEm:p===1?o.pagoEm:null,
+        recorrencia:'Única', parcela:p, totparc:parc, serie});
+    }
+    save();closeModal('ovCp');render();return toast(parc+' parcelas criadas, uma por mês');
+  }
+  DB.cp.push({id:uid(),...o});
   save();closeModal('ovCp');render();toast('Conta salva');
 }
 

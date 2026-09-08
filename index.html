@@ -1233,7 +1233,10 @@ const gCor=g=>(GRUPOS[g]||{}).cor||'#7d8797';
 const GRUPOS_DESP=Object.keys(GRUPOS).filter(g=>GRUPOS[g].cls==='desp').sort((a,b)=>GRUPOS[a].ord-GRUPOS[b].ord);
 
 /* ===== Estado ===== */
-let DB, activeTab='dashboard', mesAtual='2026-07', curDir='S', filtroConta='todas', filtroBusca='', filtroCartao=null, impState=null;
+/* O app sempre abre no mês em que a gente está. Antes ele abria no último mês
+   com algum dado, e uma parcela lá em 2027 levava a tela junto. */
+const mesDeHoje=()=>iso(new Date()).slice(0,7);
+let DB, activeTab='dashboard', mesAtual=mesDeHoje(), curDir='S', filtroConta='todas', filtroBusca='', filtroCartao=null, impState=null;
 let pendView='kanban', curPrio='media', dragId=null, metaAporteId=null;
 
 /* seedDB(limpo)
@@ -4310,8 +4313,7 @@ async function iniciarSessao() {
   document.getElementById('gate').classList.remove('on');
   document.getElementById('gate').innerHTML = '';
   aplicaTema(DB.tema || 'dual');
-  const ms = mesesComDados();
-  mesAtual = ms.length ? ms[ms.length - 1] : iso(new Date()).slice(0, 7);
+  mesAtual = mesDeHoje();
   render();
   nuvemStatus('ok');
 }

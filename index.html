@@ -2514,8 +2514,7 @@ function painelFaturas(cid){
         ?`<button class="btn btn-sm btn-ghost" onclick="desfazerPagFat('${cid}','${m}')">Desfazer</button>`
         :leg?`<button class="iconbtn" title="ver o lançamento" onclick="openLanc('${leg.id}')">✎</button>`
         :`<button class="btn btn-sm" onclick="openPagFat('${cid}','${m}')">Pagar</button>`}
-        <button class="iconbtn" title="abrir esse mês" onclick="mesAtual='${m}';render()">↗</button>
-        <button class="iconbtn del" title="excluir a fatura inteira deste mês" onclick="excluirFatura('${cid}','${m}')">🗑</button></td></tr>`}).join('');
+        <button class="iconbtn" title="abrir esse mês" onclick="mesAtual='${m}';render()">↗</button></td></tr>`}).join('');
   return `<div class="panel"><div class="panel-head"><h2>Faturas mês a mês
       <small>pagar aqui já dá baixa e lança a saída no extrato</small></h2></div>
     <div class="tbl-scroll"><table>
@@ -2566,8 +2565,6 @@ function viewCartoes(){
         ?`<button class="btn btn-sm btn-ghost" onclick="openLanc('${pagoLeg.id}')">✓ Já existe a saída no extrato</button>`
         :`<button class="btn btn-sm" onclick="openPagFat('${cid}','${mesAtual}')" ${total>0?'':'disabled'}>Pagar fatura e dar baixa</button>`}
       <button class="btn btn-sm btn-ghost" onclick="openConta('cartao','${cid}')">✎ Cartão</button>
-      ${total>0?`<button class="btn btn-sm btn-ghost" style="color:var(--neg)" title="manda a fatura inteira para os Excluídos"
-        onclick="excluirFatura('${cid}','${mesAtual}')">🗑 Excluir esta fatura</button>`:''}
     </div>
     <div class="tbl-scroll"><table>
       <thead><tr><th>Data</th><th>Estabelecimento</th><th>Conta do plano</th><th>Grupo</th><th class="num">Parcela</th><th class="num">Valor</th><th></th></tr></thead>
@@ -2621,43 +2618,19 @@ function cpPagaPelaFatura(c){
    Tudo aqui é exclusão macia: vai para os Excluídos e dá para restaurar item
    a item. Nada some do banco antes de você esvaziar a lixeira. */
 
-/* A fatura inteira de um cartão num mês. Serve para fatura importada duas
-   vezes, ou importada no mês errado. Se estava paga, a baixa é desfeita
-   junto, senão sobraria uma saída no extrato sem fatura por trás. */
-function excluirFatura(cid,mk){
-  const crt=DB.cartoes.find(c=>c.id===cid); if(!crt)return;
-  const itens=fatDoMes(mk,cid);
-  if(!itens.length)return toast('Fatura vazia neste mês, nada a excluir');
-  const total=itens.reduce((s,f)=>s+(f.valor||0),0);
-  const parc=itens.filter(f=>(f.totparc||1)>1).length;
-  const pago=pagFatura(cid,mk);
-  const aviso='Excluir a fatura de '+mesLabel(mk)+' do '+crt.nome+'?\n\n'
-    +itens.length+' lançamento(s), somando '+brl(total)+'.'
-    +(parc?'\n'+parc+' deles são parcelas de compras parceladas.':'')
-    +(pago?'\nA baixa de '+brl(pago.valor)+' em '+fmtBR(pago.data)+' também será desfeita.':'')
-    +'\n\nTudo vai para os Excluídos e dá para restaurar.';
-  if(!confirm(aviso))return;
-  if(pago)desfazerBaixaFat(cid,mk);
-  const agora=Date.now();
-  itens.forEach(f=>{const r=DB.fat.find(x=>x.id===f.id);if(r)r.deletedAt=agora});
-  save();render();
-  toast(itens.length+' lançamento(s) da fatura de '+mesLabel(mk)+' foram para os Excluídos');
-}
-/* desfaz a baixa sem perguntar de novo: quem chama já perguntou */
-function desfazerBaixaFat(cid,mk){
-  const p=pagFatura(cid,mk); if(!p)return;
-  if(p.lancId){const l=DB.lanc.find(x=>x.id===p.lancId);if(l)l.deletedAt=Date.now()}
-  delete DB.fatPag[chaveFat(cid,mk)];
-}
-/* Um parcelamento inteiro, de uma vez. É o que resolve série lançada em
-   dobro: some com uma e a outra fica de pé. */
+/* O parcelamento inteiro, de uma vez: todas as parcelas de uma série somem
+   juntas. É o que resolve compra lançada em dobro com dois nomes. Vale para
+   série no cartão e para série de contas a pagar. */
 function excluirSerie(ids,rotulo){
   const lista=(ids||'').split(',').filter(Boolean);
-  const itens=lista.map(id=>DB.fat.find(x=>x.id===id)).filter(x=>x&&!x.deletedAt);
-  if(!itens.length)return toast('Esses lançamentos já não estão mais ativos');
+  const itens=lista.map(id=>DB.fat.find(x=>x.id===id)||DB.cp.find(x=>x.id===id))
+    .filter(x=>x&&!x.deletedAt);
+  if(!itens.length)return toast('Essas parcelas já não estão mais ativas');
   const total=itens.reduce((s,f)=>s+(f.valor||0),0);
-  if(!confirm('Excluir "'+(rotulo||itens[0].desc)+'"?\n\n'+itens.length+' parcela(s), '+brl(total)+' no total, de '
-    +mesLabel(itens.map(f=>f.mesRef).sort()[0])+' a '+mesLabel(itens.map(f=>f.mesRef).sort().pop())
+  const meses=itens.map(f=>f.mesRef||mesDe(f.venc||'')).filter(Boolean).sort();
+  if(!confirm('Excluir o parcelamento "'+(rotulo||itens[0].desc)+'"?\n\n'
+    +itens.length+' parcela(s), '+brl(total)+' no total'
+    +(meses.length?', de '+mesLabel(meses[0])+' a '+mesLabel(meses[meses.length-1]):'')
     +'.\n\nVão para os Excluídos e dá para restaurar.'))return;
   const agora=Date.now();
   itens.forEach(f=>f.deletedAt=agora);
@@ -2769,7 +2742,7 @@ function conferirParcelamentos(){
       /* excluir de um lado só: some com a série repetida e a outra fica de pé */
       acao:grupo.map(s=>`<button class="btn btn-sm btn-ghost" style="color:var(--neg)"
         onclick="excluirSerie('${s.itens.map(x=>x.id).join(',')}','${esc(s.desc).replace(/'/g,'')}')"
-        >🗑 Excluir “${esc(s.desc)}”</button>`).join('')
+        >🗑 Excluir parcelamento “${esc(s.desc)}”</button>`).join('')
         +`<button class="btn btn-sm btn-ghost" onclick="filtroCartao='${f.cartaoId}';go('cartoes')">Ver na fatura</button>`});
   });
 
@@ -3094,7 +3067,11 @@ function painelParcelas(){
         ${s.faltamAgenda?`<button class="btn btn-sm btn-gold" style="flex:1;justify-content:center"
           onclick="gerarFaltantes('${esc(s.chave)}')">Lançar as ${s.faltamAgenda} que faltam</button>`:''}
         ${s.tipo==='cartao'?`<button class="btn btn-sm btn-ghost" style="flex:1;justify-content:center"
-          onclick="filtroCartao='${s.cartaoId}';go('cartoes')">Ver na fatura</button>`:''}</div>
+          onclick="filtroCartao='${s.cartaoId}';go('cartoes')">Ver na fatura</button>`:''}
+        <button class="btn btn-sm btn-ghost" style="flex:1;justify-content:center;color:var(--neg)"
+          title="manda as ${s.itens.length} parcelas para os Excluídos"
+          onclick="excluirSerie('${s.itens.map(x=>x.id).join(',')}','${esc(s.desc).replace(/'/g,'')}')"
+          >🗑 Excluir parcelamento</button></div>
     </div>`}).join('');
   return topo+`<div class="panel"><div class="panel-head"><h2>Parcelamentos
       <small>a parcela baixa sozinha quando você paga a fatura do mês dela</small></h2>

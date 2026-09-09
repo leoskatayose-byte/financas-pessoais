@@ -599,6 +599,24 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 /* conta que o app escolheu sozinho pela palavra-chave */
 .combo.auto .combo-in{border-style:dashed;color:var(--acc-s,var(--acc))}
 
+/* ---------- Selo do banco ----------
+   Cor da marca e sigla, desenhados no próprio app. Não são os logotipos
+   oficiais: logotipo de banco é marca registrada, e o app não puxa imagem
+   de fora. A cor é o que a gente reconhece de longe. */
+.bmark{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+  width:28px;height:28px;border-radius:7px;font-size:9.5px;font-weight:800;letter-spacing:.2px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.10)}
+.bmark.mini{width:20px;height:20px;border-radius:5px;font-size:8px}
+.bnome{display:inline-flex;align-items:center;gap:9px;min-width:0}
+.bnome > span:nth-child(2){font-weight:700;color:var(--txt)}
+.bpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:6px;
+  max-height:184px;overflow-y:auto;padding:8px;border:1px solid var(--line-f);border-radius:10px;background:var(--bg2)}
+.bp{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;min-width:0;
+  border:1px solid transparent;background:transparent;color:var(--dim);text-align:left;transition:.14s}
+.bp:hover{background:var(--panel2);color:var(--txt)}
+.bp.on{border-color:var(--acc);background:var(--panel2);color:var(--txt)}
+.bp-n{font-size:11.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 /* ---------- Lançamento em lote ---------- */
 .lote-pad{display:grid;grid-template-columns:220px 1fr auto;gap:12px;align-items:end;
   padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);margin-bottom:14px}
@@ -792,6 +810,24 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
   <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('ovCp')">Cancelar</button><button class="btn btn-gold" onclick="saveCp()">Salvar</button></div>
 </div></div>
 
+<!-- Modal: pagar fatura do cartão -->
+<div class="overlay" id="ovPagFat"><div class="modal">
+  <div class="modal-head"><h3 id="pfTitle">Pagar fatura</h3><button class="modal-x" onclick="closeModal('ovPagFat')">×</button></div>
+  <div class="modal-body">
+    <input type="hidden" id="pf_cid"><input type="hidden" id="pf_mes">
+    <div class="alert" id="pf_resumo"><span>💳</span><div></div></div>
+    <div class="fgrid">
+      <div class="field"><label>Valor pago (R$) *</label><input id="pf_valor" inputmode="decimal" placeholder="0,00">
+        <div class="hint">Pagou parcial ou com juros? Ajuste aqui.</div></div>
+      <div class="field"><label>Data do pagamento *</label><input type="date" id="pf_data"></div>
+    </div>
+    <div class="field"><label>Sai de qual conta *</label><select id="pf_conta"></select></div>
+    <div class="field"><label>Conta do plano</label><select data-combo id="pf_cod"></select></div>
+  </div>
+  <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('ovPagFat')">Cancelar</button>
+    <button class="btn btn-gold" onclick="salvaPagFat()">Pagar e dar baixa</button></div>
+</div></div>
+
 <!-- Modal: patrimônio -->
 <div class="overlay" id="ovPat"><div class="modal">
   <div class="modal-head"><h3 id="patTitle">Novo ativo</h3><button class="modal-x" onclick="closeModal('ovPat')">×</button></div>
@@ -812,7 +848,10 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
   <div class="modal-head"><h3 id="contaTitle">Conta</h3><button class="modal-x" onclick="closeModal('ovConta')">×</button></div>
   <div class="modal-body">
     <input type="hidden" id="c_id"><input type="hidden" id="c_tipo">
-    <div class="field"><label>Nome *</label><input id="c_nome" placeholder="Ex.: Banco Inter"></div>
+    <div class="field"><label>Nome *</label><input id="c_nome" placeholder="Ex.: Banco Inter" oninput="cNomeMudou()"></div>
+    <div class="field"><label>Instituição</label>
+      <div class="bpick" id="c_bancoPick"></div>
+      <div class="hint">A cor e a sigla identificam a conta nas listas. Não são os logotipos oficiais.</div></div>
     <div id="c_bancoBox">
       <div class="fgrid">
         <div class="field"><label>Saldo inicial (R$)</label><input id="c_saldo" inputmode="decimal" placeholder="0,00"></div>
@@ -1246,10 +1285,10 @@ let pendView='kanban', curPrio='media', dragId=null, metaAporteId=null;
                  pessoa nunca nascem dentro da conta de outra. */
 function seedDB(limpo){
   const hoje=iso(new Date()), mes1=hoje.slice(0,8)+'01';
-  const contas=SEED.contas.map(c=>({id:'bco-'+c.idx,nome:c.nome,
+  const contas=SEED.contas.map(c=>({id:'bco-'+c.idx,nome:c.nome,banco:bancoPeloNome(c.nome),
     saldoInicial:limpo?0:c.saldoInicial,dataInicial:limpo?mes1:(c.dataInicial||'2026-07-01')}));
   const codFat={1:'14.01',2:'14.02',3:'14.03'};
-  const cartoes=SEED.cartoes.map(c=>({id:'crt-'+c.idx,nome:c.nome,limite:limpo?0:c.limite,fech:c.fechamento,venc:c.vencimento,contaPagId:'bco-1',codFat:codFat[c.idx]}));
+  const cartoes=SEED.cartoes.map(c=>({id:'crt-'+c.idx,nome:c.nome,banco:bancoPeloNome(c.nome),limite:limpo?0:c.limite,fech:c.fechamento,venc:c.vencimento,contaPagId:'bco-1',codFat:codFat[c.idx]}));
   let kws=SEED.kws.map(k=>({p:k.p,cod:k.cod,dir:''}));
   // Direção: PIX que entra é receita (1.09); PIX que sai é transferência enviada (16.02).
   kws=kws.filter(k=>!(k.p==='PIX'||k.p==='RECEBIMENTO PIX'));
@@ -1301,6 +1340,10 @@ function migraDB(){
         .sort((a,b)=>((a.ordem==null?1e9:a.ordem)-(b.ordem==null?1e9:b.ordem)))
         .forEach((t,k)=>{t.ordem=k});
     });
+  /* pagamento de fatura por cartao e mes: 'cartaoId|2026-08' -> {data,valor,...} */
+  DB.fatPag=DB.fatPag||{};
+  DB.contas.forEach(c=>{c.banco=c.banco||''});
+  DB.cartoes.forEach(c=>{c.banco=c.banco||''});
   DB.metas.forEach(m=>{m.aportes=m.aportes||[];m.etapas=m.etapas||[]});
 }
 function load(){
@@ -1326,6 +1369,63 @@ const tipoDe=cod=>{const p=PM()[cod];return p?p.tipo:''};
 const nomeCartao=id=>{const c=DB.cartoes.find(x=>x.id===id);return c?c.nome:''};
 const nomeConta=cod=>{const p=PM()[cod];return p?p.cod+' — '+p.nome:(cod||'')};
 const bcoNome=id=>{const c=DB.contas.find(x=>x.id===id);return c?c.nome:'—'};
+/* ============================ MARCAS DOS BANCOS ============================
+   Selo de cada instituição: a cor da marca e a sigla, desenhados aqui mesmo.
+   Não são os logotipos oficiais, e é de propósito: logotipo de banco é marca
+   registrada, e o app não carrega imagem de fora (zero CDN). O que identifica
+   na tela é a cor, que é o que a gente reconhece de longe. */
+const BANCOS=[
+  {id:'bb',      nome:'Banco do Brasil', sigla:'BB',   cor:'#0038a8', tinta:'#fae128'},
+  {id:'bradesco',nome:'Bradesco',        sigla:'BRA',  cor:'#cc092f', tinta:'#ffffff'},
+  {id:'caixa',   nome:'Caixa',           sigla:'CX',   cor:'#0070af', tinta:'#f58220'},
+  {id:'itau',    nome:'Itaú',            sigla:'ITA',  cor:'#ec7000', tinta:'#00246b'},
+  {id:'santander',nome:'Santander',      sigla:'SAN',  cor:'#ec0000', tinta:'#ffffff'},
+  {id:'sicoob',  nome:'Sicoob',          sigla:'SIC',  cor:'#00ae9d', tinta:'#003641'},
+  {id:'sicredi', nome:'Sicredi',         sigla:'SCR',  cor:'#3fa110', tinta:'#ffffff'},
+  {id:'banrisul',nome:'Banrisul',        sigla:'BRS',  cor:'#0072bc', tinta:'#ffffff'},
+  {id:'safra',   nome:'Safra',           sigla:'SAF',  cor:'#00305c', tinta:'#c9a227'},
+  {id:'nubank',  nome:'Nubank',          sigla:'NU',   cor:'#820ad1', tinta:'#ffffff'},
+  {id:'inter',   nome:'Inter',           sigla:'INT',  cor:'#ff7a00', tinta:'#ffffff'},
+  {id:'c6',      nome:'C6 Bank',         sigla:'C6',   cor:'#1d1d1b', tinta:'#e5c07b'},
+  {id:'btg',     nome:'BTG Pactual',     sigla:'BTG',  cor:'#05122b', tinta:'#c8a45c'},
+  {id:'xp',      nome:'XP',              sigla:'XP',   cor:'#0f0f0f', tinta:'#ffd200'},
+  {id:'neon',    nome:'Neon',            sigla:'NEO',  cor:'#00a8e0', tinta:'#ffffff'},
+  {id:'will',    nome:'Will Bank',       sigla:'WILL', cor:'#ffd400', tinta:'#1d1d1b'},
+  {id:'pagbank', nome:'PagBank',         sigla:'PAG',  cor:'#00a868', tinta:'#ffffff'},
+  {id:'mercadopago',nome:'Mercado Pago', sigla:'MP',   cor:'#009ee3', tinta:'#ffffff'},
+  {id:'picpay',  nome:'PicPay',          sigla:'PIC',  cor:'#21c25e', tinta:'#0b2c18'},
+  {id:'original',nome:'Original',        sigla:'ORI',  cor:'#00a94f', tinta:'#ffffff'},
+  {id:'daycoval',nome:'Daycoval',        sigla:'DAY',  cor:'#003c71', tinta:'#ffffff'},
+  {id:'dinheiro',nome:'Dinheiro / espécie', sigla:'$', cor:'#3f7d5c', tinta:'#ffffff'},
+  {id:'',        nome:'Sem marca',       sigla:'•',    cor:'#3a4750', tinta:'#e8f1f1'}
+];
+const BM=(()=>{const m={};BANCOS.forEach(b=>m[b.id]=b);return m})();
+/* Sem banco escolhido, o selo usa a inicial do nome que o usuário deu. */
+function bancoDe(o){
+  const b=BM[(o&&o.banco)||''];
+  if(o&&o.banco&&b)return b;
+  const ini=String((o&&o.nome)||'?').trim().charAt(0).toUpperCase()||'•';
+  return {...BM[''],sigla:ini};
+}
+function marcaBanco(o,cls){
+  const b=bancoDe(o);
+  return `<span class="bmark ${cls||''}" style="background:${b.cor};color:${b.tinta}" title="${esc(b.nome)}">${esc(b.sigla)}</span>`;
+}
+/* Nome com o selo na frente, para tabela e aba */
+function comMarca(o,extra){
+  return `<span class="bnome">${marcaBanco(o)}<span>${esc((o&&o.nome)||'')}</span>${extra||''}</span>`;
+}
+/* "Cartão Bradesco" já diz qual é a marca: adivinha na hora de cadastrar */
+function bancoPeloNome(nome){
+  const t=String(nome||'').toUpperCase();
+  const b=BANCOS.filter(x=>x.id).find(x=>t.includes(x.nome.toUpperCase())
+    ||(x.id==='bb'&&/BANCO DO BRASIL|BB/.test(t))
+    ||(x.id==='caixa'&&/CEF/.test(t)));
+  return b?b.id:'';
+}
+const contaPorId=id=>DB.contas.find(c=>c.id===id);
+const cartaoPorId=id=>DB.cartoes.find(c=>c.id===id);
+
 const crtNome=id=>{const c=DB.cartoes.find(x=>x.id===id);return c?c.nome:'—'};
 
 const lancsAtivos=()=>alive(DB.lanc);
@@ -1423,7 +1523,7 @@ const IC={
 const svgIc=k=>'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(IC[k]||'')+'</svg>';
 const NAV=[
   {g:'Dia a dia',its:[['dashboard','Visão geral'],['pendencias','Pendências']]},
-  {g:'Finanças',its:[['lancamentos','Lançamentos'],['cartoes','Cartões'],['pagar','A pagar']]},
+  {g:'Finanças',its:[['lancamentos','Bancos'],['cartoes','Cartões'],['pagar','A pagar']]},
   {g:'Análise',its:[['dre','Resultado · DRE'],['patrimonio','Patrimônio']]},
   {g:'Planejamento',its:[['metas','Metas']]},
   {g:'Formação',its:[['principios','Princípios'],['playbooks','Playbooks']]},
@@ -1436,7 +1536,7 @@ const SECAO={
   metas:['Metas e objetivos','Onde o dinheiro de hoje vai chegar'],
   principios:['Princípios','As regras que você escolhe seguir'],
   playbooks:['Playbooks','Leituras curtas para decidir melhor'],
-  lancamentos:['Lançamentos','O razão das suas contas'],
+  lancamentos:['Bancos','Extrato e saldo das suas contas'],
   cartoes:['Cartões','Faturas e parcelamentos'],
   pagar:['A pagar','Vencimentos e recorrências'],
   dre:['Resultado do período','Quanto entrou, quanto saiu, quanto sobrou'],
@@ -2309,7 +2409,7 @@ function viewLanc(){
       <td>${g?`<span class="chip chip-n" style="color:${gCor(g)}">${esc(gLbl(g))}</span>`:''}</td>
       <td class="num pos">${l.entrada?brl(l.entrada):''}</td>
       <td class="num neg">${l.saida?brl(l.saida):''}</td>
-      ${única?`<td class="num ${run<0?'neg':''}">${brl(run)}</td>`:`<td class="dim">${esc(bcoNome(l.contaId))}</td>`}
+      ${única?`<td class="num ${run<0?'neg':''}">${brl(run)}</td>`:`<td class="dim">${comMarca(contaPorId(l.contaId))}</td>`}
       <td class="num" style="white-space:nowrap"><button class="iconbtn" title="Editar" onclick="openLanc('${l.id}')">✎</button> <button class="iconbtn del" title="Excluir" onclick="delItem('lanc','${l.id}')">🗑</button></td>
     </tr>`;
   }).join('');
@@ -2319,7 +2419,7 @@ function viewLanc(){
 
   return `${semC?`<div class="alert bad"><span>⚠️</span><div>${semC} lançamento(s) sem conta do plano neste filtro. Clique no lápis para classificar — ou use <b>Classificar automático</b>.</div><button class="btn btn-sm right" onclick="autoClassificar()">Classificar automático</button></div>`:''}
   <div class="panel">
-    <div class="panel-head"><h2>Razão · ${mesLabel(mesAtual)}<small>${única?'Saldo inicial da conta: '+brl(saldoInicialMes(filtroConta,mesAtual)):'Todas as contas — selecione uma conta para ver o saldo corrente'}</small></h2>
+    <div class="panel-head"><h2>Extrato · ${mesLabel(mesAtual)}<small>${única?'Saldo inicial da conta: '+brl(saldoInicialMes(filtroConta,mesAtual)):'Todas as contas — selecione uma conta para ver o saldo corrente'}</small></h2>
       <button class="btn btn-sm btn-gold" onclick="openLanc()">＋ Lançamento</button>
       <button class="btn btn-sm" onclick="openLote()">⇊ Em lote</button>
       <button class="btn btn-sm" onclick="openImport()">⇩ Importar extrato</button>
@@ -2338,7 +2438,7 @@ function viewLanc(){
   <div class="panel"><div class="panel-head"><h2>Contas bancárias</h2><button class="btn btn-sm btn-ghost" onclick="openConta('banco')">＋ Nova conta</button></div>
     <div class="tbl-scroll"><table><thead><tr><th>Conta</th><th class="num">Saldo inicial</th><th class="num">Saldo em ${mesLabel(mesAtual)}</th><th></th></tr></thead><tbody>
     ${DB.contas.map(c=>{const si=saldoInicialMes(c.id,mesAtual);const mv=lancsDoMes(mesAtual,c.id).reduce((s,l)=>s+(l.entrada||0)-(l.saida||0),0);
-      return `<tr><td><b>${esc(c.nome)}</b> <span class="muted" style="font-size:11px">desde ${fmtBR(c.dataInicial)}</span></td><td class="num dim">${brl(c.saldoInicial)}</td><td class="num ${si+mv<0?'neg':'goldtxt'}">${brl(si+mv)}</td>
+      return `<tr><td>${comMarca(c,` <span class="muted" style="font-size:11px">desde ${fmtBR(c.dataInicial)}</span>`)}</td><td class="num dim">${brl(c.saldoInicial)}</td><td class="num ${si+mv<0?'neg':'goldtxt'}">${brl(si+mv)}</td>
       <td class="num"><button class="iconbtn" onclick="openConta('banco','${c.id}')">✎</button></td></tr>`}).join('')}
     </tbody></table></div></div>`;
 }
@@ -2350,13 +2450,51 @@ function rerenderLanc(){
 }
 
 /* ============================ CARTÕES ============================ */
+/* Faixa de cobrança: a fatura fechada que ficou para trás vem primeiro, porque
+   é a que corre o risco de passar batido. */
+function avisoFaturas(cid){
+  const abertas=faturasEmAberto(cid);
+  if(!abertas.length)return '';
+  const soma=abertas.reduce((s,x)=>s+x.total,0);
+  const linhas=abertas.map(x=>`<button class="btn btn-sm btn-gold" onclick="openPagFat('${cid}','${x.mk}')">Pagar ${mesLabel(x.mk)} · ${brl(x.total)}</button>`).join(' ');
+  return `<div class="alert bad"><span>💳</span>
+    <div>${abertas.length===1?'A fatura de '+mesLabel(abertas[0].mk)+' fechou e não foi paga.'
+      :abertas.length+' faturas fecharam e não foram pagas, somando '+brl(soma)+'.'}</div>
+    <div class="right" style="display:flex;gap:8px;flex-wrap:wrap">${linhas}</div></div>`;
+}
+function painelFaturas(cid){
+  const meses=[...new Set(fatAtivos().filter(f=>f.cartaoId===cid).map(f=>f.mesRef))]
+    .filter(m=>m<=mesAtual).sort().reverse().slice(0,12);
+  if(!meses.length)return '';
+  const linhas=meses.map(m=>{
+    const t=totalFatura(cid,m), p=pagFatura(cid,m), leg=p?null:pagFatLegado(cid,m);
+    const dif=p?Math.round((p.valor-t)*100)/100:0;
+    return `<tr>
+      <td><b>${mesLabel(m)}</b>${m===mesAtual?' <span class="pill">mês na tela</span>':''}</td>
+      <td class="num">${brl(t)}</td>
+      <td>${p?`<span class="chip chip-ok">pago em ${fmtBR(p.data)}</span>`
+            :leg?`<span class="chip chip-ok">saída no extrato em ${fmtBR(leg.data)}</span>`
+            :(m<mesAtual?'<span class="chip chip-bad">em aberto</span>':'<span class="chip chip-warn">fatura do mês</span>')}</td>
+      <td class="num">${p?brl(p.valor)+(dif?`<div class="muted" style="font-size:11px">${dif>0?'+':''}${brl(dif)} vs. a fatura</div>`:'')
+            :leg?`<span class="dim">${brl(leg.saida)}</span>`:'<span class="muted">—</span>'}</td>
+      <td class="num" style="white-space:nowrap">${p
+        ?`<button class="btn btn-sm btn-ghost" onclick="desfazerPagFat('${cid}','${m}')">Desfazer</button>`
+        :leg?`<button class="iconbtn" title="ver o lançamento" onclick="openLanc('${leg.id}')">✎</button>`
+        :`<button class="btn btn-sm" onclick="openPagFat('${cid}','${m}')">Pagar</button>`}
+        <button class="iconbtn" title="abrir esse mês" onclick="mesAtual='${m}';render()">↗</button></td></tr>`}).join('');
+  return `<div class="panel"><div class="panel-head"><h2>Faturas mês a mês
+      <small>pagar aqui já dá baixa e lança a saída no extrato</small></h2></div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Fatura</th><th class="num">Total</th><th>Situação</th><th class="num">Pago</th><th></th></tr></thead>
+      <tbody>${linhas}</tbody></table></div></div>`;
+}
 function viewCartoes(){
   const cid=filtroCartao||(DB.cartoes[0]&&DB.cartoes[0].id);
   const crt=DB.cartoes.find(c=>c.id===cid);
   const F=fatDoMes(mesAtual,cid).slice().sort((a,b)=>a.data===b.data?0:(a.data<b.data?-1:1));
   const total=F.reduce((s,f)=>s+(f.valor||0),0);
   const abas=DB.cartoes.map(c=>{const t=fatDoMes(mesAtual,c.id).reduce((s,f)=>s+(f.valor||0),0);
-    return `<button class="tab ${c.id===cid?'active':''}" onclick="filtroCartao='${c.id}';render()">💳 ${esc(c.nome)} <span class="cnt">${n0(t)}</span></button>`}).join('');
+    return `<button class="tab ${c.id===cid?'active':''}" onclick="filtroCartao='${c.id}';render()">${marcaBanco(c,'mini')} ${esc(c.nome)} <span class="cnt">${n0(t)}</span></button>`}).join('');
   const rows=F.map(f=>`<tr>
       <td class="num dim">${fmtBR(f.data)}</td>
       <td><b>${esc(f.desc)}</b>${f.obs?`<div class="muted" style="font-size:11px">${esc(f.obs)}</div>`:''}</td>
@@ -2372,21 +2510,27 @@ function viewCartoes(){
   const futHtml=Object.keys(futuras).sort().slice(0,6).map(m=>`<tr><td>${mesLabel(m)}</td><td class="num">${brl(futuras[m])}</td>
     <td class="num"><button class="btn btn-sm btn-ghost" onclick="mesAtual='${m}';render()">abrir</button></td></tr>`).join('');
 
-  const jaLancada=lancsDoMes(mesAtual).some(l=>crt&&l.cod===crt.codFat);
+  const pago=pagFatura(cid,mesAtual), pagoLeg=pago?null:pagFatLegado(cid,mesAtual);
   const usoLim=crt&&crt.limite>0?Math.min(100,total/crt.limite*100):0;
 
   return `<nav class="tabs" style="margin-top:0">${abas}<button class="btn btn-sm btn-ghost" style="margin-left:6px" onclick="openConta('cartao')">＋ Cartão</button></nav>
+  ${avisoFaturas(cid)}
   <div class="stats">
     <div class="stat"><div class="k">Fatura de ${mesLabel(mesAtual)}</div><div class="v goldtxt">${brl(total)}</div><div class="sub">${F.length} lançamento(s)</div></div>
+    <div class="stat"><div class="k">Situação</div><div class="v ${pago||pagoLeg?'pos':''}" style="font-size:20px">${pago?'Paga':pagoLeg?'Paga':'Em aberto'}</div><div class="sub">${pago?brl(pago.valor)+' em '+fmtBR(pago.data):pagoLeg?'saída no extrato em '+fmtBR(pagoLeg.data):(total>0?'ainda não foi paga':'sem movimento')}</div></div>
     <div class="stat"><div class="k">Limite</div><div class="v">${crt&&crt.limite>0?brl(crt.limite):'—'}</div><div class="sub">${crt&&crt.limite>0?usoLim.toFixed(0)+'% usado nesta fatura':'sem limite cadastrado'}</div></div>
     <div class="stat"><div class="k">Fechamento / vencimento</div><div class="v" style="font-size:20px">${crt&&crt.fech?'dia '+crt.fech:'—'} / ${crt&&crt.venc?'dia '+crt.venc:'—'}</div><div class="sub">${crt?esc(bcoNome(crt.contaPagId)):''}</div></div>
     <div class="stat"><div class="k">Parcelado em aberto</div><div class="v">${brl(Object.values(futuras).reduce((a,b)=>a+b,0))}</div><div class="sub">nas próximas faturas</div></div>
   </div>
   <div class="panel">
-    <div class="panel-head"><h2>${crt?esc(crt.nome):'Cartão'} · fatura de ${mesLabel(mesAtual)}<small>a data é a da compra; o mês de referência é o da fatura</small></h2>
+    <div class="panel-head"><h2>${crt?comMarca(crt):'Cartão'} · fatura de ${mesLabel(mesAtual)}<small>a data é a da compra; o mês de referência é o da fatura</small></h2>
       <button class="btn btn-sm btn-gold" onclick="openFat()">＋ Compra</button>
       <button class="btn btn-sm" onclick="openImport('cartao')">⇩ Importar fatura</button>
-      <button class="btn btn-sm ${jaLancada?'btn-ghost':''}" onclick="lancarFatura('${cid}')" ${jaLancada?'title="Já existe um lançamento desta fatura no razão"':''}>${jaLancada?'✓ Fatura lançada':'Lançar fatura no razão'}</button>
+      ${pago
+        ?`<button class="btn btn-sm btn-ghost" onclick="desfazerPagFat('${cid}','${mesAtual}')">✓ Paga em ${fmtBR(pago.data)} · desfazer</button>`
+        :pagoLeg
+        ?`<button class="btn btn-sm btn-ghost" onclick="openLanc('${pagoLeg.id}')">✓ Já existe a saída no extrato</button>`
+        :`<button class="btn btn-sm" onclick="openPagFat('${cid}','${mesAtual}')" ${total>0?'':'disabled'}>Pagar fatura e dar baixa</button>`}
       <button class="btn btn-sm btn-ghost" onclick="openConta('cartao','${cid}')">✎ Cartão</button>
     </div>
     <div class="tbl-scroll"><table>
@@ -2395,17 +2539,8 @@ function viewCartoes(){
       <tfoot><tr class="dre-tot"><td colspan="5">TOTAL DA FATURA</td><td class="num goldtxt">${brl(total)}</td><td></td></tr></tfoot>
     </table></div>
   </div>
+  ${painelFaturas(cid)}
   ${futHtml?`<div class="panel"><div class="panel-head"><h2>Próximas faturas<small>parcelas já comprometidas</small></h2></div><table><tbody>${futHtml}</tbody></table></div>`:''}`;
-}
-function lancarFatura(cid){
-  const crt=DB.cartoes.find(c=>c.id===cid);if(!crt)return;
-  const total=fatDoMes(mesAtual,cid).reduce((s,f)=>s+(f.valor||0),0);
-  if(total<=0)return toast('Fatura vazia — nada a lançar');
-  const dia=crt.venc||10;
-  const data=mesAtual+'-'+pad(Math.min(dia,diasNoMes(mesAtual)));
-  DB.lanc.push({id:uid(),data,contaId:crt.contaPagId||DB.contas[0].id,desc:'FATURA '+crt.nome.toUpperCase(),
-                cod:crt.codFat||'14.01',entrada:0,saida:Math.round(total*100)/100,obs:'Gerado a partir da fatura'});
-  save();render();toast('Fatura de '+brl(total)+' lançada no razão');
 }
 
 /* ============================ CONTAS A PAGAR ============================ */
@@ -3206,12 +3341,27 @@ function savePat(){
   save();closeModal('ovPat');render();toast('Ativo salvo');
 }
 
+let cBanco='', cBancoTocado=false;
+function renderBancoPick(){
+  document.getElementById('c_bancoPick').innerHTML=BANCOS.map(b=>
+    `<button type="button" class="bp ${cBanco===b.id?'on':''}" onclick="pickBanco('${b.id}')" title="${esc(b.nome)}">
+      <span class="bmark" style="background:${b.cor};color:${b.tinta}">${esc(b.sigla)}</span>
+      <span class="bp-n">${esc(b.nome)}</span></button>`).join('');
+}
+function pickBanco(id){cBanco=id;cBancoTocado=true;renderBancoPick()}
+/* enquanto ninguém tocou nos selos, o nome digitado escolhe a marca */
+function cNomeMudou(){
+  if(cBancoTocado)return;
+  const b=bancoPeloNome(document.getElementById('c_nome').value);
+  if(b!==cBanco){cBanco=b;renderBancoPick()}
+}
 function openConta(tipo,id){
   const isB=tipo==='banco';
   const o=id?(isB?DB.contas:DB.cartoes).find(x=>x.id===id):null;
   document.getElementById('contaTitle').textContent=(o?'Editar ':'Nova ')+(isB?'conta bancária':'cartão');
   document.getElementById('c_id').value=o?o.id:'';document.getElementById('c_tipo').value=tipo;
   document.getElementById('c_nome').value=o?o.nome:'';
+  cBanco=o?(o.banco||''):''; cBancoTocado=!!(o&&o.banco); renderBancoPick();
   document.getElementById('c_bancoBox').style.display=isB?'':'none';
   document.getElementById('c_cartaoBox').style.display=isB?'none':'';
   if(isB){document.getElementById('c_saldo').value=o?n0(o.saldoInicial):'0,00';document.getElementById('c_dataIni').value=o?o.dataInicial:(mesAtual+'-01')}
@@ -3230,15 +3380,110 @@ function saveConta(){
   if(!nome)return toast('Informe o nome');
   const tipo=document.getElementById('c_tipo').value, id=document.getElementById('c_id').value, isB=tipo==='banco';
   if(isB){
-    const o={nome,saldoInicial:parseNum(document.getElementById('c_saldo').value),dataInicial:document.getElementById('c_dataIni').value||(mesAtual+'-01')};
+    const o={nome,banco:cBanco,saldoInicial:parseNum(document.getElementById('c_saldo').value),dataInicial:document.getElementById('c_dataIni').value||(mesAtual+'-01')};
     if(id)Object.assign(DB.contas.find(x=>x.id===id),o); else DB.contas.push({id:uid(),...o});
   }else{
-    const o={nome,limite:parseNum(document.getElementById('c_limite').value),
+    const o={nome,banco:cBanco,limite:parseNum(document.getElementById('c_limite').value),
       fech:+document.getElementById('c_fech').value||null,venc:+document.getElementById('c_venc').value||null,
       contaPagId:document.getElementById('c_contaPag').value,codFat:document.getElementById('c_codFat').value};
     if(id)Object.assign(DB.cartoes.find(x=>x.id===id),o); else{const nid=uid();DB.cartoes.push({id:nid,...o});filtroCartao=nid}
   }
   save();closeModal('ovConta');render();toast('Salvo');
+}
+
+/* ---------- Pagamento da fatura do cartão ----------
+   A fatura fechada de um mês sai do caixa de uma vez. Registrar aqui cria o
+   lançamento no razão e marca aquela fatura como paga, para não pagar duas
+   vezes nem esquecer a do mês passado. */
+const chaveFat=(cid,mk)=>cid+'|'+mk;
+const totalFatura=(cid,mk)=>Math.round(fatDoMes(mk,cid).reduce((s,f)=>s+(f.valor||0),0)*100)/100;
+const pagFatura=(cid,mk)=>(DB.fatPag||{})[chaveFat(cid,mk)]||null;
+function openPagFat(cid,mk){
+  const crt=DB.cartoes.find(c=>c.id===cid); if(!crt)return;
+  const total=totalFatura(cid,mk);
+  if(total<=0)return toast('Fatura vazia neste mês, nada a pagar');
+  if(pagFatura(cid,mk))return toast('Esta fatura já está paga');
+  document.getElementById('pfTitle').textContent='Pagar a fatura de '+mesLabel(mk);
+  document.getElementById('pf_cid').value=cid;
+  document.getElementById('pf_mes').value=mk;
+  document.querySelector('#pf_resumo div').innerHTML=
+    `<b>${esc(crt.nome)}</b> · fatura de ${mesLabel(mk)}: <b>${brl(total)}</b> em ${fatDoMes(mk,cid).length} lançamento(s).
+     <div class="muted" style="font-size:11.5px;margin-top:4px">As compras já estão distribuídas nos grupos do DRE. O pagamento entra como movimentação neutra.</div>`;
+  document.getElementById('pf_valor').value=n0(total);
+  const dia=crt.venc||10;
+  document.getElementById('pf_data').value=mk+'-'+pad(Math.min(dia,diasNoMes(mk)));
+  document.getElementById('pf_conta').innerHTML=DB.contas.map(c=>
+    `<option value="${c.id}" ${crt.contaPagId===c.id?'selected':''}>${esc(c.nome)}</option>`).join('');
+  document.getElementById('pf_cod').innerHTML=optsPlano(crt.codFat||'14.01',p=>p.grupo==='CARTÃO CRÉDITO');
+  document.getElementById('ovPagFat').classList.add('show');
+}
+function salvaPagFat(){
+  const cid=document.getElementById('pf_cid').value, mk=document.getElementById('pf_mes').value;
+  const crt=DB.cartoes.find(c=>c.id===cid); if(!crt)return;
+  const valor=parseNum(document.getElementById('pf_valor').value);
+  const data=document.getElementById('pf_data').value;
+  if(!valor)return toast('Informe o valor pago');
+  if(!data)return toast('Informe a data do pagamento');
+  const contaId=document.getElementById('pf_conta').value;
+  const cod=document.getElementById('pf_cod').value||crt.codFat||'14.01';
+  const lid=uid();
+  DB.lanc.push({id:lid,data,contaId,desc:'FATURA '+crt.nome.toUpperCase()+' · '+mesLabel(mk).toUpperCase(),
+    cod,entrada:0,saida:valor,obs:'Pagamento da fatura de '+mesLabel(mk)});
+  DB.fatPag=DB.fatPag||{};
+  DB.fatPag[chaveFat(cid,mk)]={data,valor,contaId,lancId:lid,total:totalFatura(cid,mk)};
+  save();closeModal('ovPagFat');render();
+  toast('Fatura de '+mesLabel(mk)+' paga: '+brl(valor));
+}
+/* Desfazer é simétrico: some a baixa e o lançamento vai para os Excluídos. */
+function desfazerPagFat(cid,mk){
+  const p=pagFatura(cid,mk); if(!p)return;
+  const crt=DB.cartoes.find(c=>c.id===cid);
+  if(!confirm('Voltar a fatura de '+mesLabel(mk)+' de "'+(crt?crt.nome:'')+'" para em aberto? O lançamento vai para os Excluídos.'))return;
+  if(p.lancId){const l=DB.lanc.find(x=>x.id===p.lancId);if(l)l.deletedAt=Date.now()}
+  delete DB.fatPag[chaveFat(cid,mk)];
+  save();render();toast('Fatura voltou para em aberto');
+}
+/* Fatura quitada fora daqui: o extrato importado já traz a saída
+   "CARTÃO INTER" classificada na conta da fatura. Vale o mês da fatura e o
+   seguinte, porque cada um paga no seu ritmo. Sem isso o app cobraria de
+   novo o que já foi pago. */
+function mapaPagLegado(cid){
+  const crt=DB.cartoes.find(c=>c.id===cid);
+  if(!crt||!crt.codFat)return {};
+  const saidas=lancsAtivos().filter(x=>x.cod===crt.codFat&&(x.saida||0)>0)
+    .sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  const meses=[...new Set(fatAtivos().filter(f=>f.cartaoId===cid).map(f=>f.mesRef))].sort();
+  const usado={}, mapa={};
+  /* 1ª passada: casa pelo valor, que é a prova mais forte. A fatura de julho
+     costuma ser paga em agosto, mas tem gente que paga dentro do mês. */
+  meses.forEach(mk=>{
+    const t=totalFatura(cid,mk);
+    const l=saidas.find(x=>!usado[x.id]&&Math.abs(x.saida-t)<0.01
+      &&(mesDe(x.data)===mk||mesDe(x.data)===addMes(mk,1)));
+    if(l){usado[l.id]=1;mapa[mk]=l}
+  });
+  /* 2ª passada: sobrou saída no mês seguinte sem dono, é dessa fatura */
+  meses.forEach(mk=>{
+    if(mapa[mk])return;
+    const l=saidas.find(x=>!usado[x.id]&&mesDe(x.data)===addMes(mk,1));
+    if(l){usado[l.id]=1;mapa[mk]=l}
+  });
+  return mapa;
+}
+/* Fatura quitada fora daqui: o extrato importado já traz a saída
+   "CARTÃO INTER" classificada na conta da fatura. Sem isso o app cobraria
+   de novo o que já foi pago. Cada saída serve a uma fatura só. */
+function pagFatLegado(cid,mk){return mapaPagLegado(cid)[mk]||null}
+
+/* Faturas fechadas de meses anteriores que ninguém pagou ainda. */
+function faturasEmAberto(cid){
+  const out=[];
+  const meses=[...new Set(fatAtivos().filter(f=>f.cartaoId===cid).map(f=>f.mesRef))].sort();
+  meses.filter(m=>m<mesAtual).forEach(m=>{
+    const t=totalFatura(cid,m);
+    if(t>0&&!pagFatura(cid,m)&&!pagFatLegado(cid,m))out.push({mk:m,total:t});
+  });
+  return out;
 }
 
 function openPlanoM(cod){

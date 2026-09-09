@@ -2613,83 +2613,141 @@ function cpPagaPelaFatura(c){
 /* ---------- Conferência: duplicidade ----------
    Feita em cima do que está gravado, sem adivinhação: só aponta o que se
    repete de verdade e deixa a decisão com quem sabe o que aconteceu. */
-function conferirDuplicidade(){
-  const av=[];
-  /* 1. o mesmo pagamento de fatura lançado duas vezes */
-  DB.cartoes.forEach(k=>{
-    if(!k.codFat)return;
-    const por={};
-    lancsAtivos().filter(l=>l.cod===k.codFat&&(l.saida||0)>0)
-      .forEach(l=>{const m=mesDe(l.data);(por[m]=por[m]||[]).push(l)});
-    Object.keys(por).sort().forEach(m=>{
-      const g=por[m]; if(g.length<2)return;
-      const iguais=g.filter(x=>g.filter(y=>Math.abs(y.saida-x.saida)<0.01).length>1);
-      av.push({tipo:iguais.length?'grave':'olhar',
-        titulo:(iguais.length?'Pagamento repetido':'Mais de um pagamento')+' da fatura do '+k.nome+' em '+mesLabel(m),
-        txt:g.map(x=>brl(x.saida)+' em '+fmtBR(x.data)).join(' · ')
-          +(iguais.length?' — dois lançamentos do mesmo valor no mesmo mês.'
-                         :' — pode ser pagamento em duas partes, ou um lançamento a mais.'),
-        ids:g.map(x=>x.id)});
-    });
-  });
-  /* 2. compra idêntica repetida na mesma fatura */
-  const chave={};
-  fatAtivos().forEach(f=>{
-    const k=[f.cartaoId,f.mesRef,String(f.desc||'').toUpperCase(),f.valor,f.parcela||1].join('|');
-    (chave[k]=chave[k]||[]).push(f);
-  });
-  Object.keys(chave).forEach(k=>{
-    const g=chave[k]; if(g.length<2)return;
-    const f=g[0];
-    av.push({tipo:'olhar',
-      titulo:g.length+'x a mesma compra na fatura de '+mesLabel(f.mesRef),
-      txt:esc(f.desc)+' · '+brl(f.valor)+' no '+(nomeCartao(f.cartaoId)||'cartão')
-        +' — pode ser compra repetida de verdade, ou a fatura importada duas vezes.',
-      ids:g.map(x=>x.id),fat:true});
-  });
-  /* 3. a mesma parcela da série em dois meses — vale para série encerrada também */
-  const ser={};
+/* ---------- Conferência dos parcelamentos ----------
+   Só olha compra dividida em parcelas. Compra avulsa repetida não entra: dois
+   Uber de R$ 9,97 no mesmo mês são duas corridas, e apontar isso viraria ruído.
+   Na parcela é diferente: ela é única por definição, então repetição ali é
+   erro de lançamento. */
+function seriesDoCartao(){
+  const g={};
   fatAtivos().filter(f=>(f.totparc||1)>1).forEach(f=>{
     const k=f.serie||['s',f.cartaoId,String(f.desc||'').toUpperCase(),f.totparc].join('|');
-    (ser[k]=ser[k]||[]).push(f);
+    (g[k]=g[k]||[]).push(f);
   });
-  Object.keys(ser).forEach(k=>{
-    const g=ser[k], por={};
-    g.forEach(f=>{(por[f.parcela||1]=por[f.parcela||1]||[]).push(f)});
-    Object.keys(por).forEach(p=>{
-      const r=por[p]; if(r.length<2)return;
-      av.push({tipo:'grave',titulo:'Parcela '+p+'/'+r[0].totparc+' de "'+r[0].desc+'" aparece em '+r.length+' meses',
-        txt:r.map(x=>mesLabel(x.mesRef)).join(' e ')+' — uma delas está com o número errado, ou é lançamento duplicado.',
-        ids:r.map(x=>x.id),fat:true});
+  return g;
+}
+function conferirParcelamentos(){
+  const av=[];
+  const g=seriesDoCartao();
+  Object.keys(g).forEach(k=>{
+    const itens=g[k], nome=itens[0].desc, tot=itens[0].totparc;
+    const cartao=nomeCartao(itens[0].cartaoId)||'cartão';
+
+    /* 1. o mesmo número de parcela lançado duas vezes */
+    const porNum={};
+    itens.forEach(f=>{(porNum[f.parcela||1]=porNum[f.parcela||1]||[]).push(f)});
+    Object.keys(porNum).forEach(p=>{
+      const r=porNum[p]; if(r.length<2)return;
+      const meses=[...new Set(r.map(x=>x.mesRef))];
+      av.push({tipo:'grave',
+        titulo:'Parcela '+p+'/'+tot+' de "'+nome+'" está lançada '+r.length+' vezes',
+        txt:meses.length>1
+          ?'Aparece em '+meses.map(mesLabel).join(' e ')+', no '+cartao+
+           '. Uma parcela cai num mês só: ou uma delas está com o número errado, ou é lançamento repetido.'
+          :'Duas vezes na mesma fatura de '+mesLabel(meses[0])+', no '+cartao+
+           '. A fatura provavelmente foi importada duas vezes.',
+        ids:r.map(x=>x.id)});
     });
+
+    /* 2. duas parcelas diferentes da mesma série na mesma fatura */
+    const porMes={};
+    itens.forEach(f=>{(porMes[f.mesRef]=porMes[f.mesRef]||[]).push(f)});
+    Object.keys(porMes).forEach(m=>{
+      const r=porMes[m];
+      const nums=[...new Set(r.map(x=>x.parcela||1))];
+      if(nums.length<2)return;
+      av.push({tipo:'olhar',
+        titulo:'"'+nome+'" tem '+nums.length+' parcelas na fatura de '+mesLabel(m),
+        txt:'As parcelas '+nums.sort((a,b)=>a-b).join(' e ')+' de '+tot+' caíram no mesmo mês, no '+cartao+
+          '. Parcelamento anda de mês em mês, então uma delas deve pertencer a outra fatura.',
+        ids:r.map(x=>x.id)});
+    });
+
+    /* 3. parcela com valor diferente do resto da série */
+    const vals=[...new Set(itens.map(x=>Math.round(x.valor*100)))];
+    if(vals.length>1){
+      const cont={};
+      itens.forEach(x=>{const v=Math.round(x.valor*100);cont[v]=(cont[v]||0)+1});
+      const comum=+Object.keys(cont).sort((a,b)=>cont[b]-cont[a])[0];
+      const fora=itens.filter(x=>Math.round(x.valor*100)!==comum);
+      av.push({tipo:'olhar',
+        titulo:'"'+nome+'" tem parcela de valor diferente',
+        txt:'A maior parte é de '+brl(comum/100)+', mas '+
+          fora.map(x=>'a '+(x.parcela||1)+'/'+tot+' é de '+brl(x.valor)).join(', ')+
+          '. Pode ser juros ou entrada diferente, pode ser digitação errada.',
+        ids:fora.map(x=>x.id)});
+    }
+
+    /* 4. mais linhas do que o parcelamento tem parcelas */
+    if(itens.length>tot)
+      av.push({tipo:'grave',
+        titulo:'"'+nome+'" tem '+itens.length+' lançamentos para um parcelamento de '+tot+'x',
+        txt:'Sobra '+(itens.length-tot)+' lançamento(s) no '+cartao+
+          '. Alguma parcela foi lançada a mais.',
+        ids:itens.map(x=>x.id)});
   });
-  /* 4. conta a pagar que também está na fatura, sem estar ligada */
-  alive(DB.cp).forEach(c=>{
+
+  /* 5. a mesma compra parcelada importada duas vezes, com nomes diferentes.
+     "MAZE - DUNK" e "DUNK", mesmo cartão, mesmo valor, mesmas 6 parcelas: o
+     nome muda porque a fatura descreve de um jeito e o extrato de outro, mas
+     a compra é uma só. Agrupar por descrição nunca ia pegar isso. */
+  const porValor={};
+  Object.keys(g).forEach(k=>{
+    const it=g[k], f=it[0];
+    /* arredonda no real: importador de fatura e de extrato divergem uns
+       centavos na mesma compra (91,87 x 91,90) */
+    const vk=[f.cartaoId,Math.round(f.valor),f.totparc].join('|');
+    (porValor[vk]=porValor[vk]||[]).push({chave:k,itens:it,desc:f.desc,
+      meses:it.map(x=>x.mesRef).sort(),nums:it.map(x=>x.parcela||1).sort((a,b)=>a-b)});
+  });
+  Object.keys(porValor).forEach(vk=>{
+    const grupo=porValor[vk]; if(grupo.length<2)return;
+    const f=grupo[0].itens[0];
+    /* mesmo intervalo de meses reforça que é a mesma compra */
+    const faixa=s=>[s.meses[0],s.meses[s.meses.length-1]];
+    const [a1,a2]=faixa(grupo[0]);
+    const bate=grupo.slice(1).some(s=>{const [b1,b2]=faixa(s);return b1<=a2&&a1<=b2});
+    av.push({tipo:bate?'grave':'olhar',
+      titulo:'"'+grupo.map(s=>s.desc).join('" e "')+'" parecem a mesma compra parcelada',
+      txt:'Dois parcelamentos de '+brl(f.valor)+' em '+f.totparc+'x no '+(nomeCartao(f.cartaoId)||'cartão')+
+        ', com nomes diferentes: '+grupo.map(s=>'"'+s.desc+'" ('+s.nums.length+' parcela(s), '+
+        mesLabel(s.meses[0])+' a '+mesLabel(s.meses[s.meses.length-1])+')').join(' e ')+'. '+
+        (bate?'Os meses se sobrepõem, então a compra foi lançada duas vezes e está cobrando em dobro.'
+            :'Os meses não se cruzam, então pode ser a mesma compra descrita de dois jeitos, ou duas compras iguais.'),
+      ids:grupo.reduce((acc,s)=>acc.concat(s.itens.map(x=>x.id)),[]),
+      acao:`<button class="btn btn-sm btn-ghost" onclick="filtroCartao='${f.cartaoId}';go('cartoes')">Ver na fatura</button>`});
+  });
+
+  /* 6. conta a pagar parcelada que também está na fatura, sem estar ligada */
+  alive(DB.cp).filter(c=>(c.totparc||1)>1).forEach(c=>{
     const s=sugereVinculo(c);
     if(!s.length)return;
     const f=s[0];
-    av.push({tipo:'olhar',titulo:'"'+c.desc+'" pode estar em dobro',
-      txt:'Está em A pagar e também na fatura de '+mesLabel(f.mesRef)+' do '+(nomeCartao(f.cartaoId)||'cartão')
-        +', pelo mesmo valor. Se for a mesma dívida, ligue as duas para não contar duas vezes.',
+    av.push({tipo:'olhar',titulo:'"'+c.desc+'" pode estar contada duas vezes',
+      txt:'Está em A pagar e também na fatura de '+mesLabel(f.mesRef)+' do '+(nomeCartao(f.cartaoId)||'cartão')+
+        ', pelo mesmo valor. Se for a mesma parcela, ligue as duas para o app cobrar uma vez só.',
       acao:`<button class="btn btn-sm btn-gold" onclick="vincularCpFat('${c.id}','${f.id}')">Ligar as duas</button>`});
   });
   return av;
 }
+/* nome antigo, mantido porque a tela e os testes chamam por ele */
+function conferirDuplicidade(){return conferirParcelamentos()}
 function painelConferencia(){
-  const av=conferirDuplicidade();
+  const av=conferirParcelamentos();
   const graves=av.filter(a=>a.tipo==='grave').length;
-  if(!av.length)return `<div class="panel"><div class="panel-head"><h2>Conferência
-      <small>procura pagamento repetido, compra em dobro e parcela com número trocado</small></h2></div>
-    <div class="empty">Nada repetido por aqui. ✓</div></div>`;
-  return `<div class="panel"><div class="panel-head"><h2>Conferência
-      <small>o app procurou repetição; a decisão é sua, ele não apaga nada sozinho</small></h2>
+  const nSeries=Object.keys(seriesDoCartao()).length;
+  if(!av.length)return `<div class="panel"><div class="panel-head"><h2>Conferência dos parcelamentos
+      <small>parcela repetida, parcela fora do mês e valor que destoa da série</small></h2></div>
+    <div class="empty">${nSeries} parcelamento(s) conferido(s), nada fora do lugar. ✓</div></div>`;
+  return `<div class="panel"><div class="panel-head"><h2>Conferência dos parcelamentos
+      <small>${nSeries} parcelamento(s) conferido(s) · a decisão é sua, o app não apaga nada sozinho</small></h2>
       <span class="chip ${graves?'chip-bad':'chip-warn'}">${av.length} ponto(s) para olhar</span></div>
     ${av.map(a=>`<div class="conf ${a.tipo}">
       <div class="conf-b"><b>${a.titulo}</b><div>${a.txt}</div></div>
       ${a.acao||''}</div>`).join('')}
     <div class="muted" style="font-size:11.5px;padding:4px 0 16px">
-      “Pode ser” quer dizer que o app não tem como saber: dois cafés de R$ 10 no mesmo dia
-      são duas compras de verdade. Confira no extrato antes de apagar.</div></div>`;
+      Em vermelho está o que não tem como estar certo: parcela é única, não cai em dois meses.
+      Em amarelo está o que merece um olhar, e pode ter explicação. Confira na fatura antes de apagar.</div></div>`;
 }
 
 /* ============================ CONTAS A PAGAR ============================ */
@@ -2698,7 +2756,7 @@ const CP_ABAS=[
   ['parcelas','Parcelamentos','compras que você dividiu em várias vezes'],
   ['abertas','A pagar','contas com data marcada que ainda vão sair'],
   ['pagas','Já paguei','o que saiu, mês a mês'],
-  ['conferir','Conferência','o app procura lançamento repetido']
+  ['conferir','Conferência','o app confere se alguma parcela está lançada em dobro ou fora do mês']
 ];
 function viewPagar(){
   const hoje=iso(new Date());

@@ -663,6 +663,20 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .parc-lin b{color:var(--txt);font-variant-numeric:tabular-nums}
 .parc-av{margin-top:11px;padding:9px 11px;border-radius:8px;font-size:11.5px;line-height:1.45;
   background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn)}
+.parc-det{margin-top:11px;border-top:1px solid var(--line);padding-top:9px}
+.parc-det summary{font-size:11.5px;color:var(--mut);cursor:pointer;font-weight:600;list-style:none}
+.parc-det summary::-webkit-details-marker{display:none}
+.parc-det summary::before{content:"▸ ";display:inline-block;transition:.15s}
+.parc-det[open] summary::before{transform:rotate(90deg)}
+.parc-det summary:hover{color:var(--acc)}
+.pl-lista{margin-top:9px;max-height:230px;overflow-y:auto}
+.pl{display:grid;grid-template-columns:44px 1fr auto auto;gap:8px;align-items:center;
+  padding:6px 0;border-bottom:1px solid var(--line);font-size:11.5px}
+.pl:last-child{border-bottom:none}
+.pl-n{font-weight:800;color:var(--mut);font-variant-numeric:tabular-nums}
+.pl.ok .pl-n{color:var(--pos)}
+.pl-o{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl-v{font-variant-numeric:tabular-nums;color:var(--dim)}
 .parc-ft{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
 .parc-ft .btn{flex:1 1 130px}
 </style>
@@ -1344,6 +1358,13 @@ function migraDB(){
   DB.fatPag=DB.fatPag||{};
   DB.contas.forEach(c=>{c.banco=c.banco||''});
   DB.cartoes.forEach(c=>{c.banco=c.banco||''});
+  /* Série importada da planilha vem com as parcelas daquele arquivo só. Uma
+     vez por base, completa todas até a última, para a parcela do mês aparecer
+     sozinha. Depois disso quem manda é o usuário: parcela apagada nao volta. */
+  if(!DB.parcCompletas&&typeof completaTodasParcelas==='function'){
+    DB.parcCompletas=true;
+    try{completaTodasParcelas()}catch(e){}
+  }
   DB.metas.forEach(m=>{m.aportes=m.aportes||[];m.etapas=m.etapas||[]});
 }
 function load(){
@@ -2615,53 +2636,71 @@ function parcelamentos(){
   const chave=(x,pre)=>x.serie||(pre+'|'+(x.cartaoId||'')+'|'+String(x.desc||'').replace(/\s*\(\d+\/\d+\)\s*$/,'')+'|'+x.totparc);
   fatAtivos().filter(f=>(f.totparc||1)>1).forEach(f=>{
     const k=chave(f,'fat');
-    (g[k]=g[k]||{tipo:'cartao',cartaoId:f.cartaoId,desc:f.desc,tot:f.totparc,itens:[]}).itens.push({mk:f.mesRef,valor:f.valor,parcela:f.parcela});
+    (g[k]=g[k]||{tipo:'cartao',cartaoId:f.cartaoId,desc:f.desc,tot:f.totparc,itens:[]})
+      .itens.push({id:f.id,mk:f.mesRef,valor:f.valor,parcela:f.parcela});
   });
   alive(DB.cp).filter(c=>(c.totparc||1)>1).forEach(c=>{
     const k=chave(c,'cp');
     (g[k]=g[k]||{tipo:'conta',cartaoId:'',desc:String(c.desc).replace(/\s*\(\d+\/\d+\)\s*$/,''),tot:c.totparc,itens:[]})
-      .itens.push({mk:mesDe(c.venc),valor:c.valor,parcela:c.parcela,pago:c.situacao==='Pago'});
+      .itens.push({id:c.id,mk:mesDe(c.venc),valor:c.valor,parcela:c.parcela,
+                   pago:c.situacao==='Pago',pagoEm:c.pagoEm||'',onde:'contas a pagar'});
   });
-  /* A série importada da planilha costuma vir pela metade: só as parcelas que
-     estavam naquele arquivo. Então o andamento sai do NÚMERO da parcela, não
-     da contagem de linhas, e o fim sai da conta (1ª parcela + tot − 1). */
+  /* mapaPagLegado percorre o razão inteiro: uma vez por cartão, não por parcela */
+  const legado={};
+  const legadoDe=cid=>(legado[cid]=legado[cid]||mapaPagLegado(cid));
   return Object.keys(g).map(k=>{
     const s=g[k];
     s.chave=k;
     s.itens.sort((a,b)=>(a.parcela||0)-(b.parcela||0));
     s.valor=s.itens[0]?s.itens[0].valor:0;
     s.total=Math.round(s.valor*s.tot*100)/100;
+    /* A parcela do cartão é paga junto com a fatura do mês dela. Dar baixa na
+       fatura baixa todas as parcelas que estavam dentro: é o mesmo dinheiro. */
     if(s.tipo==='cartao'){
-      const passadas=s.itens.filter(x=>x.mk<mesAtual).map(x=>x.parcela||0);
-      s.pagas=Math.min(s.tot,passadas.length?Math.max.apply(null,passadas):0);
-    } else s.pagas=s.itens.filter(x=>x.pago).length;
+      const nome=nomeCartao(s.cartaoId)||'cartão';
+      s.itens.forEach(x=>{
+        const p=pagFatura(s.cartaoId,x.mk), leg=p?null:legadoDe(s.cartaoId)[x.mk];
+        x.pago=!!(p||leg);
+        x.pagoEm=p?p.data:(leg?leg.data:'');
+        x.onde='fatura de '+mesLabel(x.mk)+' · '+nome;
+      });
+    }
+    s.pagas=s.itens.filter(x=>x.pago).length;
     s.falta=Math.round(s.valor*Math.max(0,s.tot-s.pagas)*100)/100;
     const p1=s.itens[0];
     s.fim=p1?addMes(p1.mk,s.tot-(p1.parcela||1)):'';
     s.noMes=s.itens.filter(x=>x.mk===mesAtual);
+    s.proxima=s.itens.find(x=>!x.pago)||null;
     /* série que veio da planilha traz só as parcelas daquele arquivo: o resto
        ainda não existe em lugar nenhum, e por isso não cai em mês nenhum */
     const ult=s.itens[s.itens.length-1];
     s.ultParc=ult?(ult.parcela||s.itens.length):0;
     s.ultMk=ult?ult.mk:'';
     s.faltamLancar=Math.max(0,s.tot-s.ultParc);
+    /* as que ainda dá para agendar: as outras cairiam em mês já fechado */
+    s.faltamAgenda=0;
+    for(let p=s.ultParc+1;p<=s.tot;p++)
+      if(addMes(s.ultMk,p-s.ultParc)>=mesDeHoje())s.faltamAgenda++;
     return s;
   }).filter(s=>s.pagas<s.tot).sort((a,b)=>(b.falta-a.falta));
 }
-/* Completa a série até a última parcela: continua do último mês lançado,
-   um mês por parcela. Só cria o que falta para a frente, nunca reescreve o
-   que já está lá. */
-function gerarFaltantes(chave){
-  const s=parcelamentos().find(x=>x.chave===chave);
-  if(!s||!s.faltamLancar)return toast('Esta série já está completa');
-  if(!confirm('Lançar '+s.faltamLancar+' parcela(s) de '+brl(s.valor)+' de "'+s.desc+'", uma por mês, até '+mesLabel(s.fim)+'?'))return;
+/* Cria as parcelas que faltam de UMA série, continuando do último mês lançado.
+   Nunca cria em mês já fechado: aquele mês foi conferido contra o extrato, e
+   inventar parcela lá mudaria um total que já bate. Devolve quantas nasceram.
+   Não grava nem redesenha: quem chama decide. */
+function criaFaltantes(s){
+  if(!s||!s.faltamAgenda)return 0;
   const modelo=s.tipo==='cartao'
     ? fatAtivos().find(f=>f.mesRef===s.ultMk&&(f.parcela||1)===s.ultParc&&f.cartaoId===s.cartaoId&&f.desc===s.desc)
     : alive(DB.cp).find(c=>mesDe(c.venc)===s.ultMk&&(c.parcela||1)===s.ultParc);
-  if(!modelo)return toast('Não achei a última parcela para continuar de lá');
+  if(!modelo)return 0;
   const serie=modelo.serie||uid();
+  const piso=mesDeHoje();
+  let n=0;
   for(let p=s.ultParc+1;p<=s.tot;p++){
     const mk=addMes(s.ultMk,p-s.ultParc);
+    if(mk<piso)continue;
+    n++;
     if(s.tipo==='cartao')
       DB.fat.push({...modelo,id:uid(),mesRef:mk,parcela:p,totparc:s.tot,serie,deletedAt:null});
     else{
@@ -2671,49 +2710,96 @@ function gerarFaltantes(chave){
         situacao:'Pendente',pagoEm:null,lancId:null,parcela:p,totparc:s.tot,serie,deletedAt:null});
     }
   }
-  if(!modelo.serie)modelo.serie=serie;
-  save();render();toast(s.faltamLancar+' parcela(s) lançadas até '+mesLabel(s.fim));
+  /* carimba a série nas parcelas antigas também: se só a modelo levar o id, a
+     série se parte em duas na hora de agrupar (as sem id de um lado, as novas
+     do outro) */
+  s.itens.forEach(x=>{
+    const r=(s.tipo==='cartao'?DB.fat:DB.cp).find(y=>y.id===x.id);
+    if(r&&!r.serie)r.serie=serie;
+  });
+  return n;
+}
+function gerarFaltantes(chave){
+  const s=parcelamentos().find(x=>x.chave===chave);
+  if(!s||!s.faltamAgenda)return toast('Não há parcela para agendar daqui para a frente');
+  if(!confirm('Lançar '+s.faltamAgenda+' parcela(s) de '+brl(s.valor)+' de "'+s.desc+'", uma por mês, até '+mesLabel(s.fim)+'?'))return;
+  const n=criaFaltantes(s);
+  if(!n)return toast('Não achei a última parcela para continuar de lá');
+  save();render();toast(n+' parcela(s) lançadas até '+mesLabel(s.fim));
+}
+/* Uma vez por base: completa toda série que veio pela metade da planilha,
+   para que a parcela do mês apareça sozinha daqui para a frente. Roda só na
+   primeira carga; depois disso quem manda é o usuário, e parcela apagada de
+   propósito não volta. */
+function completaTodasParcelas(){
+  let n=0,series=0;
+  parcelamentos().forEach(s=>{const q=criaFaltantes(s);if(q){n+=q;series++}});
+  return {parcelas:n,series};
+}
+/* Linha do tempo da série: qual parcela, em que fatura entrou, e se aquela
+   fatura já foi paga. É por aí que a baixa acontece: paga a fatura de julho,
+   a parcela que estava nela fica paga junto. */
+function parcelasHTML(s){
+  const linhas=s.itens.map(x=>`<div class="pl ${x.pago?'ok':''}">
+    <span class="pl-n">${x.parcela}/${s.tot}</span>
+    <span class="pl-o">${esc(x.onde||'')}</span>
+    <span class="pl-v">${brl(x.valor)}</span>
+    <span class="pl-s">${x.pago
+      ?'<span class="chip chip-ok">paga'+(x.pagoEm?' '+fmtBR(x.pagoEm):'')+'</span>'
+      :'<span class="chip chip-warn">a pagar</span>'}</span></div>`).join('');
+  const naoLancadas=s.faltamLancar
+    ? `<div class="pl"><span class="pl-n">${s.ultParc+1}–${s.tot}</span>
+        <span class="pl-o muted">${s.faltamAgenda?'ainda não lançadas em mês nenhum':'cairiam em meses já fechados'}</span>
+        <span class="pl-v muted">${brl(s.valor)}</span>
+        <span class="pl-s"><span class="chip chip-bad">sem mês</span></span></div>`:'';
+  return `<details class="parc-det"><summary>ver as ${s.tot} parcelas, uma a uma</summary>
+    <div class="pl-lista">${linhas}${naoLancadas}</div></details>`;
 }
 function painelParcelas(){
   const L=parcelamentos();
   const faltaTot=L.reduce((a,s)=>a+s.falta,0);
   const mesTot=L.reduce((a,s)=>a+s.noMes.reduce((b,x)=>b+x.valor,0),0);
+  const pagasMes=L.reduce((a,s)=>a+s.noMes.filter(x=>x.pago).length,0);
   const mesCurto=mesLabel(mesAtual).split(' ')[0];
   const topo=`<div class="stats">
     <div class="stat"><div class="k">Séries abertas</div><div class="v">${L.length}</div><div class="sub">parcelamentos em andamento</div></div>
-    <div class="stat"><div class="k">Compromisso em ${mesCurto}</div><div class="v goldtxt">${brl(mesTot)}</div><div class="sub">soma das parcelas do mês</div></div>
+    <div class="stat"><div class="k">Compromisso em ${mesCurto}</div><div class="v goldtxt">${brl(mesTot)}</div><div class="sub">${pagasMes?pagasMes+' parcela(s) já baixada(s) com a fatura':'soma das parcelas do mês'}</div></div>
     <div class="stat"><div class="k">Falta pagar</div><div class="v ${faltaTot?'neg':'pos'}">${brl(faltaTot)}</div><div class="sub">até a última parcela</div></div>
   </div>`;
   if(!L.length)return `<div class="panel"><div class="panel-head"><h2>Parcelamentos
-      <small>cadastre uma vez; a parcela do mês aparece sozinha daqui para a frente</small></h2></div>
+      <small>a parcela baixa sozinha quando você paga a fatura do mês dela</small></h2></div>
     <div class="empty">Nenhum parcelamento aberto.<br>Clique em <b>＋ Conta</b>, escolha <b>Parcelado</b> e diga em quantas vezes.</div></div>`;
   const cards=L.map(s=>{
     const feita=Math.min(s.pagas,s.tot), pctP=Math.round(100*feita/s.tot);
     const noMes=s.noMes.reduce((a,x)=>a+x.valor,0);
-    const prox=s.noMes.length?s.noMes[0].parcela:feita+1;
+    const noMesPago=s.noMes.length&&s.noMes.every(x=>x.pago);
     const onde=s.tipo==='cartao'?'💳 fatura do '+(nomeCartao(s.cartaoId)||'cartão'):'📄 contas a pagar';
+    const px=s.proxima;
     return `<div class="parc">
       <div class="parc-t">${esc(s.desc)}</div>
       <div class="parc-o">${esc(onde)}</div>
       <div class="parc-n"><b>${brl(s.valor)}</b><span>por mês</span></div>
       <div class="parc-bar"><i style="width:${pctP}%"></i></div>
-      <div class="parc-o">Parcela <b style="color:var(--txt)">${Math.min(prox,s.tot)} de ${s.tot}</b> · ${feita} já ${feita===1?'paga':'pagas'}</div>
+      <div class="parc-o">${feita} de ${s.tot} ${feita===1?'parcela paga':'parcelas pagas'}${px
+        ?` · próxima é a <b style="color:var(--txt)">${px.parcela}/${s.tot}</b>, ${esc(px.onde||'')}`:''}</div>
       <div style="margin-top:11px">
-        <div class="parc-lin"><span>Cai em ${mesCurto}</span><b class="${noMes?'goldtxt':'muted'}">${noMes?brl(noMes):'nada'}</b></div>
+        <div class="parc-lin"><span>Cai em ${mesCurto}</span><b class="${noMes?(noMesPago?'pos':'goldtxt'):'muted'}">${noMes?brl(noMes)+(noMesPago?' · paga':''):'nada'}</b></div>
         <div class="parc-lin"><span>Falta pagar</span><b>${brl(s.falta)}</b></div>
         <div class="parc-lin"><span>Total da compra</span><b>${brl(s.total)}</b></div>
         <div class="parc-lin"><span>Última parcela</span><b>${mesLabel(s.fim)}</b></div>
       </div>
-      ${s.faltamLancar?`<div class="parc-av">Só ${s.ultParc} de ${s.tot} parcelas estão lançadas.
-        As outras ${s.faltamLancar} ainda não existem em mês nenhum.</div>`:''}
+      ${parcelasHTML(s)}
+      ${s.faltamLancar?`<div class="parc-av">Só ${s.ultParc} de ${s.tot} parcelas estão lançadas.${s.faltamAgenda
+        ?` As outras ${s.faltamLancar} ainda não existem em mês nenhum.`
+        :` As outras ${s.faltamLancar} cairiam em meses já fechados, e o app não mexe em mês fechado.`}</div>`:''}
       <div class="parc-ft">
-        ${s.faltamLancar?`<button class="btn btn-sm btn-gold" style="flex:1;justify-content:center"
-          onclick="gerarFaltantes('${esc(s.chave)}')">Lançar as ${s.faltamLancar} que faltam</button>`:''}
+        ${s.faltamAgenda?`<button class="btn btn-sm btn-gold" style="flex:1;justify-content:center"
+          onclick="gerarFaltantes('${esc(s.chave)}')">Lançar as ${s.faltamAgenda} que faltam</button>`:''}
         ${s.tipo==='cartao'?`<button class="btn btn-sm btn-ghost" style="flex:1;justify-content:center"
           onclick="filtroCartao='${s.cartaoId}';go('cartoes')">Ver na fatura</button>`:''}</div>
     </div>`}).join('');
   return topo+`<div class="panel"><div class="panel-head"><h2>Parcelamentos
-      <small>cadastre uma vez; a parcela do mês aparece sozinha daqui para a frente</small></h2>
+      <small>a parcela baixa sozinha quando você paga a fatura do mês dela</small></h2>
       <span class="goldtxt" style="font-variant-numeric:tabular-nums;font-weight:700">${brl(faltaTot)} a vencer</span></div>
     <div class="parc-g">${cards}</div></div>`;
 }

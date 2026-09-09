@@ -677,6 +677,14 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .pl.ok .pl-n{color:var(--pos)}
 .pl-o{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pl-v{font-variant-numeric:tabular-nums;color:var(--dim)}
+.aba-txt{font-size:12px;color:var(--mut);margin:-4px 0 14px;padding-left:2px}
+.tabs .cnt.alerta{background:color-mix(in srgb,var(--neg) 20%,transparent);color:var(--neg)}
+.conf{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;margin-bottom:9px;
+  border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:0 10px 10px 0;background:var(--panel2)}
+.conf.grave{border-left-color:var(--neg)}
+.conf-b{flex:1;min-width:0;font-size:12.5px;line-height:1.5}
+.conf-b b{color:var(--txt)}
+.conf-b div{color:var(--dim);margin-top:4px}
 .parc-nota{margin-top:11px;padding:9px 11px;border-radius:8px;font-size:11.5px;line-height:1.45;
   background:color-mix(in srgb,var(--pos) 10%,transparent);color:var(--pos)}
 .parc-ft{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
@@ -1358,6 +1366,7 @@ function migraDB(){
     });
   /* pagamento de fatura por cartao e mes: 'cartaoId|2026-08' -> {data,valor,...} */
   DB.fatPag=DB.fatPag||{};
+  DB.cp.forEach(c=>{if(c.fatId===undefined)c.fatId=null});
   DB.contas.forEach(c=>{c.banco=c.banco||''});
   DB.cartoes.forEach(c=>{c.banco=c.banco||''});
   /* Série importada da planilha vem com as parcelas daquele arquivo só. Uma
@@ -2566,22 +2575,152 @@ function viewCartoes(){
   ${futHtml?`<div class="panel"><div class="panel-head"><h2>Próximas faturas<small>parcelas já comprometidas</small></h2></div><table><tbody>${futHtml}</tbody></table></div>`:''}`;
 }
 
+/* ---------- Conta a pagar ligada à compra no cartão ----------
+   A mesma dívida às vezes está nos dois lugares: cadastrada em "A pagar" e
+   também na fatura, porque veio no extrato do cartão. Ligar os dois faz o app
+   tratar como uma coisa só: a conta baixa quando a fatura é paga, e o valor
+   não conta duas vezes. */
+const cpNaFatura=c=>c.fatId?fatAtivos().find(f=>f.id===c.fatId)||null:null;
+/* candidatas: mesmo mês e mesmo valor, sem vínculo ainda */
+function sugereVinculo(c){
+  if(c.fatId)return [];
+  const mk=mesDe(c.venc||'');
+  return fatAtivos().filter(f=>f.mesRef===mk&&Math.abs(f.valor-c.valor)<0.01
+    &&!alive(DB.cp).some(x=>x.fatId===f.id));
+}
+function vincularCpFat(cpId,fatId){
+  const c=DB.cp.find(x=>x.id===cpId), f=DB.fat.find(x=>x.id===fatId);
+  if(!c||!f)return;
+  c.fatId=fatId;
+  if(c.situacao==='Pago'&&c.lancId){
+    /* a fatura é que sai do caixa: o lançamento avulso da baixa vira duplicidade */
+    const l=DB.lanc.find(x=>x.id===c.lancId); if(l)l.deletedAt=Date.now();
+    c.lancId=null;
+  }
+  c.situacao='Pendente'; c.pagoEm=null;
+  save();render();toast('Ligada à fatura de '+mesLabel(f.mesRef)+' do '+(nomeCartao(f.cartaoId)||'cartão'));
+}
+function desvincularCpFat(cpId){
+  const c=DB.cp.find(x=>x.id===cpId); if(!c)return;
+  c.fatId=null; save();render();toast('Vínculo desfeito');
+}
+/* conta ligada à fatura está paga quando aquela fatura foi paga */
+function cpPagaPelaFatura(c){
+  const f=cpNaFatura(c); if(!f)return null;
+  return pagFatura(f.cartaoId,f.mesRef)||pagFatLegado(f.cartaoId,f.mesRef)||null;
+}
+
+/* ---------- Conferência: duplicidade ----------
+   Feita em cima do que está gravado, sem adivinhação: só aponta o que se
+   repete de verdade e deixa a decisão com quem sabe o que aconteceu. */
+function conferirDuplicidade(){
+  const av=[];
+  /* 1. o mesmo pagamento de fatura lançado duas vezes */
+  DB.cartoes.forEach(k=>{
+    if(!k.codFat)return;
+    const por={};
+    lancsAtivos().filter(l=>l.cod===k.codFat&&(l.saida||0)>0)
+      .forEach(l=>{const m=mesDe(l.data);(por[m]=por[m]||[]).push(l)});
+    Object.keys(por).sort().forEach(m=>{
+      const g=por[m]; if(g.length<2)return;
+      const iguais=g.filter(x=>g.filter(y=>Math.abs(y.saida-x.saida)<0.01).length>1);
+      av.push({tipo:iguais.length?'grave':'olhar',
+        titulo:(iguais.length?'Pagamento repetido':'Mais de um pagamento')+' da fatura do '+k.nome+' em '+mesLabel(m),
+        txt:g.map(x=>brl(x.saida)+' em '+fmtBR(x.data)).join(' · ')
+          +(iguais.length?' — dois lançamentos do mesmo valor no mesmo mês.'
+                         :' — pode ser pagamento em duas partes, ou um lançamento a mais.'),
+        ids:g.map(x=>x.id)});
+    });
+  });
+  /* 2. compra idêntica repetida na mesma fatura */
+  const chave={};
+  fatAtivos().forEach(f=>{
+    const k=[f.cartaoId,f.mesRef,String(f.desc||'').toUpperCase(),f.valor,f.parcela||1].join('|');
+    (chave[k]=chave[k]||[]).push(f);
+  });
+  Object.keys(chave).forEach(k=>{
+    const g=chave[k]; if(g.length<2)return;
+    const f=g[0];
+    av.push({tipo:'olhar',
+      titulo:g.length+'x a mesma compra na fatura de '+mesLabel(f.mesRef),
+      txt:esc(f.desc)+' · '+brl(f.valor)+' no '+(nomeCartao(f.cartaoId)||'cartão')
+        +' — pode ser compra repetida de verdade, ou a fatura importada duas vezes.',
+      ids:g.map(x=>x.id),fat:true});
+  });
+  /* 3. a mesma parcela da série em dois meses — vale para série encerrada também */
+  const ser={};
+  fatAtivos().filter(f=>(f.totparc||1)>1).forEach(f=>{
+    const k=f.serie||['s',f.cartaoId,String(f.desc||'').toUpperCase(),f.totparc].join('|');
+    (ser[k]=ser[k]||[]).push(f);
+  });
+  Object.keys(ser).forEach(k=>{
+    const g=ser[k], por={};
+    g.forEach(f=>{(por[f.parcela||1]=por[f.parcela||1]||[]).push(f)});
+    Object.keys(por).forEach(p=>{
+      const r=por[p]; if(r.length<2)return;
+      av.push({tipo:'grave',titulo:'Parcela '+p+'/'+r[0].totparc+' de "'+r[0].desc+'" aparece em '+r.length+' meses',
+        txt:r.map(x=>mesLabel(x.mesRef)).join(' e ')+' — uma delas está com o número errado, ou é lançamento duplicado.',
+        ids:r.map(x=>x.id),fat:true});
+    });
+  });
+  /* 4. conta a pagar que também está na fatura, sem estar ligada */
+  alive(DB.cp).forEach(c=>{
+    const s=sugereVinculo(c);
+    if(!s.length)return;
+    const f=s[0];
+    av.push({tipo:'olhar',titulo:'"'+c.desc+'" pode estar em dobro',
+      txt:'Está em A pagar e também na fatura de '+mesLabel(f.mesRef)+' do '+(nomeCartao(f.cartaoId)||'cartão')
+        +', pelo mesmo valor. Se for a mesma dívida, ligue as duas para não contar duas vezes.',
+      acao:`<button class="btn btn-sm btn-gold" onclick="vincularCpFat('${c.id}','${f.id}')">Ligar as duas</button>`});
+  });
+  return av;
+}
+function painelConferencia(){
+  const av=conferirDuplicidade();
+  const graves=av.filter(a=>a.tipo==='grave').length;
+  if(!av.length)return `<div class="panel"><div class="panel-head"><h2>Conferência
+      <small>procura pagamento repetido, compra em dobro e parcela com número trocado</small></h2></div>
+    <div class="empty">Nada repetido por aqui. ✓</div></div>`;
+  return `<div class="panel"><div class="panel-head"><h2>Conferência
+      <small>o app procurou repetição; a decisão é sua, ele não apaga nada sozinho</small></h2>
+      <span class="chip ${graves?'chip-bad':'chip-warn'}">${av.length} ponto(s) para olhar</span></div>
+    ${av.map(a=>`<div class="conf ${a.tipo}">
+      <div class="conf-b"><b>${a.titulo}</b><div>${a.txt}</div></div>
+      ${a.acao||''}</div>`).join('')}
+    <div class="muted" style="font-size:11.5px;padding:4px 0 16px">
+      “Pode ser” quer dizer que o app não tem como saber: dois cafés de R$ 10 no mesmo dia
+      são duas compras de verdade. Confira no extrato antes de apagar.</div></div>`;
+}
+
 /* ============================ CONTAS A PAGAR ============================ */
-let cpAba='abertas';
+let cpAba='parcelas';
+const CP_ABAS=[
+  ['parcelas','Parcelamentos','compras que você dividiu em várias vezes'],
+  ['abertas','A pagar','contas com data marcada que ainda vão sair'],
+  ['pagas','Já paguei','o que saiu, mês a mês'],
+  ['conferir','Conferência','o app procura lançamento repetido']
+];
 function viewPagar(){
   const hoje=iso(new Date());
   const list=alive(DB.cp);
-  const abertas=list.filter(c=>c.situacao!=='Pago').sort((a,b)=>(a.venc||'')<(b.venc||'')?-1:1);
-  const pagas=list.filter(c=>c.situacao==='Pago');
+  /* conta ligada à fatura não é cobrada aqui: quem paga é a fatura */
+  const naFatura=list.filter(c=>cpNaFatura(c));
+  const proprias=list.filter(c=>!cpNaFatura(c));
+  const abertas=proprias.filter(c=>c.situacao!=='Pago').sort((a,b)=>(a.venc||'')<(b.venc||'')?-1:1);
+  const pagas=proprias.filter(c=>c.situacao==='Pago');
   const atras=abertas.filter(c=>c.venc&&c.venc<hoje);
-  /* uma conta paga pertence ao mês em que o pagamento aconteceu, não ao do vencimento */
   const mesPago=c=>mesDe(c.pagoEm||c.venc||'');
   const noMes=pagas.filter(c=>mesPago(c)===mesAtual);
+  const P=parcelamentos();
+  const parcMes=P.reduce((a,s)=>a+s.noMes.reduce((b,x)=>b+x.valor,0),0);
 
   const linha=(c,paga)=>{
     const late=!paga&&c.venc&&c.venc<hoje;
+    const sug=paga?[]:sugereVinculo(c);
     return `<tr>
-      <td><b>${esc(c.desc)}</b>${c.obs?`<div class="muted" style="font-size:11px">${esc(c.obs)}</div>`:''}</td>
+      <td><b>${esc(c.desc)}</b>${c.obs?`<div class="muted" style="font-size:11px">${esc(c.obs)}</div>`:''}
+        ${sug.length?`<div class="muted" style="font-size:11px">também está na fatura de ${mesLabel(sug[0].mesRef)}
+          · <button class="lnk-teto" onclick="vincularCpFat('${c.id}','${sug[0].id}')">ligar as duas</button></div>`:''}</td>
       <td class="num dim">${fmtBR(c.venc)}</td>
       ${paga?`<td class="num dim">${fmtBR(c.pagoEm||c.venc)}</td>`:''}
       <td class="num">${brl(c.valor)}</td>
@@ -2593,11 +2732,25 @@ function viewPagar(){
         <button class="iconbtn" onclick="openCp('${c.id}')">✎</button> <button class="iconbtn del" onclick="delItem('cp','${c.id}')">🗑</button></td>
     </tr>`};
 
-  const tabelaAbertas=`<div class="tbl-scroll"><table>
-    <thead><tr><th>Descrição</th><th class="num">Vencimento</th><th class="num">Valor</th><th>Recorrência</th><th>Situação</th><th></th></tr></thead>
-    <tbody>${abertas.map(c=>linha(c,false)).join('')||'<tr><td colspan="6"><div class="empty">Nada em aberto. 🎉</div></td></tr>'}</tbody></table></div>`;
+  const tabelaAbertas=`<div class="panel">
+    <div class="panel-head"><h2>A pagar<small>marcar “Pagar” já lança a saída no extrato</small></h2></div>
+    <div class="tbl-scroll"><table>
+    <thead><tr><th>O que é</th><th class="num">Vence em</th><th class="num">Valor</th><th>Repete</th><th>Situação</th><th></th></tr></thead>
+    <tbody>${abertas.map(c=>linha(c,false)).join('')||'<tr><td colspan="6"><div class="empty">Nada em aberto. 🎉</div></td></tr>'}</tbody></table></div></div>`;
 
-  /* arquivo: agrupado pelo mês do pagamento, o mais recente em cima */
+  const ligadas=naFatura.length?`<div class="panel"><div class="panel-head"><h2>Ligadas à fatura do cartão
+      <small>quem paga essas é a fatura, por isso elas não aparecem na lista acima</small></h2></div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>O que é</th><th>Onde está</th><th class="num">Valor</th><th>Situação</th><th></th></tr></thead>
+      <tbody>${naFatura.map(c=>{const f=cpNaFatura(c),p=cpPagaPelaFatura(c);
+        return `<tr><td><b>${esc(c.desc)}</b></td>
+          <td class="dim">fatura de ${mesLabel(f.mesRef)} · ${esc(nomeCartao(f.cartaoId)||'cartão')}</td>
+          <td class="num">${brl(c.valor)}</td>
+          <td>${p?`<span class="chip chip-ok">paga com a fatura${p.data?' em '+fmtBR(p.data):''}</span>`
+                :'<span class="chip chip-warn">sai quando a fatura for paga</span>'}</td>
+          <td class="num"><button class="btn btn-sm btn-ghost" onclick="desvincularCpFat('${c.id}')">Desligar</button></td></tr>`}).join('')}
+      </tbody></table></div></div>`:'';
+
   const porMes={};
   pagas.forEach(c=>{const m=mesPago(c)||'sem data';(porMes[m]=porMes[m]||[]).push(c)});
   const meses=Object.keys(porMes).sort().reverse();
@@ -2609,26 +2762,38 @@ function viewPagar(){
         <small>${g.length} conta(s) quitada(s)</small></h2>
         <span class="goldtxt" style="font-variant-numeric:tabular-nums;font-weight:700">${brl(tot)}</span></div>
       <div class="tbl-scroll"><table>
-        <thead><tr><th>Descrição</th><th class="num">Vencimento</th><th class="num">Pago em</th><th class="num">Valor</th><th>Recorrência</th><th></th></tr></thead>
+        <thead><tr><th>O que é</th><th class="num">Vencia em</th><th class="num">Paguei em</th><th class="num">Valor</th><th>Repete</th><th></th></tr></thead>
         <tbody>${g.map(c=>linha(c,true)).join('')}</tbody></table></div></div>`;
   }).join(''):'<div class="empty">Nenhuma conta paga ainda.</div>';
 
-  return `<div class="stats">
-    <div class="stat"><div class="k">Em aberto</div><div class="v">${abertas.length}</div><div class="sub">${brl(abertas.reduce((s,c)=>s+c.valor,0))}</div></div>
-    <div class="stat"><div class="k">Atrasadas</div><div class="v ${atras.length?'neg':''}">${atras.length}</div><div class="sub">${brl(atras.reduce((s,c)=>s+c.valor,0))}</div></div>
-    <div class="stat"><div class="k">Pagas em ${mesLabel(mesAtual).split(' ')[0]}</div><div class="v pos">${noMes.length}</div><div class="sub">${brl(noMes.reduce((s,c)=>s+c.valor,0))}</div></div>
-    <div class="stat"><div class="k">Pagas no total</div><div class="v">${pagas.length}</div><div class="sub">${brl(pagas.reduce((s,c)=>s+c.valor,0))}</div></div>
-  </div>
-  <nav class="tabs">
-    <button class="tab ${cpAba==='abertas'?'active':''}" onclick="cpAba='abertas';render()">A pagar <span class="cnt">${abertas.length}</span></button>
-    <button class="tab ${cpAba==='pagas'?'active':''}" onclick="cpAba='pagas';render()">Arquivo de pagas <span class="cnt">${pagas.length}</span></button>
-    <button class="tab ${cpAba==='parcelas'?'active':''}" onclick="cpAba='parcelas';render()">Parcelamentos <span class="cnt">${parcelamentos().length}</span></button>
-    <button class="btn btn-sm btn-gold" style="margin-left:auto" onclick="openCp()">＋ Conta</button>
-    ${cpAba==='abertas'?'<button class="btn btn-sm" onclick="gerarRecorrentes()">Gerar próximas recorrentes</button>':''}
+  const nAvisos=conferirDuplicidade().length;
+  const stats=cpAba==='parcelas'
+    ?''   /* o painel de parcelamentos traz a própria faixa */
+    :`<div class="stats">
+      <div class="stat"><div class="k">Ainda vou pagar</div><div class="v">${abertas.length}</div><div class="sub">${brl(abertas.reduce((s,c)=>s+c.valor,0))} no total</div></div>
+      <div class="stat"><div class="k">Passou do prazo</div><div class="v ${atras.length?'neg':'pos'}">${atras.length}</div><div class="sub">${atras.length?brl(atras.reduce((s,c)=>s+c.valor,0)):'nada vencido'}</div></div>
+      <div class="stat"><div class="k">Parcelas em ${mesLabel(mesAtual).split(' ')[0]}</div><div class="v goldtxt">${brl(parcMes)}</div><div class="sub">${P.length} parcelamento(s) em andamento</div></div>
+      <div class="stat"><div class="k">Paguei em ${mesLabel(mesAtual).split(' ')[0]}</div><div class="v pos">${noMes.length}</div><div class="sub">${brl(noMes.reduce((s,c)=>s+c.valor,0))}</div></div>
+    </div>`;
+
+  const cont={parcelas:()=>parcelamentos().length,abertas:()=>abertas.length,
+              pagas:()=>pagas.length,conferir:()=>nAvisos};
+  const abas=CP_ABAS.map(([id,lbl])=>{
+    const n=cont[id]();
+    return `<button class="tab ${cpAba===id?'active':''}" onclick="cpAba='${id}';render()">${lbl}${
+      n?`<span class="cnt ${id==='conferir'?'alerta':''}">${n}</span>`:''}</button>`}).join('');
+  const explica=(CP_ABAS.find(a=>a[0]===cpAba)||[])[2]||'';
+
+  return `${stats}
+  <nav class="tabs">${abas}
+    <button class="btn btn-sm btn-gold" style="margin-left:auto" onclick="openCp()">＋ Nova conta</button>
+    ${cpAba==='abertas'?'<button class="btn btn-sm" onclick="gerarRecorrentes()">Gerar as próximas que repetem</button>':''}
   </nav>
-  ${cpAba==='abertas'
-    ?`<div class="panel"><div class="panel-head"><h2>Contas a pagar<small>lembretes de vencimento — “Pagar” já cria o lançamento no razão</small></h2></div>${tabelaAbertas}</div>`
-    :cpAba==='parcelas'?painelParcelas():arquivo}`;
+  <div class="aba-txt">${explica}</div>
+  ${cpAba==='abertas'?tabelaAbertas+ligadas
+   :cpAba==='parcelas'?painelParcelas()
+   :cpAba==='conferir'?painelConferencia()
+   :arquivo}`;
 }
 /* Parcelamentos em andamento: as compras do cartão em série (o dentista em 16x)
    e as contas a pagar que foram criadas parceladas. Cada série vira uma linha,

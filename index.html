@@ -677,6 +677,8 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .pl.ok .pl-n{color:var(--pos)}
 .pl-o{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pl-v{font-variant-numeric:tabular-nums;color:var(--dim)}
+.parc-nota{margin-top:11px;padding:9px 11px;border-radius:8px;font-size:11.5px;line-height:1.45;
+  background:color-mix(in srgb,var(--pos) 10%,transparent);color:var(--pos)}
 .parc-ft{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
 .parc-ft .btn{flex:1 1 130px}
 </style>
@@ -2665,22 +2667,32 @@ function parcelamentos(){
         x.onde='fatura de '+mesLabel(x.mk)+' · '+nome;
       });
     }
-    s.pagas=s.itens.filter(x=>x.pago).length;
+    /* Parcela que não está lançada em lugar nenhum. O mês dela sai por conta:
+       a partir de qualquer parcela conhecida, uma por mês. Se esse mês já
+       passou, ela foi paga antes da série entrar no app (a planilha trouxe só
+       um pedaço do parcelamento). Se ainda vai chegar, dá para agendar. */
+    const ref=s.itens[0];
+    s.faltantes=[];
+    if(ref){
+      const tem={}; s.itens.forEach(x=>tem[x.parcela||0]=1);
+      for(let n=1;n<=s.tot;n++){
+        if(tem[n])continue;
+        s.faltantes.push({parcela:n,mk:addMes(ref.mk,n-(ref.parcela||1))});
+      }
+    }
+    const piso=mesDeHoje();
+    s.antigas=s.faltantes.filter(x=>x.mk<piso);
+    s.agenda=s.faltantes.filter(x=>x.mk>=piso);
+    s.faltamLancar=s.faltantes.length;
+    s.faltamAgenda=s.agenda.length;
+    s.pagas=s.itens.filter(x=>x.pago).length+s.antigas.length;
     s.falta=Math.round(s.valor*Math.max(0,s.tot-s.pagas)*100)/100;
-    const p1=s.itens[0];
-    s.fim=p1?addMes(p1.mk,s.tot-(p1.parcela||1)):'';
+    s.fim=ref?addMes(ref.mk,s.tot-(ref.parcela||1)):'';
     s.noMes=s.itens.filter(x=>x.mk===mesAtual);
     s.proxima=s.itens.find(x=>!x.pago)||null;
-    /* série que veio da planilha traz só as parcelas daquele arquivo: o resto
-       ainda não existe em lugar nenhum, e por isso não cai em mês nenhum */
     const ult=s.itens[s.itens.length-1];
     s.ultParc=ult?(ult.parcela||s.itens.length):0;
     s.ultMk=ult?ult.mk:'';
-    s.faltamLancar=Math.max(0,s.tot-s.ultParc);
-    /* as que ainda dá para agendar: as outras cairiam em mês já fechado */
-    s.faltamAgenda=0;
-    for(let p=s.ultParc+1;p<=s.tot;p++)
-      if(addMes(s.ultMk,p-s.ultParc)>=mesDeHoje())s.faltamAgenda++;
     return s;
   }).filter(s=>s.pagas<s.tot).sort((a,b)=>(b.falta-a.falta));
 }
@@ -2695,21 +2707,18 @@ function criaFaltantes(s){
     : alive(DB.cp).find(c=>mesDe(c.venc)===s.ultMk&&(c.parcela||1)===s.ultParc);
   if(!modelo)return 0;
   const serie=modelo.serie||uid();
-  const piso=mesDeHoje();
   let n=0;
-  for(let p=s.ultParc+1;p<=s.tot;p++){
-    const mk=addMes(s.ultMk,p-s.ultParc);
-    if(mk<piso)continue;
+  s.agenda.forEach(x=>{
     n++;
     if(s.tipo==='cartao')
-      DB.fat.push({...modelo,id:uid(),mesRef:mk,parcela:p,totparc:s.tot,serie,deletedAt:null});
+      DB.fat.push({...modelo,id:uid(),mesRef:x.mk,parcela:x.parcela,totparc:s.tot,serie,deletedAt:null});
     else{
       const dia=+modelo.venc.slice(8);
-      DB.cp.push({...modelo,id:uid(),desc:s.desc+' ('+p+'/'+s.tot+')',
-        venc:mk+'-'+pad(Math.min(dia,diasNoMes(mk))),
-        situacao:'Pendente',pagoEm:null,lancId:null,parcela:p,totparc:s.tot,serie,deletedAt:null});
+      DB.cp.push({...modelo,id:uid(),desc:s.desc+' ('+x.parcela+'/'+s.tot+')',
+        venc:x.mk+'-'+pad(Math.min(dia,diasNoMes(x.mk))),
+        situacao:'Pendente',pagoEm:null,lancId:null,parcela:x.parcela,totparc:s.tot,serie,deletedAt:null});
     }
-  }
+  });
   /* carimba a série nas parcelas antigas também: se só a modelo levar o id, a
      série se parte em duas na hora de agrupar (as sem id de um lado, as novas
      do outro) */
@@ -2740,20 +2749,29 @@ function completaTodasParcelas(){
    fatura já foi paga. É por aí que a baixa acontece: paga a fatura de julho,
    a parcela que estava nela fica paga junto. */
 function parcelasHTML(s){
-  const linhas=s.itens.map(x=>`<div class="pl ${x.pago?'ok':''}">
-    <span class="pl-n">${x.parcela}/${s.tot}</span>
-    <span class="pl-o">${esc(x.onde||'')}</span>
+  /* A lista vai da 1 até a última, misturando o que está lançado com o que só
+     existe por dedução: parcela de mês que já passou entra como quitada. */
+  const linhas=[];
+  s.itens.forEach(x=>linhas.push({n:x.parcela,mk:x.mk,onde:x.onde||'',valor:x.valor,
+    st:x.pago?'paga':'a pagar',em:x.pagoEm||''}));
+  s.antigas.forEach(x=>linhas.push({n:x.parcela,mk:x.mk,onde:'fatura de '+mesLabel(x.mk)+', antes de entrar no app',
+    valor:s.valor,st:'antiga',em:''}));
+  s.agenda.forEach(x=>linhas.push({n:x.parcela,mk:x.mk,onde:'ainda não lançada em mês nenhum',
+    valor:s.valor,st:'sem mes',em:''}));
+  linhas.sort((a,b)=>(a.n||0)-(b.n||0));
+  const chip={
+    'paga':x=>'<span class="chip chip-ok">paga'+(x.em?' '+fmtBR(x.em):'')+'</span>',
+    'antiga':()=>'<span class="chip chip-ok">quitada antes</span>',
+    'a pagar':()=>'<span class="chip chip-warn">a pagar</span>',
+    'sem mes':()=>'<span class="chip chip-bad">sem mês</span>'
+  };
+  const html=linhas.map(x=>`<div class="pl ${x.st==='a pagar'||x.st==='sem mes'?'':'ok'}">
+    <span class="pl-n">${x.n}/${s.tot}</span>
+    <span class="pl-o">${esc(x.onde)}</span>
     <span class="pl-v">${brl(x.valor)}</span>
-    <span class="pl-s">${x.pago
-      ?'<span class="chip chip-ok">paga'+(x.pagoEm?' '+fmtBR(x.pagoEm):'')+'</span>'
-      :'<span class="chip chip-warn">a pagar</span>'}</span></div>`).join('');
-  const naoLancadas=s.faltamLancar
-    ? `<div class="pl"><span class="pl-n">${s.ultParc+1}–${s.tot}</span>
-        <span class="pl-o muted">${s.faltamAgenda?'ainda não lançadas em mês nenhum':'cairiam em meses já fechados'}</span>
-        <span class="pl-v muted">${brl(s.valor)}</span>
-        <span class="pl-s"><span class="chip chip-bad">sem mês</span></span></div>`:'';
+    <span class="pl-s">${chip[x.st](x)}</span></div>`).join('');
   return `<details class="parc-det"><summary>ver as ${s.tot} parcelas, uma a uma</summary>
-    <div class="pl-lista">${linhas}${naoLancadas}</div></details>`;
+    <div class="pl-lista">${html}</div></details>`;
 }
 function painelParcelas(){
   const L=parcelamentos();
@@ -2789,9 +2807,11 @@ function painelParcelas(){
         <div class="parc-lin"><span>Última parcela</span><b>${mesLabel(s.fim)}</b></div>
       </div>
       ${parcelasHTML(s)}
-      ${s.faltamLancar?`<div class="parc-av">Só ${s.ultParc} de ${s.tot} parcelas estão lançadas.${s.faltamAgenda
-        ?` As outras ${s.faltamLancar} ainda não existem em mês nenhum.`
-        :` As outras ${s.faltamLancar} cairiam em meses já fechados, e o app não mexe em mês fechado.`}</div>`:''}
+      ${s.antigas.length?`<div class="parc-nota">${s.antigas.length} parcela${s.antigas.length>1?'s':''}
+        de mês já passado ${s.antigas.length>1?'entraram':'entrou'} como quitada${s.antigas.length>1?'s':''}:
+        ${s.antigas.map(x=>x.parcela+'/'+s.tot).join(', ')}.</div>`:''}
+      ${s.faltamAgenda?`<div class="parc-av">${s.faltamAgenda} parcela(s) daqui para a frente
+        ainda não existem em mês nenhum.</div>`:''}
       <div class="parc-ft">
         ${s.faltamAgenda?`<button class="btn btn-sm btn-gold" style="flex:1;justify-content:center"
           onclick="gerarFaltantes('${esc(s.chave)}')">Lançar as ${s.faltamAgenda} que faltam</button>`:''}

@@ -1080,26 +1080,34 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 
 <!-- Modal: lançamentos em lote -->
 <div class="overlay" id="ovLote"><div class="modal wide">
-  <div class="modal-head"><h3>Lançar em lote</h3><button class="modal-x" onclick="closeModal('ovLote')">×</button></div>
+  <div class="modal-head"><h3 id="loteTitle">Lançar em lote</h3><button class="modal-x" onclick="closeModal('ovLote')">×</button></div>
   <div class="modal-body">
-    <div class="alert"><span>⌨</span><div>Cada linha tem a <b>sua</b> data, tipo, conta do plano e valor.
+    <div class="alert"><span>⌨</span><div id="loteAjuda">Cada linha tem a <b>sua</b> data, tipo, conta do plano e valor.
       O histórico já sugere a conta sozinho. <b>Enter</b> no valor abre a próxima linha.</div></div>
-    <div class="fgrid">
+    <div class="fgrid" id="lo_cabBanco">
       <div class="field"><label>Conta do dinheiro *</label><select id="lo_conta"></select>
         <div class="hint">Vale para todas as linhas: é de onde sai e para onde entra.</div></div>
       <div class="field"><label>Mês de referência</label><input type="month" id="lo_mes" onchange="renderLote()">
         <div class="hint">Só preenche a data das linhas em branco.</div></div>
     </div>
+    <div class="fgrid" id="lo_cabCartao" style="display:none">
+      <div class="field"><label>Cartão *</label><select id="lo_cartao"></select>
+        <div class="hint">Todas as compras entram neste cartão.</div></div>
+      <div class="field"><label>Fatura (mês) *</label><input type="month" id="lo_fatMes" onchange="renderLote()">
+        <div class="hint">A 1ª parcela cai nesta fatura; as outras seguem mês a mês.</div></div>
+    </div>
     <div class="lote-pad">
-      <div class="field" style="margin:0"><label>Padrão das novas linhas</label>
+      <div class="field" style="margin:0" id="lo_dirBox"><label>Padrão das novas linhas</label>
         <div class="seg" id="lo_dir">
           <div class="o sel" data-v="S" onclick="pickDirLote('S')">↓ Saída</div>
           <div class="o" data-v="E" onclick="pickDirLote('E')">↑ Entrada</div></div></div>
       <div class="field" style="margin:0"><label>Conta do plano padrão</label><select data-combo id="lo_cod"></select></div>
       <button class="btn btn-sm" onclick="loteAplicaTodas()" title="copia o padrão acima para todas as linhas">Aplicar a todas</button>
     </div>
-    <div class="lote-hd">
+    <div class="lote-hd" id="lo_hdBanco">
       <span>Data</span><span>Tipo</span><span>Histórico</span><span>Conta do plano</span><span class="num">Valor</span><span></span></div>
+    <div class="lote-hd" id="lo_hdCartao" style="display:none">
+      <span>Data</span><span>Parcelas</span><span>Estabelecimento</span><span>Conta do plano</span><span class="num">Valor</span><span></span></div>
     <div id="loteBody"></div>
     <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">
       <button class="btn btn-sm" onclick="loteAdd()">＋ linha</button>
@@ -2792,6 +2800,7 @@ function viewCartoes(){
   <div class="panel">
     <div class="panel-head"><h2>${crt?comMarca(crt):'Cartão'} · fatura de ${mesLabel(mesAtual)}<small>a data é a da compra; o mês de referência é o da fatura</small></h2>
       <button class="btn btn-sm btn-gold" onclick="openFat()">＋ Compra</button>
+      <button class="btn btn-sm" onclick="openLoteFat()">⇊ Em lote</button>
       <button class="btn btn-sm" onclick="openImport('cartao')">⇩ Importar fatura</button>
       ${pago
         ?`<button class="btn btn-sm btn-ghost" onclick="desfazerPagFat('${cid}','${mesAtual}')">✓ Paga em ${fmtBR(pago.data)} · desfazer</button>`
@@ -4402,19 +4411,44 @@ function saveOrc(){
 
 /* ============================================================
    LANÇAMENTOS EM LOTE
-   Cada linha é um lançamento inteiro: data, tipo, histórico,
-   conta do plano e valor. A conta bancária vale para todas, e o
-   padrão do topo só preenche as linhas novas. Digitar o
-   histórico já sugere a conta pela palavra-chave.
+   Dois modos no mesmo quadro: extrato do banco e fatura do cartão.
+   No banco cada linha é um lançamento inteiro (data, tipo, histórico, conta
+   do plano e valor). No cartão o tipo some, porque compra de cartão é sempre
+   saída, e entra o número de parcelas: uma linha de 6x vira as 6 parcelas,
+   uma por fatura. Digitar o histórico já sugere a conta pela palavra-chave.
    ============================================================ */
-let loteLinhas=[], curDirLote='S';
-const loteVazia=()=>({data:'',dir:curDirLote,desc:'',cod:document.getElementById('lo_cod')?document.getElementById('lo_cod').value:'',valor:'',tocado:false});
+let loteLinhas=[], curDirLote='S', loteModo='banco';
+const noCartao=()=>loteModo==='cartao';
+const loteVazia=()=>({data:'',dir:noCartao()?'S':curDirLote,desc:'',
+  cod:document.getElementById('lo_cod')?document.getElementById('lo_cod').value:'',
+  valor:'',parc:1,tocado:false});
 
-function openLote(){
+function abreLote(modo){
+  loteModo=modo;
   curDirLote='S';
-  const loPad=typeof contaPadrao==='function'?contaPadrao():'';
-  document.getElementById('lo_conta').innerHTML=DB.contas.map(c=>`<option value="${c.id}" ${c.id===loPad?'selected':''}>${esc(c.nome)}</option>`).join('');
-  document.getElementById('lo_mes').value=mesAtual;
+  const cart=noCartao();
+  document.getElementById('loteTitle').textContent=cart?'Lançar compras em lote':'Lançar em lote';
+  document.getElementById('loteAjuda').innerHTML=cart
+    ? 'Cada linha é uma compra: data, parcelas, estabelecimento, conta do plano e valor da parcela. '+
+      'O estabelecimento já sugere a conta sozinho. <b>Enter</b> no valor abre a próxima linha.'
+    : 'Cada linha tem a <b>sua</b> data, tipo, conta do plano e valor. '+
+      'O histórico já sugere a conta sozinho. <b>Enter</b> no valor abre a próxima linha.';
+  document.getElementById('lo_cabBanco').style.display=cart?'none':'';
+  document.getElementById('lo_cabCartao').style.display=cart?'':'none';
+  document.getElementById('lo_dirBox').style.display=cart?'none':'';
+  document.getElementById('lo_hdBanco').style.display=cart?'none':'';
+  document.getElementById('lo_hdCartao').style.display=cart?'':'none';
+  if(cart){
+    const cid=typeof cartaoPadrao==='function'?cartaoPadrao():'';
+    document.getElementById('lo_cartao').innerHTML=DB.cartoes.map(c=>
+      `<option value="${c.id}" ${c.id===cid?'selected':''}>${esc(c.nome)}</option>`).join('');
+    document.getElementById('lo_fatMes').value=mesAtual;
+  }else{
+    const loPad=typeof contaPadrao==='function'?contaPadrao():'';
+    document.getElementById('lo_conta').innerHTML=DB.contas.map(c=>
+      `<option value="${c.id}" ${c.id===loPad?'selected':''}>${esc(c.nome)}</option>`).join('');
+    document.getElementById('lo_mes').value=mesAtual;
+  }
   document.querySelectorAll('#lo_dir .o').forEach(o=>o.classList.toggle('sel',o.dataset.v==='S'));
   encheCodLote();
   document.getElementById('lo_cod').value='';
@@ -4422,6 +4456,11 @@ function openLote(){
   renderLote();
   document.getElementById('ovLote').classList.add('show');
   setTimeout(()=>{const e=document.querySelector('#loteBody .lote-desc');if(e)e.focus()},120);
+}
+function openLote(){abreLote('banco')}
+function openLoteFat(){
+  if(!DB.cartoes.length)return toast('Cadastre um cartão primeiro');
+  abreLote('cartao');
 }
 function pickDirLote(d){
   curDirLote=d;
@@ -4432,13 +4471,13 @@ function encheCodLote(){
   const sel=document.getElementById('lo_cod');
   const cur=sel.value;
   sel.innerHTML='<option value="">— nenhuma: cada linha escolhe a sua —</option>'+
-    optsPlano(cur,p=>curDirLote==='E'?p.tipo!=='DESPESA':p.tipo!=='RECEITA');
+    optsPlano(cur,p=>noCartao()?p.tipo!=='RECEITA':(curDirLote==='E'?p.tipo!=='DESPESA':p.tipo!=='RECEITA'));
   ligaCombos();comboSync(sel);
 }
 /* copia o padrão do topo para todas as linhas, inclusive as já digitadas */
 function loteAplicaTodas(){
   const cod=document.getElementById('lo_cod').value;
-  loteLinhas.forEach(l=>{l.dir=curDirLote;if(cod){l.cod=cod;l.tocado=true}});
+  loteLinhas.forEach(l=>{if(!noCartao())l.dir=curDirLote;if(cod){l.cod=cod;l.tocado=true}});
   renderLote();
   toast(cod?'Conta aplicada nas '+loteLinhas.length+' linhas':'Tipo aplicado nas '+loteLinhas.length+' linhas');
 }
@@ -4453,7 +4492,7 @@ function loteSet(i,campo,v){
     loteRecarregaCod(i);
     if(!l.tocado){const c=autoCod(l.desc,l.dir);l.cod=c||'';loteAtualizaCod(i)}
   }
-  if(campo==='valor')loteTotal();
+  if(campo==='valor'||campo==='parc')loteTotal();
 }
 /* mexe só no <select> daquela linha: refazer a lista inteira tiraria o foco */
 function loteAtualizaCod(i){
@@ -4478,10 +4517,19 @@ function loteAdd(){
 function loteDel(i){loteLinhas.splice(i,1);if(!loteLinhas.length)loteLinhas.push(loteVazia());renderLote()}
 function loteTotal(){
   const cheias=loteLinhas.filter(l=>l.desc.trim()&&parseNum(l.valor));
+  const el=document.getElementById('loteTotal');
+  if(!el)return;
+  if(noCartao()){
+    const parcelas=cheias.reduce((s,l)=>s+Math.max(1,+l.parc||1),0);
+    const naFatura=cheias.reduce((s,l)=>s+parseNum(l.valor),0);
+    const total=cheias.reduce((s,l)=>s+parseNum(l.valor)*Math.max(1,+l.parc||1),0);
+    el.innerHTML=cheias.length+' compra(s) · '+parcelas+' parcela(s) · '+
+      '<span class="goldtxt">'+brl(naFatura)+' nesta fatura</span> · total '+brl(total);
+    return;
+  }
   const e=cheias.filter(l=>l.dir==='E').reduce((s,l)=>s+parseNum(l.valor),0);
   const s=cheias.filter(l=>l.dir==='S').reduce((s,l)=>s+parseNum(l.valor),0);
-  const el=document.getElementById('loteTotal');
-  if(el)el.innerHTML=cheias.length+' linha(s) prontas · '+
+  el.innerHTML=cheias.length+' linha(s) prontas · '+
     (e?`<span class="pos">↑ ${brl(e)}</span> `:'')+(s?`<span class="neg">↓ ${brl(s)}</span>`:'');
 }
 /* Enter no valor abre a próxima linha: dá para digitar sem tocar no mouse */
@@ -4492,17 +4540,24 @@ function loteTecla(e,i){
   else{const el=document.querySelectorAll('#loteBody .lote-l')[i+1].querySelector('.lote-desc');if(el)el.focus()}
 }
 function renderLote(){
-  const dia=(document.getElementById('lo_mes').value||mesAtual)+'-01';
+  const cart=noCartao();
+  const base=cart?(document.getElementById('lo_fatMes').value||mesAtual)
+                 :(document.getElementById('lo_mes').value||mesAtual);
+  const dia=base+'-01';
   document.getElementById('loteBody').innerHTML=loteLinhas.map((l,i)=>`<div class="lote-l">
     <input type="date" value="${esc(l.data||dia)}" onchange="loteSet(${i},'data',this.value)">
-    <select onchange="loteSet(${i},'dir',this.value)">
-      <option value="S" ${l.dir==='S'?'selected':''}>↓ Saída</option>
-      <option value="E" ${l.dir==='E'?'selected':''}>↑ Entrada</option></select>
-    <input class="lote-desc" placeholder="histórico (ex.: UBER)" value="${esc(l.desc)}"
+    ${cart
+      ? `<input type="number" min="1" max="120" value="${esc(l.parc||1)}" title="em quantas vezes"
+          onchange="loteSet(${i},'parc',this.value)" oninput="loteSet(${i},'parc',this.value)" class="num">`
+      : `<select onchange="loteSet(${i},'dir',this.value)">
+          <option value="S" ${l.dir==='S'?'selected':''}>↓ Saída</option>
+          <option value="E" ${l.dir==='E'?'selected':''}>↑ Entrada</option></select>`}
+    <input class="lote-desc" placeholder="${cart?'estabelecimento (ex.: DENTISTA)':'histórico (ex.: UBER)'}" value="${esc(l.desc)}"
       oninput="loteSet(${i},'desc',this.value)" onkeydown="loteTecla(event,${i})">
     <select data-combo id="lo_cod_${i}" onchange="loteSet(${i},'cod',this.value)">
       <option value="">— escolher —</option>${optsPlano(l.cod,p=>l.dir==='E'?p.tipo!=='DESPESA':p.tipo!=='RECEITA')}</select>
     <input inputmode="decimal" placeholder="0,00" value="${esc(l.valor)}" class="num"
+      title="${cart?'valor de cada parcela':'valor'}"
       oninput="loteSet(${i},'valor',this.value)" onkeydown="loteTecla(event,${i})">
     <button class="iconbtn del" title="tirar a linha" onclick="loteDel(${i})">×</button>
   </div>`).join('');
@@ -4511,12 +4566,34 @@ function renderLote(){
   loteTotal();
 }
 function saveLote(){
-  const contaId=document.getElementById('lo_conta').value;
-  const mes=document.getElementById('lo_mes').value||mesAtual;
   const validas=loteLinhas.filter(l=>l.desc.trim()&&parseNum(l.valor));
   if(!validas.length)return toast('Preencha ao menos uma linha com histórico e valor');
   const semConta=validas.filter(l=>!l.cod).length;
   if(semConta&&!confirm(semConta+' linha(s) sem conta do plano. Entram assim mesmo?'))return;
+
+  if(noCartao()){
+    const cartaoId=document.getElementById('lo_cartao').value;
+    const mesRef=document.getElementById('lo_fatMes').value||mesAtual;
+    let n=0,parc=0;
+    validas.forEach(l=>{
+      const valor=parseNum(l.valor), tot=Math.max(1,Math.min(120,+l.parc||1));
+      const serie=uid(), desc=l.desc.trim().toUpperCase();
+      const cod=l.cod||autoCod(l.desc,'S')||'';
+      for(let p=1;p<=tot;p++){
+        DB.fat.push({id:uid(),cartaoId,data:l.data||(mesRef+'-01'),mesRef:addMes(mesRef,p-1),
+          desc,valor,parcela:p,totparc:tot,cod,obs:'em lote',serie});
+        parc++;
+      }
+      n++;
+    });
+    filtroCartao=cartaoId; cartaoSel=cartaoId; mesAtual=mesRef;
+    save();closeModal('ovLote');render();
+    toast(n+' compra(s) · '+parc+' parcela(s) na fatura de '+nomeCartao(cartaoId));
+    return;
+  }
+
+  const contaId=document.getElementById('lo_conta').value;
+  const mes=document.getElementById('lo_mes').value||mesAtual;
   validas.forEach(l=>{
     const valor=parseNum(l.valor);
     DB.lanc.push({id:uid(),data:l.data||(mes+'-01'),contaId,desc:l.desc.trim().toUpperCase(),

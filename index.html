@@ -713,6 +713,9 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .pl.ok .pl-n{color:var(--pos)}
 .pl-o{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pl-v{font-variant-numeric:tabular-nums;color:var(--dim)}
+.pl-id{display:block;font-size:9.5px;color:var(--mut);font-variant-numeric:tabular-nums;letter-spacing:.3px}
+.pl-ok{font-size:11.5px;color:var(--pos);padding:9px 0 2px}
+.pl-erro{font-size:11.5px;color:var(--neg);padding:9px 0 2px}
 .aba-txt{font-size:12px;color:var(--mut);margin:-4px 0 14px;padding-left:2px}
 .tabs .cnt.alerta{background:color-mix(in srgb,var(--neg) 20%,transparent);color:var(--neg)}
 .conf{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;margin-bottom:9px;
@@ -1406,6 +1409,8 @@ function migraDB(){
   DB.cp.forEach(c=>{if(c.fatId===undefined)c.fatId=null});
   DB.contas.forEach(c=>{c.banco=c.banco||'';c.logo=c.logo||''});
   DB.cartoes.forEach(c=>{c.banco=c.banco||'';c.logo=c.logo||''});
+  /* toda parcela pertence a uma série; sem isso a mesma compra vira duas */
+  if(typeof carimbaSeries==='function'){try{carimbaSeries()}catch(e){}}
   /* Série importada da planilha vem com as parcelas daquele arquivo só. Uma
      vez por base, completa todas até a última, para a parcela do mês aparecer
      sozinha. Depois disso quem manda é o usuário: parcela apagada nao volta. */
@@ -2964,6 +2969,18 @@ function conferirParcelamentos(){
         +`<button class="btn btn-sm btn-ghost" onclick="abreCartao('${f.cartaoId}')">Ver na fatura</button>`});
   });
 
+  /* 6. parcela que não está em fatura nenhuma. Enquanto ela não existe, a
+     fatura daquele mês fica menor do que a realidade. */
+  parcelamentos().forEach(p=>{
+    if(!p.agenda.length)return;
+    av.push({tipo:'grave',
+      titulo:'"'+p.desc+'" tem '+p.agenda.length+' parcela(s) fora de qualquer fatura',
+      txt:'A(s) parcela(s) '+p.agenda.map(x=>x.parcela+'/'+p.tot).join(', ')+
+        ' deveria(m) cair na(s) fatura(s) de '+p.agenda.map(x=>mesLabel(x.mk)).join(', ')+
+        ', mas não existe(m) em mês nenhum. Até lançar, essas faturas ficam menores do que a realidade.',
+      acao:`<button class="btn btn-sm btn-gold" onclick="gerarFaltantes('${esc(p.chave)}')">Lançar nas faturas</button>`});
+  });
+
   /* 6. conta a pagar parcelada que também está na fatura, sem estar ligada */
   alive(DB.cp).filter(c=>(c.totparc||1)>1).forEach(c=>{
     const s=sugereVinculo(c);
@@ -3102,18 +3119,50 @@ function viewPagar(){
 /* Parcelamentos em andamento: as compras do cartão em série (o dentista em 16x)
    e as contas a pagar que foram criadas parceladas. Cada série vira uma linha,
    não dezesseis. */
+/* ---------- Identidade da parcela ----------
+   Uma parcela é única por (série, número). A série é o id da compra; o número
+   diz qual das N ela é. Com isso o app sabe dizer "a 3/6 já existe" antes de
+   criar outra, e você tem um código para apontar na hora de conferir mês a mês.
+   Séries antigas, importadas de planilha, não tinham série: o migraDB carimba
+   uma, agrupando por cartão + histórico + total de parcelas. */
+const CHAVE_SERIE=(x,pre)=>x.serie
+  ||((pre||'s')+'|'+(x.cartaoId||'')+'|'+String(x.desc||'').replace(/\s*\(\d+\/\d+\)\s*$/,'').toUpperCase()+'|'+x.totparc);
+const parcelaId=(x)=>(x&&x.serie?String(x.serie).slice(0,6):'?')+'-'+(x&&x.parcela||1);
+
+function carimbaSeries(){
+  let n=0;
+  const marca=(lista,pre)=>{
+    const g={};
+    lista.filter(x=>!x.deletedAt&&(x.totparc||1)>1)
+         .forEach(x=>{const k=CHAVE_SERIE(x,pre);(g[k]=g[k]||[]).push(x)});
+    Object.keys(g).forEach(k=>{
+      const itens=g[k];
+      const id=(itens.find(x=>x.serie)||{}).serie||uid();
+      itens.forEach(x=>{if(!x.serie){x.serie=id;n++}});
+    });
+  };
+  marca(DB.fat||[],'fat');
+  marca(DB.cp||[],'cp');
+  return n;
+}
+/* já existe essa parcela dessa série? evita criar a mesma duas vezes */
+function jaTemParcela(serie,num,tipo){
+  const lista=tipo==='conta'?alive(DB.cp):fatAtivos();
+  return lista.some(x=>x.serie===serie&&(x.parcela||1)===num);
+}
+
 function parcelamentos(){
   const g={};
-  const chave=(x,pre)=>x.serie||(pre+'|'+(x.cartaoId||'')+'|'+String(x.desc||'').replace(/\s*\(\d+\/\d+\)\s*$/,'')+'|'+x.totparc);
+  const chave=CHAVE_SERIE;
   fatAtivos().filter(f=>(f.totparc||1)>1).forEach(f=>{
     const k=chave(f,'fat');
     (g[k]=g[k]||{tipo:'cartao',cartaoId:f.cartaoId,desc:f.desc,tot:f.totparc,itens:[]})
-      .itens.push({id:f.id,mk:f.mesRef,valor:f.valor,parcela:f.parcela});
+      .itens.push({id:f.id,serie:f.serie,mk:f.mesRef,valor:f.valor,parcela:f.parcela});
   });
   alive(DB.cp).filter(c=>(c.totparc||1)>1).forEach(c=>{
     const k=chave(c,'cp');
     (g[k]=g[k]||{tipo:'conta',cartaoId:'',desc:String(c.desc).replace(/\s*\(\d+\/\d+\)\s*$/,''),tot:c.totparc,itens:[]})
-      .itens.push({id:c.id,mk:mesDe(c.venc),valor:c.valor,parcela:c.parcela,
+      .itens.push({id:c.id,serie:c.serie,mk:mesDe(c.venc),valor:c.valor,parcela:c.parcela,
                    pago:c.situacao==='Pago',pagoEm:c.pagoEm||'',onde:'contas a pagar'});
   });
   /* mapaPagLegado percorre o razão inteiro: uma vez por cartão, não por parcela */
@@ -3178,6 +3227,8 @@ function criaFaltantes(s){
   const serie=modelo.serie||uid();
   let n=0;
   s.agenda.forEach(x=>{
+    /* a parcela e unica por (serie, numero): se ja existe, nao cria outra */
+    if(jaTemParcela(serie,x.parcela,s.tipo))return;
     n++;
     if(s.tipo==='cartao')
       DB.fat.push({...modelo,id:uid(),mesRef:x.mk,parcela:x.parcela,totparc:s.tot,serie,deletedAt:null});
@@ -3219,28 +3270,36 @@ function completaTodasParcelas(){
    a parcela que estava nela fica paga junto. */
 function parcelasHTML(s){
   /* A lista vai da 1 até a última, misturando o que está lançado com o que só
-     existe por dedução: parcela de mês que já passou entra como quitada. */
+     existe por dedução: parcela de mês que já passou entra como quitada.
+     Cada linha mostra o código da parcela (série-número), que é o que
+     identifica ela de verdade na hora de conferir mês a mês. */
   const linhas=[];
   s.itens.forEach(x=>linhas.push({n:x.parcela,mk:x.mk,onde:x.onde||'',valor:x.valor,
-    st:x.pago?'paga':'a pagar',em:x.pagoEm||''}));
-  s.antigas.forEach(x=>linhas.push({n:x.parcela,mk:x.mk,onde:'fatura de '+mesLabel(x.mk)+', antes de entrar no app',
-    valor:s.valor,st:'antiga',em:''}));
-  s.agenda.forEach(x=>linhas.push({n:x.parcela,mk:x.mk,onde:'ainda não lançada em mês nenhum',
-    valor:s.valor,st:'sem mes',em:''}));
+    id:parcelaId(x),st:x.pago?'paga':'a pagar',em:x.pagoEm||''}));
+  s.antigas.forEach(x=>linhas.push({n:x.parcela,mk:x.mk,
+    onde:'fatura de '+mesLabel(x.mk)+', antes de entrar no app',
+    valor:s.valor,id:'—',st:'antiga',em:''}));
+  s.agenda.forEach(x=>linhas.push({n:x.parcela,mk:x.mk,
+    onde:'deveria estar na fatura de '+mesLabel(x.mk),
+    valor:s.valor,id:'—',st:'sem mes',em:''}));
   linhas.sort((a,b)=>(a.n||0)-(b.n||0));
   const chip={
     'paga':x=>'<span class="chip chip-ok">paga'+(x.em?' '+fmtBR(x.em):'')+'</span>',
     'antiga':()=>'<span class="chip chip-ok">quitada antes</span>',
-    'a pagar':()=>'<span class="chip chip-warn">a pagar</span>',
-    'sem mes':()=>'<span class="chip chip-bad">sem mês</span>'
+    'a pagar':()=>'<span class="chip chip-warn">na fatura</span>',
+    'sem mes':()=>'<span class="chip chip-bad">falta lançar</span>'
   };
   const html=linhas.map(x=>`<div class="pl ${x.st==='a pagar'||x.st==='sem mes'?'':'ok'}">
     <span class="pl-n">${x.n}/${s.tot}</span>
-    <span class="pl-o">${esc(x.onde)}</span>
+    <span class="pl-o">${esc(x.onde)}<span class="pl-id">${esc(x.id)}</span></span>
     <span class="pl-v">${brl(x.valor)}</span>
     <span class="pl-s">${chip[x.st](x)}</span></div>`).join('');
+  const nMes=new Set(s.itens.map(x=>x.mk)).size;
+  const resumo=s.itens.length===nMes
+    ? `<div class="pl-ok">✓ uma parcela por mês, sem duas na mesma fatura.</div>`
+    : `<div class="pl-erro">⚠ ${s.itens.length} lançamentos para ${nMes} meses: tem mês com mais de uma parcela.</div>`;
   return `<details class="parc-det"><summary>ver as ${s.tot} parcelas, uma a uma</summary>
-    <div class="pl-lista">${html}</div></details>`;
+    <div class="pl-lista">${html}</div>${resumo}</details>`;
 }
 function painelParcelas(){
   const L=parcelamentos();

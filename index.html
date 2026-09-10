@@ -2854,6 +2854,33 @@ function cpPagaPelaFatura(c){
 /* O parcelamento inteiro, de uma vez: todas as parcelas de uma série somem
    juntas. É o que resolve compra lançada em dobro com dois nomes. Vale para
    série no cartão e para série de contas a pagar. */
+/* Junta dois parcelamentos que são a mesma compra com nomes diferentes. É o
+   caso comum de importação: a fatura descreve "LAZER - TROPICADELIA" num mês e
+   "TROPICADELIA" no outro, e o app vê duas séries de 6x. Aqui não se apaga
+   nada: as parcelas continuam nas faturas onde estão, só passam a pertencer à
+   mesma série e a usar o mesmo nome. Se as duas tiverem o MESMO número de
+   parcela, aí é duplicidade de verdade e o caminho é excluir, não juntar. */
+function juntarSeries(ids,nomeFinal){
+  const rows=(ids||'').split(',').filter(Boolean)
+    .map(id=>DB.fat.find(f=>f.id===id)||DB.cp.find(c=>c.id===id))
+    .filter(x=>x&&!x.deletedAt);
+  if(rows.length<2)return toast('Não achei as duas séries para juntar');
+  const porNum={};
+  rows.forEach(r=>{const n=r.parcela||1;(porNum[n]=porNum[n]||[]).push(r)});
+  const repetidas=Object.keys(porNum).filter(n=>porNum[n].length>1);
+  if(repetidas.length)
+    return toast('A parcela '+repetidas.join(', ')+' aparece nas duas: aí é excluir uma, não juntar');
+  const tot=Math.max.apply(null,rows.map(r=>r.totparc||1));
+  const nums=Object.keys(porNum).map(Number).sort((a,b)=>a-b);
+  if(!confirm('Juntar as duas séries em uma só, com o nome "'+nomeFinal+'"?\n\n'
+    +rows.length+' parcela(s) já lançadas ('+nums.join(', ')+' de '+tot+') passam a ser o mesmo parcelamento.\n'
+    +'Nenhuma parcela é apagada e nenhuma fatura muda de valor.'))return;
+  const serie=rows[0].serie||uid();
+  rows.forEach(r=>{r.serie=serie;r.desc=nomeFinal;r.totparc=tot});
+  save();render();
+  toast('Séries juntadas em "'+nomeFinal+'"');
+}
+
 function excluirSerie(ids,rotulo){
   const lista=(ids||'').split(',').filter(Boolean);
   const itens=lista.map(id=>DB.fat.find(x=>x.id===id)||DB.cp.find(x=>x.id===id))
@@ -2964,19 +2991,34 @@ function conferirParcelamentos(){
     const faixa=s=>[s.meses[0],s.meses[s.meses.length-1]];
     const [a1,a2]=faixa(grupo[0]);
     const bate=grupo.slice(1).some(s=>{const [b1,b2]=faixa(s);return b1<=a2&&a1<=b2});
-    av.push({tipo:bate?'grave':'olhar',
-      titulo:'"'+grupo.map(s=>s.desc).join('" e "')+'" parecem a mesma compra parcelada',
+    /* Números de parcela repetidos entre as duas = a mesma parcela lançada
+       duas vezes, e aí o caminho é excluir. Números diferentes = uma compra
+       só, partida em duas por causa do nome, e aí o caminho é juntar: apagar
+       um lado jogaria fora parcelas que estão de verdade nas faturas. */
+    const cont={};
+    grupo.forEach(s=>s.nums.forEach(n=>{cont[n]=(cont[n]||0)+1}));
+    const repetidas=Object.keys(cont).filter(n=>cont[n]>1).map(Number).sort((a,b)=>a-b);
+    const todosIds=grupo.reduce((acc,s)=>acc.concat(s.itens.map(x=>x.id)),[]);
+    const verFatura=`<button class="btn btn-sm btn-ghost" onclick="abreCartao('${f.cartaoId}')">Ver na fatura</button>`;
+    av.push({tipo:repetidas.length?'grave':(bate?'grave':'olhar'),
+      titulo:repetidas.length
+        ? 'A parcela '+repetidas.join(', ')+' de "'+grupo[0].desc+'" está lançada duas vezes'
+        : '"'+grupo.map(s=>s.desc).join('" e "')+'" são a mesma compra, com nomes diferentes',
       txt:'Dois parcelamentos de '+brl(f.valor)+' em '+f.totparc+'x no '+(nomeCartao(f.cartaoId)||'cartão')+
-        ', com nomes diferentes: '+grupo.map(s=>'"'+s.desc+'" ('+s.nums.length+' parcela(s), '+
+        ': '+grupo.map(s=>'"'+s.desc+'" (parcela '+s.nums.join(', ')+', '+
         mesLabel(s.meses[0])+' a '+mesLabel(s.meses[s.meses.length-1])+')').join(' e ')+'. '+
-        (bate?'Os meses se sobrepõem, então a compra foi lançada duas vezes e está cobrando em dobro.'
-            :'Os meses não se cruzam, então pode ser a mesma compra descrita de dois jeitos, ou duas compras iguais.'),
-      ids:grupo.reduce((acc,s)=>acc.concat(s.itens.map(x=>x.id)),[]),
-      /* excluir de um lado só: some com a série repetida e a outra fica de pé */
-      acao:grupo.map(s=>`<button class="btn btn-sm btn-ghost" style="color:var(--neg)"
-        onclick="excluirSerie('${s.itens.map(x=>x.id).join(',')}','${esc(s.desc).replace(/'/g,'')}')"
-        >🗑 Excluir parcelamento “${esc(s.desc)}”</button>`).join('')
-        +`<button class="btn btn-sm btn-ghost" onclick="abreCartao('${f.cartaoId}')">Ver na fatura</button>`});
+        (repetidas.length
+          ? 'Como a mesma parcela aparece nos dois, tem lançamento em dobro: exclua um dos lados.'
+          : 'As parcelas não se repetem, então é uma compra só que foi importada com dois nomes. '+
+            'Juntar mantém tudo onde está e passa a tratar como um parcelamento único; excluir jogaria fora parcelas que estão nas faturas.'),
+      ids:todosIds,
+      acao:(repetidas.length
+        ? grupo.map(s=>`<button class="btn btn-sm btn-ghost" style="color:var(--neg)"
+            onclick="excluirSerie('${s.itens.map(x=>x.id).join(',')}','${esc(s.desc).replace(/'/g,'')}')"
+            >🗑 Excluir parcelamento “${esc(s.desc)}”</button>`).join('')
+        : grupo.map(s=>`<button class="btn btn-sm btn-gold"
+            onclick="juntarSeries('${todosIds.join(',')}','${esc(s.desc).replace(/'/g,'')}')"
+            >Juntar com o nome “${esc(s.desc)}”</button>`).join(''))+verFatura});
   });
 
   /* 6. parcela que não está em fatura nenhuma. Enquanto ela não existe, a
@@ -3233,8 +3275,18 @@ function parcelamentos(){
     const ult=s.itens[s.itens.length-1];
     s.ultParc=ult?(ult.parcela||s.itens.length):0;
     s.ultMk=ult?ult.mk:'';
+    /* chave de "mesma compra": cartão, valor arredondado e total de parcelas */
+    s.gemea=[s.tipo,s.cartaoId,Math.round(s.valor),s.tot].join('|');
     return s;
   }).filter(s=>s.pagas<s.tot).sort((a,b)=>(b.falta-a.falta));
+}
+/* Série que tem uma gêmea (mesma compra com outro nome) não pode ser
+   completada antes de juntar: gerar as faltantes dos dois lados criaria a
+   mesma parcela duas vezes, agora de verdade. */
+function marcaGemeas(lista){
+  const c={}; lista.forEach(s=>{c[s.gemea]=(c[s.gemea]||0)+1});
+  lista.forEach(s=>{s.temGemea=c[s.gemea]>1});
+  return lista;
 }
 /* Cria as parcelas que faltam de UMA série, continuando do último mês lançado.
    Nunca cria em mês já fechado: aquele mês foi conferido contra o extrato, e
@@ -3271,7 +3323,8 @@ function criaFaltantes(s){
   return n;
 }
 function gerarFaltantes(chave){
-  const s=parcelamentos().find(x=>x.chave===chave);
+  const s=marcaGemeas(parcelamentos()).find(x=>x.chave===chave);
+  if(s&&s.temGemea)return toast('Junte este parcelamento com o gêmeo antes, na aba Conferência');
   if(!s||!s.faltamAgenda)return toast('Não há parcela para agendar daqui para a frente');
   if(!confirm('Lançar '+s.faltamAgenda+' parcela(s) de '+brl(s.valor)+' de "'+s.desc+'", uma por mês, até '+mesLabel(s.fim)+'?'))return;
   const n=criaFaltantes(s);
@@ -3284,7 +3337,10 @@ function gerarFaltantes(chave){
    propósito não volta. */
 function completaTodasParcelas(){
   let n=0,series=0;
-  parcelamentos().forEach(s=>{const q=criaFaltantes(s);if(q){n+=q;series++}});
+  /* série com gêmea fica de fora: primeiro juntar, senão a parcela nasce
+     duas vezes, uma de cada lado */
+  marcaGemeas(parcelamentos()).forEach(s=>{if(s.temGemea)return;
+    const q=criaFaltantes(s);if(q){n+=q;series++}});
   return {parcelas:n,series};
 }
 /* Linha do tempo da série: qual parcela, em que fatura entrou, e se aquela
@@ -3324,7 +3380,7 @@ function parcelasHTML(s){
     <div class="pl-lista">${html}</div>${resumo}</details>`;
 }
 function painelParcelas(){
-  const L=parcelamentos();
+  const L=marcaGemeas(parcelamentos());
   const faltaTot=L.reduce((a,s)=>a+s.falta,0);
   const mesTot=L.reduce((a,s)=>a+s.noMes.reduce((b,x)=>b+x.valor,0),0);
   const pagasMes=L.reduce((a,s)=>a+s.noMes.filter(x=>x.pago).length,0);
@@ -3362,10 +3418,12 @@ function painelParcelas(){
       ${s.antigas.length?`<div class="parc-nota">${s.antigas.length} parcela${s.antigas.length>1?'s':''}
         ${s.antigas.length>1?'caíram':'caiu'} em fatura que já foi paga, então ${s.antigas.length>1?'contam':'conta'}
         como quitada${s.antigas.length>1?'s':''}: ${s.antigas.map(x=>x.parcela+'/'+s.tot).join(', ')}.</div>`:''}
-      ${s.faltamAgenda?`<div class="parc-av">${s.faltamAgenda} parcela(s) daqui para a frente
+      ${s.temGemea?`<div class="parc-av">Existe outro parcelamento igual a este, com outro nome.
+        Junte os dois na aba <b>Conferência</b> antes de lançar as que faltam, senão a mesma parcela nasce duas vezes.</div>`
+      :s.faltamAgenda?`<div class="parc-av">${s.faltamAgenda} parcela(s) daqui para a frente
         ainda não existem em mês nenhum.</div>`:''}
       <div class="parc-ft">
-        ${s.faltamAgenda?`<button class="btn btn-sm btn-gold" style="flex:1;justify-content:center"
+        ${s.faltamAgenda&&!s.temGemea?`<button class="btn btn-sm btn-gold" style="flex:1;justify-content:center"
           onclick="gerarFaltantes('${esc(s.chave)}')">Lançar as ${s.faltamAgenda} que faltam</button>`:''}
         ${s.tipo==='cartao'?`<button class="btn btn-sm btn-ghost" style="flex:1;justify-content:center"
           onclick="abreCartao('${s.cartaoId}')">Ver na fatura</button>`:''}

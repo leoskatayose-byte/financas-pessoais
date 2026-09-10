@@ -3186,9 +3186,12 @@ function parcelamentos(){
       });
     }
     /* Parcela que não está lançada em lugar nenhum. O mês dela sai por conta:
-       a partir de qualquer parcela conhecida, uma por mês. Se esse mês já
-       passou, ela foi paga antes da série entrar no app (a planilha trouxe só
-       um pedaço do parcelamento). Se ainda vai chegar, dá para agendar. */
+       a partir de qualquer parcela conhecida, uma por mês.
+
+       Quem decide se ela já foi paga NÃO é o calendário, é a fatura daquele
+       mês. Se a fatura de agosto está paga, a parcela de agosto saiu junto com
+       ela e não há o que fazer. Se a fatura de agosto continua em aberto, a
+       parcela precisa entrar lá: sem isso a fatura cobra menos do que deve. */
     const ref=s.itens[0];
     s.faltantes=[];
     if(ref){
@@ -3199,8 +3202,17 @@ function parcelamentos(){
       }
     }
     const piso=mesDeHoje();
-    s.antigas=s.faltantes.filter(x=>x.mk<piso);
-    s.agenda=s.faltantes.filter(x=>x.mk>=piso);
+    /* Mês anterior ao primeiro que o cartão tem no app é história que nunca
+       foi importada: não existe fatura ali para receber a parcela. */
+    const mesesCartao=s.tipo==='cartao'
+      ? fatAtivos().filter(f=>f.cartaoId===s.cartaoId).map(f=>f.mesRef).sort() : [];
+    const inicio=mesesCartao[0]||'';
+    const quitadaAli=x=>s.tipo!=='cartao'
+      ? x.mk<piso                              /* fora do cartão não há fatura para consultar */
+      : (inicio&&x.mk<inicio) ? true           /* antes do app */
+      : !!(pagFatura(s.cartaoId,x.mk)||legadoDe(s.cartaoId)[x.mk]);
+    s.antigas=s.faltantes.filter(quitadaAli);
+    s.agenda=s.faltantes.filter(x=>!quitadaAli(x));
     s.faltamLancar=s.faltantes.length;
     s.faltamAgenda=s.agenda.length;
     s.pagas=s.itens.filter(x=>x.pago).length+s.antigas.length;
@@ -3277,10 +3289,10 @@ function parcelasHTML(s){
   s.itens.forEach(x=>linhas.push({n:x.parcela,mk:x.mk,onde:x.onde||'',valor:x.valor,
     id:parcelaId(x),st:x.pago?'paga':'a pagar',em:x.pagoEm||''}));
   s.antigas.forEach(x=>linhas.push({n:x.parcela,mk:x.mk,
-    onde:'fatura de '+mesLabel(x.mk)+', antes de entrar no app',
+    onde:'fatura de '+mesLabel(x.mk)+', que já foi paga',
     valor:s.valor,id:'—',st:'antiga',em:''}));
   s.agenda.forEach(x=>linhas.push({n:x.parcela,mk:x.mk,
-    onde:'deveria estar na fatura de '+mesLabel(x.mk),
+    onde:'deveria estar na fatura de '+mesLabel(x.mk)+(x.mk<mesDeHoje()?', que ainda está em aberto':''),
     valor:s.valor,id:'—',st:'sem mes',em:''}));
   linhas.sort((a,b)=>(a.n||0)-(b.n||0));
   const chip={
@@ -3336,8 +3348,8 @@ function painelParcelas(){
       </div>
       ${parcelasHTML(s)}
       ${s.antigas.length?`<div class="parc-nota">${s.antigas.length} parcela${s.antigas.length>1?'s':''}
-        de mês já passado ${s.antigas.length>1?'entraram':'entrou'} como quitada${s.antigas.length>1?'s':''}:
-        ${s.antigas.map(x=>x.parcela+'/'+s.tot).join(', ')}.</div>`:''}
+        ${s.antigas.length>1?'caíram':'caiu'} em fatura que já foi paga, então ${s.antigas.length>1?'contam':'conta'}
+        como quitada${s.antigas.length>1?'s':''}: ${s.antigas.map(x=>x.parcela+'/'+s.tot).join(', ')}.</div>`:''}
       ${s.faltamAgenda?`<div class="parc-av">${s.faltamAgenda} parcela(s) daqui para a frente
         ainda não existem em mês nenhum.</div>`:''}
       <div class="parc-ft">

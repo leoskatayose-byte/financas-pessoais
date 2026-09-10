@@ -646,6 +646,8 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
   padding-top:10px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
 .bsel-go{display:block;font-size:11.5px;color:var(--mut);margin-top:11px;font-weight:600}
 .bsel:hover .bsel-go{color:var(--acc)}
+.bsel-bar{height:5px;background:var(--raise);border-radius:3px;overflow:hidden;margin:11px 0 5px}
+.bsel-bar > i{display:block;height:100%;background:var(--acc);border-radius:3px}
 .bnav{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;
   padding:10px 14px;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
 .bnav-q{font-size:13.5px}
@@ -1710,6 +1712,7 @@ function go(id){
   activeTab=id;
   /* Bancos sempre comeca perguntando em qual conta voce vai mexer */
   if(id==='lancamentos'&&typeof contaSel!=='undefined')contaSel=null;
+  if(id==='cartoes'&&typeof cartaoSel!=='undefined')cartaoSel=null;
   toggleMenu(false);render();window.scrollTo({top:0,behavior:'smooth'})}
 function stepMes(n){mesAtual=addMes(mesAtual,n);render()}
 function render(){
@@ -2083,7 +2086,7 @@ function diaHTML(dk){
           ${c.cod?`<span class="chip chip-n">${esc(nomeConta(c.cod))}</span>`:''}</div></div>
       <div class="vl">${brl(c.valor)}</div></div>`}).join('');
   if(fats.length)h+=sec('Faturas do cartão',fats.length)+fats.map(x=>
-    `<div class="dia-i" style="cursor:pointer" onclick="filtroCartao='${x.c.id}';go('cartoes')">
+    `<div class="dia-i" style="cursor:pointer" onclick="abreCartao('${x.c.id}')">
       <div class="bd"><div class="tt">💳 ${esc(x.c.nome)}</div>
         <div class="mt"><span class="chip chip-n">vencimento da fatura</span></div></div>
       <div class="vl">${brl(x.tt)}</div></div>`).join('');
@@ -2633,6 +2636,65 @@ function rerenderLanc(){
 }
 
 /* ============================ CARTÕES ============================ */
+/* ---------- Escolha do cartão ----------
+   Mesma ideia da tela Bancos: antes de mexer na fatura, você diz em qual
+   cartão. Sem isso a compra nova cai no primeiro cartão da lista, que é o
+   jeito mais fácil de lançar no cartão errado. */
+let cartaoSel=null;   /* null = mostrando a tela de escolha */
+function escolheCartao(id){
+  cartaoSel=id; filtroCartao=id;
+  render(); window.scrollTo({top:0,behavior:'smooth'});
+}
+function trocaCartao(){cartaoSel=null;render();window.scrollTo({top:0,behavior:'smooth'})}
+/* Vai direto para a fatura de um cartão, de qualquer lugar do app. A ordem
+   importa: go('cartoes') zera a escolha, então escolhemos depois dele. */
+function abreCartao(id,mk){
+  if(mk)mesAtual=mk;
+  go('cartoes');
+  escolheCartao(id);
+}
+const cartaoPadrao=()=>cartaoSel||filtroCartao||((DB.cartoes[0]||{}).id||'');
+
+function viewEscolhaCartao(){
+  if(!DB.cartoes.length)return `<div class="panel"><div class="panel-head"><h2>Cartões
+      <small>cadastre o primeiro para começar a lançar compras</small></h2>
+      <button class="btn btn-sm btn-gold" onclick="openConta('cartao')">＋ Cartão</button></div>
+    <div class="empty">Nenhum cartão cadastrado ainda.</div></div>`;
+  const cartao=(c)=>{
+    const F=fatDoMes(mesAtual,c.id);
+    const tot=F.reduce((s,f)=>s+(f.valor||0),0);
+    const pago=pagFatura(c.id,mesAtual)||pagFatLegado(c.id,mesAtual);
+    const abertas=faturasEmAberto(c.id);
+    const fut={};
+    fatAtivos().filter(f=>f.cartaoId===c.id&&f.mesRef>mesAtual).forEach(f=>{fut[f.mesRef]=(fut[f.mesRef]||0)+(f.valor||0)});
+    const comprometido=Object.values(fut).reduce((a,b)=>a+b,0);
+    const uso=c.limite>0?Math.min(100,tot/c.limite*100):0;
+    return `<button class="bsel" onclick="escolheCartao('${c.id}')">
+      <div class="bsel-t">${marcaBanco(c)}<b>${esc(c.nome)}</b></div>
+      <div class="bsel-v">${brl(tot)}</div>
+      <div class="bsel-s">fatura de ${mesLabel(mesAtual)}${F.length?' · '+F.length+' lançamento(s)':''}</div>
+      <div class="bsel-m">
+        ${pago?'<span class="chip chip-ok">paga</span>'
+             :tot>0?'<span class="chip chip-warn">em aberto</span>'
+             :'<span class="muted">sem movimento</span>'}
+        ${abertas.length?`<span class="chip chip-bad">${abertas.length} fatura(s) atrás em aberto</span>`:''}
+      </div>
+      ${c.limite>0?`<div class="bsel-bar"><i style="width:${uso.toFixed(0)}%"></i></div>
+        <div class="bsel-s">${uso.toFixed(0)}% do limite de ${brl(c.limite)}</div>`:''}
+      ${comprometido?`<div class="bsel-s" style="margin-top:6px">${brl(comprometido)} já comprometido nas próximas</div>`:''}
+      <span class="bsel-go">abrir a fatura →</span>
+    </button>`};
+  const atras=DB.cartoes.reduce((s,c)=>s+faturasEmAberto(c.id).length,0);
+  return `<div class="panel"><div class="panel-head"><h2>Em qual cartão você vai mexer?
+      <small>escolha antes de lançar; assim a compra não cai no cartão errado</small></h2>
+      <button class="btn btn-sm btn-ghost" onclick="openConta('cartao')">＋ Novo cartão</button></div>
+    ${atras?`<div class="alert bad"><span>💳</span><div>${atras} fatura(s) de meses anteriores continuam em aberto.
+      Abra o cartão para ver e pagar.</div></div>`:''}
+    <div class="bsel-g">${DB.cartoes.map(cartao).join('')}</div>
+    <div class="muted" style="font-size:11.5px;padding:2px 0 18px">
+      Depois de escolher, o botão <b>＋ Compra</b> já vem com esse cartão marcado.</div></div>`;
+}
+
 /* Faixa de cobrança: a fatura fechada que ficou para trás vem primeiro, porque
    é a que corre o risco de passar batido. */
 function avisoFaturas(cid){
@@ -2672,12 +2734,13 @@ function painelFaturas(cid){
       <tbody>${linhas}</tbody></table></div></div>`;
 }
 function viewCartoes(){
-  const cid=filtroCartao||(DB.cartoes[0]&&DB.cartoes[0].id);
+  if(cartaoSel===null)return viewEscolhaCartao();
+  const cid=cartaoSel||filtroCartao||(DB.cartoes[0]&&DB.cartoes[0].id);
   const crt=DB.cartoes.find(c=>c.id===cid);
   const F=fatDoMes(mesAtual,cid).slice().sort((a,b)=>a.data===b.data?0:(a.data<b.data?-1:1));
   const total=F.reduce((s,f)=>s+(f.valor||0),0);
   const abas=DB.cartoes.map(c=>{const t=fatDoMes(mesAtual,c.id).reduce((s,f)=>s+(f.valor||0),0);
-    return `<button class="tab ${c.id===cid?'active':''}" onclick="filtroCartao='${c.id}';render()">${marcaBanco(c,'mini')} ${esc(c.nome)} <span class="cnt">${n0(t)}</span></button>`}).join('');
+    return `<button class="tab ${c.id===cid?'active':''}" onclick="escolheCartao('${c.id}')">${marcaBanco(c,'mini')} ${esc(c.nome)} <span class="cnt">${n0(t)}</span></button>`}).join('');
   const rows=F.map(f=>`<tr>
       <td class="num dim">${fmtBR(f.data)}</td>
       <td><b>${esc(f.desc)}</b>${f.obs?`<div class="muted" style="font-size:11px">${esc(f.obs)}</div>`:''}</td>
@@ -2696,7 +2759,12 @@ function viewCartoes(){
   const pago=pagFatura(cid,mesAtual), pagoLeg=pago?null:pagFatLegado(cid,mesAtual);
   const usoLim=crt&&crt.limite>0?Math.min(100,total/crt.limite*100):0;
 
-  return `<nav class="tabs" style="margin-top:0">${abas}<button class="btn btn-sm btn-ghost" style="margin-left:6px" onclick="openConta('cartao')">＋ Cartão</button></nav>
+  return `<div class="bnav">
+    <button class="btn btn-sm btn-ghost" onclick="trocaCartao()">‹ Trocar de cartão</button>
+    <div class="bnav-q">${crt?comMarca(crt):'<b>Cartão</b>'}</div>
+    <span class="bnav-s">fatura de ${mesLabel(mesAtual)}: <b class="goldtxt">${brl(total)}</b></span>
+  </div>
+  <nav class="tabs" style="margin-top:0">${abas}<button class="btn btn-sm btn-ghost" style="margin-left:6px" onclick="openConta('cartao')">＋ Cartão</button></nav>
   ${avisoFaturas(cid)}
   <div class="stats">
     <div class="stat"><div class="k">Fatura de ${mesLabel(mesAtual)}</div><div class="v goldtxt">${brl(total)}</div><div class="sub">${F.length} lançamento(s)</div></div>
@@ -2893,7 +2961,7 @@ function conferirParcelamentos(){
       acao:grupo.map(s=>`<button class="btn btn-sm btn-ghost" style="color:var(--neg)"
         onclick="excluirSerie('${s.itens.map(x=>x.id).join(',')}','${esc(s.desc).replace(/'/g,'')}')"
         >🗑 Excluir parcelamento “${esc(s.desc)}”</button>`).join('')
-        +`<button class="btn btn-sm btn-ghost" onclick="filtroCartao='${f.cartaoId}';go('cartoes')">Ver na fatura</button>`});
+        +`<button class="btn btn-sm btn-ghost" onclick="abreCartao('${f.cartaoId}')">Ver na fatura</button>`});
   });
 
   /* 6. conta a pagar parcelada que também está na fatura, sem estar ligada */
@@ -3217,7 +3285,7 @@ function painelParcelas(){
         ${s.faltamAgenda?`<button class="btn btn-sm btn-gold" style="flex:1;justify-content:center"
           onclick="gerarFaltantes('${esc(s.chave)}')">Lançar as ${s.faltamAgenda} que faltam</button>`:''}
         ${s.tipo==='cartao'?`<button class="btn btn-sm btn-ghost" style="flex:1;justify-content:center"
-          onclick="filtroCartao='${s.cartaoId}';go('cartoes')">Ver na fatura</button>`:''}
+          onclick="abreCartao('${s.cartaoId}')">Ver na fatura</button>`:''}
         <button class="btn btn-sm btn-ghost" style="flex:1;justify-content:center;color:var(--neg)"
           title="manda as ${s.itens.length} parcelas para os Excluídos"
           onclick="excluirSerie('${s.itens.map(x=>x.id).join(',')}','${esc(s.desc).replace(/'/g,'')}')"
@@ -3665,7 +3733,7 @@ function openFat(id){
   const f=id?DB.fat.find(x=>x.id===id):null;
   document.getElementById('fatTitle').textContent=f?'Editar compra':'Nova compra no cartão';
   document.getElementById('f_id').value=f?f.id:'';
-  const cid=f?f.cartaoId:(filtroCartao||(DB.cartoes[0]&&DB.cartoes[0].id));
+  const cid=f?f.cartaoId:(typeof cartaoPadrao==='function'?cartaoPadrao():(filtroCartao||(DB.cartoes[0]&&DB.cartoes[0].id)));
   document.getElementById('f_cartao').innerHTML=DB.cartoes.map(c=>`<option value="${c.id}" ${cid===c.id?'selected':''}>${esc(c.nome)}</option>`).join('');
   document.getElementById('f_data').value=f?f.data:(mesAtual+'-'+pad(Math.min(new Date().getDate(),diasNoMes(mesAtual))));
   document.getElementById('f_mes').value=f?f.mesRef:mesAtual;
@@ -3700,7 +3768,7 @@ function saveFat(){
     }
     if(totparc>parcela)toast((totparc-parcela)+' parcela(s) futura(s) criada(s)');
   }
-  filtroCartao=o.cartaoId; if(mesRef!==mesAtual)mesAtual=mesRef;
+  filtroCartao=o.cartaoId; cartaoSel=o.cartaoId; if(mesRef!==mesAtual)mesAtual=mesRef;
   save();closeModal('ovFat');render();
 }
 
@@ -3807,7 +3875,7 @@ function saveCp(){
     for(let p=1;p<=v.n;p++)
       DB.fat.push({id:uid(),cartaoId,data:venc,mesRef:addMes(mesRef,p-1),desc:desc.toUpperCase(),valor:v.parcela,
                    parcela:p,totparc:v.n,cod:cod||autoCod(desc,'S')||'',obs,serie});
-    filtroCartao=cartaoId; cpAba='parcelas';
+    filtroCartao=cartaoId; cartaoSel=cartaoId; cpAba='parcelas';
     save();closeModal('ovCp');render();
     return toast(v.n+' parcelas de '+brl(v.parcela)+' na fatura do '+nomeCartao(cartaoId));
   }
@@ -3949,7 +4017,7 @@ function saveConta(){
     const o={nome,banco:cBanco,logo:cLogo,limite:parseNum(document.getElementById('c_limite').value),
       fech:+document.getElementById('c_fech').value||null,venc:+document.getElementById('c_venc').value||null,
       contaPagId:document.getElementById('c_contaPag').value,codFat:document.getElementById('c_codFat').value};
-    if(id)Object.assign(DB.cartoes.find(x=>x.id===id),o); else{const nid=uid();DB.cartoes.push({id:nid,...o});filtroCartao=nid}
+    if(id)Object.assign(DB.cartoes.find(x=>x.id===id),o); else{const nid=uid();DB.cartoes.push({id:nid,...o});filtroCartao=nid;cartaoSel=nid}
   }
   save();closeModal('ovConta');render();toast('Salvo');
 }
@@ -4821,7 +4889,7 @@ function confirmarImport(){
   if(impState.modo==='cartao'){
     sel.forEach(l=>DB.fat.push({id:uid(),cartaoId:impState.destino,mesRef:impState.mesFat,data:l.data,
       desc:l.desc.toUpperCase(),valor:Math.abs(l.valor),parcela:1,totparc:1,cod:l.cod,obs:'importado'}));
-    filtroCartao=impState.destino;mesAtual=impState.mesFat;activeTab='cartoes';
+    filtroCartao=impState.destino;cartaoSel=impState.destino;mesAtual=impState.mesFat;activeTab='cartoes';
   }else{
     sel.forEach(l=>DB.lanc.push({id:uid(),data:l.data,contaId:impState.destino,desc:l.desc.toUpperCase(),
       cod:l.cod,entrada:l.dir==='E'?Math.abs(l.valor):0,saida:l.dir==='S'?Math.abs(l.valor):0,obs:'importado'}));

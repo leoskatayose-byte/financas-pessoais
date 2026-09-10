@@ -631,6 +631,26 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .bp.on{border-color:var(--acc);background:var(--panel2);color:var(--txt)}
 .bp-n{font-size:11.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+/* ---------- Escolher o banco antes de lançar ---------- */
+.bsel-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;padding-bottom:16px}
+.bsel{display:block;text-align:left;background:var(--panel2);border:1px solid var(--line);
+  border-left:2px solid var(--acc);border-radius:0 12px 12px 0;padding:15px 16px;transition:.15s;width:100%}
+.bsel:hover{border-color:var(--line-f);border-left-color:var(--acc-s,var(--acc));background:var(--raise);transform:translateY(-1px)}
+.bsel.geral{border-left-color:var(--dim)}
+.bsel-t{display:flex;align-items:center;gap:10px;min-width:0}
+.bsel-t b{font-size:13.5px;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bsel-v{font-size:23px;font-weight:700;color:var(--acc);font-variant-numeric:tabular-nums;margin-top:12px}
+.bsel-v.neg{color:var(--neg)}
+.bsel-s{font-size:11px;color:var(--mut);margin-top:2px}
+.bsel-m{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;margin-top:11px;
+  padding-top:10px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.bsel-go{display:block;font-size:11.5px;color:var(--mut);margin-top:11px;font-weight:600}
+.bsel:hover .bsel-go{color:var(--acc)}
+.bnav{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;
+  padding:10px 14px;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
+.bnav-q{font-size:13.5px}
+.bnav-s{margin-left:auto;font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}
+
 /* ---------- Lançamento em lote ---------- */
 .lote-pad{display:grid;grid-template-columns:220px 1fr auto;gap:12px;align-items:end;
   padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);margin-bottom:14px}
@@ -1686,7 +1706,11 @@ function toggleMenu(v){
   const abrir=v===undefined?!el.classList.contains('open'):v;
   el.classList.toggle('open',abrir);sc.classList.toggle('on',abrir);
 }
-function go(id){activeTab=id;toggleMenu(false);render();window.scrollTo({top:0,behavior:'smooth'})}
+function go(id){
+  activeTab=id;
+  /* Bancos sempre comeca perguntando em qual conta voce vai mexer */
+  if(id==='lancamentos'&&typeof contaSel!=='undefined')contaSel=null;
+  toggleMenu(false);render();window.scrollTo({top:0,behavior:'smooth'})}
 function stepMes(n){mesAtual=addMes(mesAtual,n);render()}
 function render(){
   document.getElementById('mesLbl').textContent=mesLabel(mesAtual);
@@ -2488,7 +2512,61 @@ function paraOnde(l){
   }
   return '';
 }
+/* ---------- Escolha do banco ----------
+   A tela Bancos começa perguntando em qual conta você vai mexer. Antes ela
+   abria em "todas" e o lançamento novo caía na primeira conta da lista, o que
+   é o jeito mais fácil de lançar no banco errado. Com a conta escolhida, o
+   modal de lançamento e o de lote já nascem apontando para ela. */
+let contaSel=null;   /* null = mostrando a tela de escolha */
+function escolheConta(id){
+  contaSel=id; filtroConta=id; filtroBusca='';
+  render(); window.scrollTo({top:0,behavior:'smooth'});
+}
+function trocaConta(){contaSel=null;render();window.scrollTo({top:0,behavior:'smooth'})}
+/* a conta que os modais devem sugerir: a escolhida, se for uma conta de verdade */
+const contaPadrao=()=>(contaSel&&contaSel!=='todas')?contaSel
+  :(filtroConta&&filtroConta!=='todas')?filtroConta:((DB.contas[0]||{}).id||'');
+
+function viewEscolhaBanco(){
+  const hoje=iso(new Date());
+  const cartao=(c)=>{
+    const si=saldoInicialMes(c.id,mesAtual);
+    const mv=lancsDoMes(mesAtual,c.id);
+    const saldo=si+mv.reduce((s,l)=>s+(l.entrada||0)-(l.saida||0),0);
+    const e=mv.reduce((s,l)=>s+(l.entrada||0),0), sa=mv.reduce((s,l)=>s+(l.saida||0),0);
+    return `<button class="bsel" onclick="escolheConta('${c.id}')">
+      <div class="bsel-t">${marcaBanco(c)}<b>${esc(c.nome)}</b></div>
+      <div class="bsel-v ${saldo<0?'neg':''}">${brl(saldo)}</div>
+      <div class="bsel-s">saldo em ${mesLabel(mesAtual)}</div>
+      <div class="bsel-m">
+        <span class="pos">↑ ${brl(e)}</span>
+        <span class="neg">↓ ${brl(sa)}</span>
+        <span class="muted">${mv.length} lanç.</span></div>
+      <span class="bsel-go">abrir o extrato →</span>
+    </button>`};
+  const T=lancsDoMes(mesAtual);
+  const totE=T.reduce((s,l)=>s+(l.entrada||0),0), totS=T.reduce((s,l)=>s+(l.saida||0),0);
+  const todas=`<button class="bsel geral" onclick="escolheConta('todas')">
+      <div class="bsel-t"><span class="bmark" style="background:var(--raise)"><svg viewBox="0 0 40 40">
+        <rect x="8" y="10" width="24" height="7" rx="2" fill="var(--dim)"/>
+        <rect x="8" y="20" width="24" height="7" rx="2" fill="var(--dim)" opacity=".7"/>
+        <rect x="8" y="30" width="24" height="4" rx="2" fill="var(--dim)" opacity=".4"/></svg></span>
+        <b>Todas as contas juntas</b></div>
+      <div class="bsel-v">${brl(resumo(mesAtual).saldoFim)}</div>
+      <div class="bsel-s">soma de ${DB.contas.length} conta(s)</div>
+      <div class="bsel-m"><span class="pos">↑ ${brl(totE)}</span><span class="neg">↓ ${brl(totS)}</span>
+        <span class="muted">${T.length} lanç.</span></div>
+      <span class="bsel-go">ver o mês inteiro →</span></button>`;
+  return `<div class="panel"><div class="panel-head"><h2>Em qual banco você vai mexer?
+      <small>escolha a conta antes de lançar; assim o lançamento não cai na conta errada</small></h2>
+      <button class="btn btn-sm btn-ghost" onclick="openConta('banco')">＋ Nova conta</button></div>
+    <div class="bsel-g">${DB.contas.map(cartao).join('')}${todas}</div>
+    <div class="muted" style="font-size:11.5px;padding:2px 0 18px">
+      Depois de escolher, o botão <b>＋ Lançamento</b> já vem com essa conta marcada.</div></div>`;
+}
+
 function viewLanc(){
+  if(contaSel===null)return viewEscolhaBanco();
   const contas=DB.contas;
   let list=lancsDoMes(mesAtual,filtroConta).slice().sort((a,b)=>a.data===b.data?0:(a.data<b.data?-1:1));
   if(filtroBusca){const q=filtroBusca.toUpperCase();list=list.filter(l=>(l.desc||'').toUpperCase().includes(q)||nomeConta(l.cod).toUpperCase().includes(q))}
@@ -2514,17 +2592,24 @@ function viewLanc(){
 
   const tot={e:list.reduce((s,l)=>s+(l.entrada||0),0),s:list.reduce((s,l)=>s+(l.saida||0),0)};
   const cab=contas.map(c=>`<option value="${c.id}" ${filtroConta===c.id?'selected':''}>${esc(c.nome)}</option>`).join('');
+  const escolhida=contaPorId(contaSel);
+  /* faixa com o banco em que você está: some a dúvida de onde o lançamento cai */
+  const faixa=`<div class="bnav">
+    <button class="btn btn-sm btn-ghost" onclick="trocaConta()">‹ Trocar de banco</button>
+    <div class="bnav-q">${escolhida?comMarca(escolhida):'<b>Todas as contas juntas</b>'}</div>
+    ${escolhida?`<span class="bnav-s">saldo em ${mesLabel(mesAtual)}: <b class="${run<0?'neg':'goldtxt'}">${brl(run)}</b></span>`:''}
+  </div>`;
 
-  return `${semC?`<div class="alert bad"><span>⚠️</span><div>${semC} lançamento(s) sem conta do plano neste filtro. Clique no lápis para classificar — ou use <b>Classificar automático</b>.</div><button class="btn btn-sm right" onclick="autoClassificar()">Classificar automático</button></div>`:''}
+  return `${faixa}${semC?`<div class="alert bad"><span>⚠️</span><div>${semC} lançamento(s) sem conta do plano neste filtro. Clique no lápis para classificar — ou use <b>Classificar automático</b>.</div><button class="btn btn-sm right" onclick="autoClassificar()">Classificar automático</button></div>`:''}
   <div class="panel">
-    <div class="panel-head"><h2>Extrato · ${mesLabel(mesAtual)}<small>${única?'Saldo inicial da conta: '+brl(saldoInicialMes(filtroConta,mesAtual)):'Todas as contas — selecione uma conta para ver o saldo corrente'}</small></h2>
+    <div class="panel-head"><h2>Extrato · ${mesLabel(mesAtual)}<small>${única?'Saldo inicial da conta: '+brl(saldoInicialMes(filtroConta,mesAtual)):'Todas as contas juntas — escolha um banco para ver o saldo corrente'}</small></h2>
       <button class="btn btn-sm btn-gold" onclick="openLanc()">＋ Lançamento</button>
       <button class="btn btn-sm" onclick="openLote()">⇊ Em lote</button>
       <button class="btn btn-sm" onclick="openImport()">⇩ Importar extrato</button>
       <button class="btn btn-sm btn-ghost" onclick="openConta('banco')">＋ Conta</button>
     </div>
     <div class="filters">
-      <select onchange="filtroConta=this.value;render()"><option value="todas" ${filtroConta==='todas'?'selected':''}>Todas as contas</option>${cab}</select>
+      <select onchange="escolheConta(this.value)"><option value="todas" ${filtroConta==='todas'?'selected':''}>Todas as contas</option>${cab}</select>
       <input placeholder="Buscar histórico ou conta…" value="${esc(filtroBusca)}" oninput="filtroBusca=this.value;rerenderLanc()" id="buscaLanc">
       <span class="right muted" style="font-size:12px">${list.length} lançamento(s) · entradas ${brl(tot.e)} · saídas ${brl(tot.s)}</span>
     </div>
@@ -3471,7 +3556,9 @@ function openLanc(id){
   document.getElementById('l_id').value=l?l.id:'';
   curDir=l?((eTransf||ePat)?'T':(l.entrada>0?'E':'S')):'S';
   document.querySelectorAll('#l_dir .o').forEach(o=>o.classList.toggle('sel',o.dataset.v===curDir));
-  document.getElementById('l_conta').innerHTML=DB.contas.map(c=>`<option value="${c.id}" ${l&&l.contaId===c.id?'selected':''}>${esc(c.nome)}</option>`).join('');
+  /* conta nova ja vem na que voce escolheu na tela Bancos */
+  const cPad=typeof contaPadrao==='function'?contaPadrao():'';
+  document.getElementById('l_conta').innerHTML=DB.contas.map(c=>`<option value="${c.id}" ${(l?l.contaId===c.id:c.id===cPad)?'selected':''}>${esc(c.nome)}</option>`).join('');
   document.getElementById('l_data').value=l?l.data:(mesAtual+'-'+pad(Math.min(new Date().getDate(),diasNoMes(mesAtual))));
   document.getElementById('l_desc').value=l?l.desc:'';
   document.getElementById('l_valor').value=l?n0(l.entrada||l.saida):'';
@@ -4033,7 +4120,8 @@ const loteVazia=()=>({data:'',dir:curDirLote,desc:'',cod:document.getElementById
 
 function openLote(){
   curDirLote='S';
-  document.getElementById('lo_conta').innerHTML=DB.contas.map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join('');
+  const loPad=typeof contaPadrao==='function'?contaPadrao():'';
+  document.getElementById('lo_conta').innerHTML=DB.contas.map(c=>`<option value="${c.id}" ${c.id===loPad?'selected':''}>${esc(c.nome)}</option>`).join('');
   document.getElementById('lo_mes').value=mesAtual;
   document.querySelectorAll('#lo_dir .o').forEach(o=>o.classList.toggle('sel',o.dataset.v==='S'));
   encheCodLote();

@@ -391,6 +391,9 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 @keyframes viewIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
 .dre-sec{font-weight:800;color:var(--acc);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding-top:16px}
 .dre-tot td{border-top:1px solid var(--line-f);border-bottom:1px solid var(--line-f);font-weight:700}
+/* o resultado da operação em si, antes das movimentações neutras */
+.dre-res td{border-top:2px solid var(--acc);border-bottom:1px solid var(--line-f);
+  font-weight:800;font-size:14px;background:color-mix(in srgb,var(--acc) 7%,transparent)}
 .dre-ind td{border:none;padding:6px 10px}
 /* ---------- Princípios ----------
    Efeitos que dizem algo: o fio lateral carrega a cor da categoria e
@@ -3489,12 +3492,16 @@ function viewDre(){
         <tr><td style="padding-left:24px" class="muted">${gLbl('CARTÃO CRÉDITO')} <span class="pill">neutra</span></td><td class="num muted">${brl(nCart)}</td><td class="num muted">—</td></tr>
         <tr><td colspan="3" class="muted" style="font-size:11.5px;padding-left:24px;border:none">O pagamento da fatura não entra no total: as compras do cartão já foram distribuídas nos grupos acima.</td></tr>
         <tr class="dre-tot"><td>(=) TOTAL DE DESPESAS</td><td class="num neg">${brl(r.totDesp)}</td><td class="num">${r.totRec?pct(r.totDesp/r.totRec):'—'}</td></tr>
-        <tr><td class="dre-sec" colspan="3">(~) MOVIMENTAÇÕES NEUTRAS</td></tr>
+        <tr class="dre-res"><td>(=) RESULTADO DO PERÍODO</td><td class="num ${r.resultado>=0?'pos':'neg'}">${brl(r.resultado)}</td><td class="num">${r.totRec?pct(r.resultado/r.totRec):'—'}</td></tr>
+        <tr><td colspan="3" class="muted" style="font-size:11.5px;padding-left:24px;border:none">O que a sua vida financeira produziu no mês: receitas menos despesas. Nada abaixo desta linha muda esse número.</td></tr>
+        <tr><td class="dre-sec" colspan="3">(~) MOVIMENTAÇÕES NEUTRAS — dinheiro que trocou de lugar</td></tr>
         <tr><td style="padding-left:24px">Investimentos — aportes (saídas)</td><td class="num">${brl(nInvS)}</td><td class="num muted">—</td></tr>
         <tr><td style="padding-left:24px">Investimentos — resgates (entradas)</td><td class="num">${brl(nInvE)}</td><td class="num muted">—</td></tr>
         <tr><td style="padding-left:24px">Transferências / PIX — enviados</td><td class="num">${brl(nTrS)}</td><td class="num muted">—</td></tr>
         <tr><td style="padding-left:24px">Transferências / PIX — recebidos</td><td class="num">${brl(nTrE)}</td><td class="num muted">—</td></tr>
-        <tr class="dre-tot"><td>(=) RESULTADO LÍQUIDO DO PERÍODO</td><td class="num ${r.resultado>=0?'pos':'neg'}">${brl(r.resultado)}</td><td class="num">${r.totRec?pct(r.resultado/r.totRec):'—'}</td></tr>
+        <tr><td colspan="3" class="muted" style="font-size:11.5px;padding-left:24px;border:none">Aporte não é despesa e resgate não é receita: o dinheiro saiu do caixa e virou patrimônio, ou voltou. Por isso ficam fora do resultado e aparecem aqui.</td></tr>
+        <tr class="dre-tot"><td>(=) VARIAÇÃO DO CAIXA NO MÊS</td><td class="num ${(r.entradas-r.saidas)>=0?'pos':'neg'}">${brl(r.entradas-r.saidas)}</td><td class="num muted">—</td></tr>
+        <tr><td colspan="3" class="muted" style="font-size:11.5px;padding-left:24px;border:none">Tudo que entrou menos tudo que saiu das contas, movimentação neutra incluída. ${brl(r.saldoIni)} no começo do mês ${(r.entradas-r.saidas)>=0?'+':'−'} ${brl(Math.abs(r.entradas-r.saidas))} = ${brl(r.saldoFim)} no fim.</td></tr>
       </tbody></table></div>
   </div>
   `+painelMovPat(mesAtual)+`

@@ -392,6 +392,9 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .dre-sec{font-weight:800;color:var(--acc);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding-top:16px}
 .dre-tot td{border-top:1px solid var(--line-f);border-bottom:1px solid var(--line-f);font-weight:700}
 /* o resultado da operação em si, antes das movimentações neutras */
+.dre-res2 td{border-top:2px solid var(--meta);border-bottom:1px solid var(--line-f);
+  font-weight:800;font-size:14px;background:color-mix(in srgb,var(--meta) 7%,transparent)}
+.dre-res2 td:first-child{color:var(--meta-s,var(--meta))}
 .dre-res td{border-top:2px solid var(--acc);border-bottom:1px solid var(--line-f);
   font-weight:800;font-size:14px;background:color-mix(in srgb,var(--acc) 7%,transparent)}
 .dre-ind td{border:none;padding:6px 10px}
@@ -3500,6 +3503,15 @@ function viewDre(){
   const nCart=(r.neutras['CARTÃO CRÉDITO']||{s:0}).s;
   const nInvS=(r.neutras['INVESTIMENTOS']||{s:0}).s, nInvE=(r.neutras['INVESTIMENTOS']||{e:0}).e;
   const nTrS=(r.neutras['TRANSFERÊNCIAS']||{s:0}).s, nTrE=(r.neutras['TRANSFERÊNCIAS']||{e:0}).e;
+  /* Resultado com investimento: o que sobrou mais o que virou patrimônio.
+     Serve para responder "quanto ficou comigo no mês", contando o que você
+     guardou em vez de gastar. O aporte pode ter vindo da sobra do mês ou do
+     saldo que já existia; a nota embaixo separa os dois, senão o número vira
+     uma soma que ninguém sabe de onde saiu. */
+  const aporteLiq=Math.round((nInvS-nInvE)*100)/100;
+  const comInv=Math.round((r.resultado+aporteLiq)*100)/100;
+  const doMes=Math.max(0,Math.min(Math.max(r.resultado,0),aporteLiq));
+  const doSaldo=Math.round((aporteLiq-doMes)*100)/100;
   const dias=diasNoMes(mesAtual);
   return `<div class="panel">
     <div class="panel-head"><h2>DRE — Demonstração do Resultado Pessoal<small>${mesLabel(mesAtual)} · despesas = razão + compras nos cartões</small></h2></div>
@@ -3526,6 +3538,8 @@ function viewDre(){
         <tr><td colspan="3" class="muted" style="font-size:11.5px;padding-left:24px;border:none">Aporte não é despesa e resgate não é receita: o dinheiro saiu do caixa e virou patrimônio, ou voltou. Por isso ficam fora do resultado e aparecem aqui.</td></tr>
         <tr class="dre-tot"><td>(=) VARIAÇÃO DO CAIXA NO MÊS</td><td class="num ${(r.entradas-r.saidas)>=0?'pos':'neg'}">${brl(r.entradas-r.saidas)}</td><td class="num muted">—</td></tr>
         <tr><td colspan="3" class="muted" style="font-size:11.5px;padding-left:24px;border:none">Tudo que entrou menos tudo que saiu das contas, movimentação neutra incluída. ${brl(r.saldoIni)} no começo do mês ${(r.entradas-r.saidas)>=0?'+':'−'} ${brl(Math.abs(r.entradas-r.saidas))} = ${brl(r.saldoFim)} no fim.</td></tr>
+        <tr class="dre-res2"><td>(=) RESULTADO COM INVESTIMENTO</td><td class="num ${comInv>=0?'pos':'neg'}">${brl(comInv)}</td><td class="num muted">—</td></tr>
+        <tr><td colspan="3" class="muted" style="font-size:11.5px;padding-left:24px;border:none">O que sobrou <b>mais</b> o que você guardou: ${brl(r.resultado)} de resultado ${aporteLiq>=0?'+':'−'} ${brl(Math.abs(aporteLiq))} que ${aporteLiq>=0?'entrou para':'saiu do'} o patrimônio.${aporteLiq>0?` Desse aporte, ${brl(doMes)} veio da sobra do próprio mês e ${brl(doSaldo)} veio do dinheiro que você já tinha em conta.`:''}</td></tr>
       </tbody></table></div>
   </div>
   `+painelMovPat(mesAtual)+`
@@ -3541,6 +3555,9 @@ function viewDre(){
         <tr><td>% da receita comprometida</td><td class="num">${r.totRec?pct(r.totDesp/r.totRec):'—'}</td></tr>
         <tr><td>% de sobra / poupança potencial</td><td class="num ${r.resultado>=0?'pos':'neg'}">${r.totRec?pct(r.resultado/r.totRec):'—'}</td></tr>
         <tr><td>Custo médio por dia</td><td class="num">${brl(r.totDesp/dias)}</td></tr>
+        <tr><td>Quanto foi para investimento</td><td class="num">${brl(aporteLiq)}</td></tr>
+        <tr><td>Resultado com investimento</td><td class="num ${comInv>=0?'pos':'neg'}">${brl(comInv)}</td></tr>
+        <tr><td>Taxa de poupança (aporte sobre receita)</td><td class="num">${r.totRec?pct(aporteLiq/r.totRec):'—'}</td></tr>
         <tr><td>Saldo em conta ao fim do mês</td><td class="num goldtxt">${brl(r.saldoFim)}</td></tr>
       </tbody></table></div>
   </div>`;

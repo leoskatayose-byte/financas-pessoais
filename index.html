@@ -951,7 +951,8 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
       <div class="field"><label>Tipo *</label><select id="pc_tipo"><option>DESPESA</option><option>RECEITA</option><option>NEUTRA</option></select></div>
     </div>
     <div class="field"><label>Nome da conta *</label><input id="pc_nome" placeholder="ex.: Marmita"></div>
-    <div class="field"><label>Grupo *</label><select id="pc_grupo"></select></div>
+    <div class="field"><label>Grupo *</label><select id="pc_grupo" onchange="grupoMudou()"></select>
+      <div class="hint" id="pc_hint"></div></div>
   </div>
   <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('ovPlano')">Cancelar</button><button class="btn btn-gold" onclick="savePlano()">Salvar</button></div>
 </div></div>
@@ -3472,14 +3473,37 @@ function painelMovPat(mk){
 
 function viewDre(){
   const r=resumo(mesAtual);
-  const recRows=['RECEITAS','RECEITAS FINANCEIRAS'].map(g=>`<tr><td style="padding-left:24px">${gLbl(g)}</td><td class="num">${brl(r.receitas[g]||0)}</td><td class="num muted">${r.totRec?pct((r.receitas[g]||0)/r.totRec):'—'}</td></tr>`).join('');
-  const despRows=GRUPOS_DESP.map(g=>`<tr><td style="padding-left:24px">${gLbl(g)}</td><td class="num">${brl(r.despesas[g]||0)}</td><td class="num muted">${r.totRec?pct((r.despesas[g]||0)/r.totRec):'—'}</td></tr>`).join('');
+  /* As linhas saem do que o mês tem de verdade, não de uma lista fixa. Antes o
+     DRE imprimia dois grupos de receita e somava todos: uma conta de receita
+     movida para outro grupo entrava no total sem aparecer em linha nenhuma. */
+  const ordena=gs=>gs.slice().sort((a,b)=>((GRUPOS[a]||{}).ord||99)-((GRUPOS[b]||{}).ord||99));
+  const linhas=(mapa,fixos)=>{
+    const gs=ordena([...new Set((fixos||[]).concat(Object.keys(mapa)))]);
+    return gs.map(g=>{
+      const v=mapa[g]||0;
+      const estranho=!GRUPOS[g];
+      return `<tr><td style="padding-left:24px">${gLbl(g)}${estranho?' <span class="chip chip-bad">grupo fora do padrão</span>':''}</td>
+        <td class="num">${brl(v)}</td>
+        <td class="num muted">${r.totRec?pct(v/r.totRec):'—'}</td></tr>`}).join('');
+  };
+  const recRows=linhas(r.receitas,['RECEITAS','RECEITAS FINANCEIRAS']);
+  const despRows=linhas(r.despesas,GRUPOS_DESP);
+  /* conta classificada como receita (ou despesa) dentro de um grupo neutro é
+     erro de cadastro: o número entra no resultado sem aparecer onde deveria */
+  const fora=[];
+  Object.keys(r.receitas).forEach(g=>{if((GRUPOS[g]||{}).cls!=='rec'&&r.receitas[g])fora.push([g,'receita',r.receitas[g]])});
+  Object.keys(r.despesas).forEach(g=>{if((GRUPOS[g]||{}).cls!=='desp'&&r.despesas[g])fora.push([g,'despesa',r.despesas[g]])});
+  const alertaFora=fora.length?`<div class="alert bad"><span>⚠️</span><div>
+    ${fora.map(([g,t,v])=>`<b>${gLbl(g)}</b> está somando ${brl(v)} como ${t}, mas é um grupo ${gLbl(g)===g?'desconhecido':'neutro'}.`).join(' ')}
+    Abra o <b>Plano de contas</b> e confira o tipo dessas contas: uma conta de investimento deve ser do tipo neutra, não receita.</div>
+    <button class="btn btn-sm right" onclick="go('plano')">Abrir plano de contas</button></div>`:'';
   const nCart=(r.neutras['CARTÃO CRÉDITO']||{s:0}).s;
   const nInvS=(r.neutras['INVESTIMENTOS']||{s:0}).s, nInvE=(r.neutras['INVESTIMENTOS']||{e:0}).e;
   const nTrS=(r.neutras['TRANSFERÊNCIAS']||{s:0}).s, nTrE=(r.neutras['TRANSFERÊNCIAS']||{e:0}).e;
   const dias=diasNoMes(mesAtual);
   return `<div class="panel">
     <div class="panel-head"><h2>DRE — Demonstração do Resultado Pessoal<small>${mesLabel(mesAtual)} · despesas = razão + compras nos cartões</small></h2></div>
+    ${alertaFora}
     ${r.semConta.length?`<div class="alert bad"><span>⚠️</span><div>${r.semConta.length} lançamento(s) sem conta do plano estão fora deste DRE (total ${brl(r.semConta.reduce((s,x)=>s+(x.saida||x.valor||0)-(x.entrada||0),0))}).</div></div>`:''}
     <div class="tbl-scroll"><table>
       <thead><tr><th>Conta / descrição</th><th class="num">Valor (R$)</th><th class="num">% Rec.</th></tr></thead>
@@ -4208,14 +4232,39 @@ function openPlanoM(cod){
   document.getElementById('pc_nome').value=p?p.nome:'';
   document.getElementById('pc_tipo').value=p?p.tipo:'DESPESA';
   document.getElementById('pc_grupo').innerHTML=Object.keys(GRUPOS).map(g=>`<option value="${esc(g)}" ${p&&p.grupo===g?'selected':''}>${esc(gLbl(g))}</option>`).join('');
+  /* aviso na hora, se a conta ja estiver com tipo e grupo em desacordo */
+  const hint=document.getElementById('pc_hint');
+  const esp=TIPO_DO_GRUPO(document.getElementById('pc_grupo').value);
+  hint.textContent=(esp&&p&&p.tipo!==esp)
+    ? 'Atenção: esta conta está como '+String(p.tipo).toLowerCase()+' num grupo '+esp.toLowerCase()+'. Isso soma no DRE fora da linha certa.'
+    : '';
+  hint.style.color=(esp&&p&&p.tipo!==esp)?'var(--neg)':'';
   document.getElementById('ovPlano').classList.add('show');
+}
+/* O tipo tem de combinar com o grupo. Escolher RECEITA num grupo neutro faz o
+   valor entrar no total do DRE sem aparecer em linha de receita nenhuma: foi
+   assim que a conta de investimento inflou o total de receitas. */
+const TIPO_DO_GRUPO=g=>({rec:'RECEITA',desp:'DESPESA',neutra:'NEUTRA'})[(GRUPOS[g]||{}).cls]||'';
+function grupoMudou(){
+  const g=document.getElementById('pc_grupo').value;
+  const t=TIPO_DO_GRUPO(g);
+  const sel=document.getElementById('pc_tipo'), hint=document.getElementById('pc_hint');
+  if(t&&sel.value!==t)sel.value=t;
+  hint.textContent=t
+    ? 'Grupo '+gLbl(g)+' é do tipo '+t.toLowerCase()+'; o tipo acima acompanhou.'
+    : '';
 }
 function savePlano(){
   const cod=document.getElementById('pc_cod').value.trim(), nome=document.getElementById('pc_nome').value.trim();
   if(!cod||!nome)return toast('Preencha código e nome');
   const orig=document.getElementById('pc_orig').value;
   if(!orig&&DB.plano.some(p=>p.cod===cod))return toast('Já existe uma conta com esse código');
-  const o={cod,nome,grupo:document.getElementById('pc_grupo').value,tipo:document.getElementById('pc_tipo').value};
+  const grupo=document.getElementById('pc_grupo').value, tipo=document.getElementById('pc_tipo').value;
+  const esperado=TIPO_DO_GRUPO(grupo);
+  if(esperado&&tipo!==esperado&&!confirm(
+      'O grupo '+gLbl(grupo)+' é do tipo '+esperado.toLowerCase()+', e você marcou '+tipo.toLowerCase()+'.\n\n'+
+      'Assim o valor entra no total do DRE sem aparecer na linha certa. Salvar mesmo assim?'))return;
+  const o={cod,nome,grupo,tipo};
   if(orig){const p=DB.plano.find(x=>x.cod===orig);Object.assign(p,o);
     if(orig!==cod){DB.lanc.forEach(l=>{if(l.cod===orig)l.cod=cod});DB.fat.forEach(f=>{if(f.cod===orig)f.cod=cod});DB.kws.forEach(k=>{if(k.cod===orig)k.cod=cod})}}
   else DB.plano.push(o);

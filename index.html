@@ -453,11 +453,60 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .pr-c{animation:prEntra .34s cubic-bezier(.2,.7,.2,1) backwards}
 @keyframes prEntra{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
 
+/* Princípio adotado respira: brilho lento na borda e no botão. É devagar de
+   propósito, para lembrar sem incomodar quem deixa a tela aberta o dia todo. */
+.pr-c.on{box-shadow:0 0 0 1px color-mix(in srgb,var(--pcor) 30%,transparent)}
+.pr-c.on::before{animation:prBrilho 3.4s ease-in-out infinite}
+@keyframes prBrilho{
+  0%,100%{opacity:1;box-shadow:0 0 6px 0 color-mix(in srgb,var(--pcor) 45%,transparent)}
+  50%{opacity:1;box-shadow:0 0 16px 2px color-mix(in srgb,var(--pcor) 80%,transparent)}}
+.pr-adotar.on{animation:prPulso 3.4s ease-in-out infinite}
+@keyframes prPulso{
+  0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--pcor) 55%,transparent)}
+  50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--pcor) 0%,transparent)}}
+/* comemoração de uma vez só, no clique */
+.pr-c.acabou{animation:prFesta .9s cubic-bezier(.2,.8,.2,1)}
+@keyframes prFesta{
+  0%{transform:scale(1)}
+  28%{transform:scale(1.035);box-shadow:0 0 34px 6px color-mix(in srgb,var(--pcor) 55%,transparent)}
+  100%{transform:scale(1)}}
+
 .pdia{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);
   border-left:2px solid var(--acc);border-radius:0 12px 12px 0;padding:13px 18px;margin-bottom:16px}
 .pdia .k{font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:var(--mut);font-weight:800;white-space:nowrap}
 .pdia .t{font-size:14px;font-weight:600;flex:1;min-width:180px;line-height:1.4}
-@media(prefers-reduced-motion:reduce){.pr-c{animation:none}.pr-c:hover{transform:none}}
+/* vários princípios adotados: o do dia em cima, os outros em fichas */
+.pdia.col{display:block}
+.pdia-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.pdia-top .t{font-size:14px;font-weight:600;flex:1;min-width:180px;line-height:1.4}
+.pdia-g{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
+.pf{font-size:11.5px;color:var(--dim);background:var(--panel2);border:1px solid var(--line);
+  border-left:2px solid var(--pcor,var(--acc));border-radius:0 7px 7px 0;padding:5px 10px;
+  max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pdia-n{font-size:11px;color:var(--mut);margin-top:9px}
+
+/* metas em miniatura, quando há mais de uma */
+.mm-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:10px;padding-bottom:18px}
+.mm{display:flex;align-items:center;gap:13px;text-align:left;width:100%;
+  background:var(--panel2);border:1px solid var(--line);border-left:2px solid var(--meta);
+  border-radius:0 11px 11px 0;padding:12px 14px;transition:.15s}
+.mm:hover{border-color:var(--line-f);border-left-color:var(--meta-s,var(--meta));background:var(--raise);transform:translateY(-1px)}
+.mm.ok{border-left-color:var(--pos)}
+.mm-anel{position:relative;width:50px;height:50px;flex:0 0 50px}
+.mm-anel svg{width:100%;height:100%;transform:rotate(-90deg)}
+.mm-anel circle{fill:none;stroke-width:5;stroke-linecap:round}
+.mm-anel .tr{stroke:var(--raise)}
+.mm-anel .fg{stroke:var(--meta);transition:stroke-dashoffset .6s cubic-bezier(.2,.8,.2,1)}
+.mm.ok .mm-anel .fg{stroke:var(--pos)}
+.mm-emo{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:19px}
+.mm-b{flex:1;min-width:0}
+.mm-n{font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mm-v{font-size:12px;color:var(--dim);margin-top:3px;font-variant-numeric:tabular-nums}
+.mm-m{display:flex;align-items:center;gap:7px;margin-top:6px;font-size:11px;color:var(--mut);flex-wrap:wrap}
+.mm-m b{color:var(--meta);font-size:12.5px;font-variant-numeric:tabular-nums}
+@media(prefers-reduced-motion:reduce){
+  .pr-c,.pr-c.acabou,.pr-c.on::before,.pr-adotar.on{animation:none}
+  .pr-c:hover{transform:none}}
 /* ---------- Playbooks ---------- */
 .pb{display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));gap:12px}
 .pb-c{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;cursor:pointer;
@@ -737,6 +786,65 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
   background:color-mix(in srgb,var(--pos) 10%,transparent);color:var(--pos)}
 .parc-ft{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
 .parc-ft .btn{flex:1 1 130px}
+
+/* ==========================================================================
+   Celular e acessibilidade
+   Medido em 390px de largura, que é o iPhone mais comum. Três coisas guiam:
+   caber sem rolar para o lado, alvo grande o bastante para o dedo, e foco
+   visível para quem navega pelo teclado.
+   ========================================================================== */
+:where(a,button,input,select,textarea,details summary,.pr-c,.bsel,.mm,.kb-card,.dia-i,.parc)
+  :focus-visible,
+:where(a,button,input,select,textarea,details summary,.pr-c,.bsel,.mm)
+  :is(:focus-visible){outline:none}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,
+textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid var(--acc);outline-offset:2px;border-radius:6px}
+
+@media(max-width:600px){
+  /* o título encolhe em vez de empurrar os botões para outra linha */
+  .topbar{padding:12px 16px;gap:10px}
+  .topbar h1{font-size:17px;min-width:0;flex:1 1 120px}
+  .topbar h1 span{font-size:11px;margin-top:2px}
+  .tb-acts{gap:6px}
+  .tb-acts .btn{padding:7px 10px;font-size:12px}
+  .mesnav b{min-width:92px;font-size:12.5px}
+  .page{padding:16px 14px 64px}
+
+  /* dedo: alvo grande nos botões pequenos, inclusive nos que o desktop
+     encolhe de propósito (cartão do kanban) */
+  .iconbtn,.kb-card .acts .iconbtn{width:38px;height:38px;font-size:13px}
+  .kb-card .acts{opacity:1;gap:6px}
+  .btn-sm{padding:9px 12px}
+  .chk{width:26px;height:26px;flex:0 0 26px}
+
+  /* faixa do princípio do dia: tudo empilhado, nada espremido */
+  .pdia{flex-wrap:wrap;padding:12px 14px}
+  .pdia .t,.pdia-top .t{min-width:100%;order:2}
+  .pdia .btn,.pdia-top .btn{order:3}
+  .pf{max-width:100%}
+
+  /* metas em miniatura ocupam a linha toda */
+  .mm-g{grid-template-columns:1fr}
+
+  /* playbook em papel: menos margem, texto do tamanho de leitura no celular */
+  .papel{padding:22px 18px!important;border-radius:10px}
+  .papel .cab{flex-direction:column;gap:12px;align-items:flex-start}
+  .papel .cab svg{width:150px}
+  .papel .cab-dir{text-align:left;min-width:0}
+  .papel h1{font-size:21px}
+  .papel .resumo{font-size:14px}
+  .papel p{font-size:13.5px;line-height:1.7}
+  .modal-body{padding:14px 12px}
+  .modal-foot{padding:12px 14px;gap:7px}
+  .modal-foot .btn{flex:1 1 auto;justify-content:center}
+}
+@media(max-width:340px){
+  /* só em tela bem estreita a faixa vira uma coluna: em 390px duas cabem e
+     a tela fica bem mais curta */
+  .stats{grid-template-columns:1fr}
+  .stat + .stat{border-left:none;border-top:1px solid var(--line)}
+}
 </style>
 
 <div class="gate" id="gate"></div>
@@ -1798,7 +1906,7 @@ function viewDash(){
     ['Gasto nos cartões',brl(r.totCartoes),'',r.F.length+' compras na fatura'],
     ['Custo médio/dia',brl(r.totDesp/diasNoMes(mesAtual)),'','sobre '+diasNoMes(mesAtual)+' dias']
   ];
-  const statsHtml=boasVindas()+principioDoDia()+heroMeta()+`<div class="stats">${stats.map(([k,v,c,s])=>`<div class="stat"><div class="k">${k}</div><div class="v ${c||''}">${v}</div><div class="sub">${s}</div></div>`).join('')}</div>`;
+  const statsHtml=boasVindas()+principioDoDia()+painelMetas()+`<div class="stats">${stats.map(([k,v,c,s])=>`<div class="stat"><div class="k">${k}</div><div class="v ${c||''}">${v}</div><div class="sub">${s}</div></div>`).join('')}</div>`;
 
   const alerta=r.semConta.length?`<div class="alert bad"><span>⚠️</span><div><b>${r.semConta.length} lançamento(s) sem conta do plano</b> — ficam de fora do DRE e dos gráficos. ${r.semConta.slice(0,3).map(x=>esc(x.desc)).join(', ')}${r.semConta.length>3?'…':''}. <button class="btn btn-sm" style="margin-left:6px" onclick="go('lancamentos')">Resolver</button></div></div>`:'';
 
@@ -2318,7 +2426,7 @@ function viewPrinc(){
     <div class="stat"><div class="k">Adotados</div><div class="v goldtxt">${adot.length}</div><div class="sub">os que você assumiu como seus</div></div>
     ${cats.slice(0,3).map(c=>`<div class="stat"><div class="k" style="color:${pcor(c)}">${esc(c)}</div><div class="v">${L.filter(x=>x.cat===c&&x.adotado).length}<span class="muted" style="font-size:13px;font-weight:500"> de ${L.filter(x=>x.cat===c).length}</span></div><div class="sub">adotados</div></div>`).join('')}
   </div>`;
-  const card=(x,i)=>`<div class="pr-c ${x.adotado?'on':''}"
+  const card=(x,i)=>`<div class="pr-c ${x.adotado?'on':''}" data-id="${x.id}"
       style="--pcor:${pcor(x.cat)};animation-delay:${Math.min(i*34,420)}ms">
     <div class="cab"><span class="cat">${esc(x.cat)}</span>
       ${x.proprio?'<span class="pill">seu</span>':''}
@@ -2344,7 +2452,11 @@ function viewPrinc(){
 function adotar(id){
   const x=DB.principios.find(p=>p.id===id);if(!x)return;
   x.adotado=!x.adotado;save();render();
-  if(x.adotado)toast('Adotado. Ele vai aparecer na sua Visão geral.');
+  if(!x.adotado)return toast('Tirado dos seus princípios');
+  toast('Adotado. Ele vai aparecer na sua Visão geral.');
+  /* uma comemoração curta no cartão que acabou de ser adotado */
+  const el=document.querySelector('.pr-c[data-id="'+id+'"]');
+  if(el){el.classList.add('acabou');setTimeout(()=>el.classList.remove('acabou'),950)}
 }
 function openPrinc(id){
   const x=id?DB.principios.find(p=>p.id===id):null;
@@ -2366,13 +2478,69 @@ function savePrinc(){
   else DB.principios.push({id:uid(),...o,adotado:true,proprio:true});
   save();closeModal('ovPr');render();toast('Princípio salvo');
 }
+/* ---------- Metas na Visão geral ----------
+   Com uma meta só, o cartão grande vale a pena: ele é o destaque da tela. Com
+   duas ou mais, o cartão grande empurraria o resto para baixo da dobra, então
+   elas viram cartões pequenos lado a lado e cabem todas de uma olhada. */
+function miniMeta(m){
+  const p=Math.min(1,progresso(m)), fin=m.tipo==='financeira', jun=juntado(m);
+  const hoje=iso(new Date());
+  const noPrazo=!m.prazo||m.prazo>=hoje||p>=1;
+  const etapasFeitas=(m.etapas||[]).filter(e=>e.feito).length, etapasTot=(m.etapas||[]).length;
+  const C=2*Math.PI*26, off=(C*(1-p)).toFixed(1);
+  return `<button class="mm ${p>=1?'ok':''}" onclick="go('metas')" title="${esc(m.nome)}">
+    <div class="mm-anel">
+      <svg viewBox="0 0 64 64"><circle class="tr" cx="32" cy="32" r="26"/>
+        <circle class="fg" cx="32" cy="32" r="26" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off}"/></svg>
+      <span class="mm-emo">${esc(m.emoji||'◎')}</span>
+    </div>
+    <div class="mm-b">
+      <div class="mm-n">${esc(m.nome)}</div>
+      <div class="mm-v">${fin?brl(jun):etapasFeitas+' de '+etapasTot+' etapas'}
+        <span class="muted">${fin?' de '+brl(m.valorAlvo):''}</span></div>
+      <div class="mm-m"><b>${(p*100).toFixed(0)}%</b>
+        <span class="chip ${p>=1?'chip-ok':(noPrazo?'chip-n':'chip-bad')}">${p>=1?'concluída':(noPrazo?'no prazo':'atrasada')}</span>
+        ${m.prazo?`<span class="muted">${fmtBR(m.prazo)}</span>`:''}</div>
+    </div></button>`;
+}
+function painelMetas(){
+  const abertas=metasAtivas().filter(m=>progresso(m)<1);
+  const ord=(a,b)=>((b.tipo==='financeira')-(a.tipo==='financeira'))||(progresso(b)-progresso(a));
+  const todas=metasAtivas().slice().sort(ord);
+  if(!todas.length)return `<div class="panel" style="text-align:center;padding:26px">
+    <div class="meta-kicker">Meta ativa</div>
+    <div style="margin:10px 0 14px;color:var(--dim);font-size:13.5px">Nenhuma meta cadastrada ainda. Dê um destino ao dinheiro que sobra.</div>
+    <button class="btn btn-gold" onclick="go('metas')">＋ Criar minha primeira meta</button></div>`;
+  if(todas.length===1)
+    return metaHTML(todas[0],true).replace('<div class="meta">','<div class="meta" style="margin-bottom:16px">')
+             .replace(/class="meta-kicker">[^<]*</,'class="meta-kicker">Meta ativa<');
+  const nAb=abertas.length;
+  return `<div class="panel"><div class="panel-head"><h2>Suas metas
+      <small>${nAb?nAb+' em andamento':'todas concluídas'} · clique para abrir</small></h2>
+      <button class="btn btn-sm btn-ghost" onclick="go('metas')">Ver todas</button></div>
+    <div class="mm-g">${todas.map(miniMeta).join('')}</div></div>`;
+}
+
+/* ---------- Princípios na Visão geral ----------
+   Um princípio adotado vira a faixa de sempre. Vários viram uma fileira de
+   fichas: cabem na tela e o do dia continua em destaque. */
 function principioDoDia(){
   const L=principiosAtivos().filter(x=>x.adotado);
   if(!L.length)return '';
   const hoje=new Date(); const n=Math.floor((hoje-new Date(hoje.getFullYear(),0,0))/864e5);
-  const x=L[n%L.length];
-  return `<div class="pdia"><span class="k">Princípio do dia</span><span class="t">${esc(x.txt)}</span>
-    <button class="btn btn-sm btn-ghost" onclick="go('principios')">Ver todos</button></div>`;
+  const doDia=L[n%L.length];
+  if(L.length===1)
+    return `<div class="pdia"><span class="k">Princípio do dia</span><span class="t">${esc(doDia.txt)}</span>
+      <button class="btn btn-sm btn-ghost" onclick="go('principios')">Ver todos</button></div>`;
+  const resto=L.filter(x=>x.id!==doDia.id);
+  return `<div class="pdia col">
+    <div class="pdia-top"><span class="k">Princípio do dia</span>
+      <span class="t">${esc(doDia.txt)}</span>
+      <button class="btn btn-sm btn-ghost" onclick="go('principios')">Ver todos</button></div>
+    <div class="pdia-g">${resto.map(x=>`<span class="pf" style="--pcor:${pcor(x.cat)}"
+      title="${esc(x.cat)}">${esc(x.txt)}</span>`).join('')}</div>
+    <div class="pdia-n">${L.length} princípios adotados. O do dia troca sozinho a cada dia.</div>
+  </div>`;
 }
 
 /* ============================ PLAYBOOKS ============================ */
@@ -2406,7 +2574,7 @@ function viewPb(){
   </div>
   <div class="pb">${vis.map(card).join('')}</div>`;
 }
-let pbAberto=null, pbPapel=false;
+let pbAberto=null;
 
 /* O playbook em papel: mesmo texto, desenho das propostas Lidere.
    Serve para ler no claro e é exatamente o que vai para o PDF. */
@@ -2434,7 +2602,6 @@ function pbPapelHTML(p){
     <div class="rodape"><span>LIDERE · Finanças pessoais</span><span>Gerado em ${hoje}</span></div>
   </div>`;
 }
-function pbTogglePapel(){pbPapel=!pbPapel;abrirPb(pbAberto)}
 function pbPdf(id){
   const p=PLAYBOOKS.find(x=>x.id===id);if(!p)return;
   document.getElementById('imprimir').innerHTML=pbPapelHTML(p);
@@ -2445,18 +2612,11 @@ function abrirPb(id){
   const p=PLAYBOOKS.find(x=>x.id===id);if(!p)return;
   pbAberto=id;
   const lido=(DB.lidos||{})[id];
-  if(pbPapel){document.getElementById('pbBody').innerHTML=pbPapelHTML(p)}
-  else document.getElementById('pbBody').innerHTML=`<div class="leitura" style="--tcor:${TCOR[p.tema]||'var(--acc)'}">
-    <div class="tema">${esc(p.tema)} · ${p.min} min de leitura</div>
-    <h2>${esc(p.titulo)}</h2>
-    <div class="res">${esc(p.resumo)}</div>
-    ${p.blocos.map(b=>`<h3>${esc(b.h)}</h3><p>${esc(b.p)}</p>`).join('')}
-    <div class="acao"><b>Aplique hoje</b><p>${esc(p.acao)}</p></div>
-    ${p.nota?`<div class="nota">${esc(p.nota)}</div>`:''}
-  </div>`;
+  /* Playbook só existe em papel: é assim que ele foi desenhado e é
+     exatamente o que sai no PDF. Não há mais duas versões para manter. */
+  document.getElementById('pbBody').innerHTML=pbPapelHTML(p);
   document.getElementById('pbFoot').innerHTML=`
     <button class="btn btn-ghost" onclick="closeModal('ovPb')">Fechar</button>
-    <button class="btn" onclick="pbTogglePapel()">${pbPapel?'◐ Ver no tema do app':'◑ Ler em papel'}</button>
     <button class="btn" onclick="pbPdf('${id}')">⎙ Exportar PDF</button>
     <button class="btn" onclick="pbVirarPendencia('${id}')">Virar pendência</button>
     <button class="btn ${lido?'':'btn-gold'}" onclick="pbLido('${id}')">${lido?'✓ lido — desmarcar':'Marcar como lido'}</button>`;
@@ -2508,18 +2668,6 @@ function ritmo(){
       <div><div class="k">Sequência atual</div><div class="v ${atual>=3?'goldtxt':''}">${atual}<span class="muted" style="font-size:12px;font-weight:500"> dia(s)</span></div></div>
       <div><div class="k">Melhor sequência</div><div class="v">${melhor}<span class="muted" style="font-size:12px;font-weight:500"> dia(s)</span></div></div>
     </div></div>`;
-}
-function heroMeta(){
-  /* meta ativa = financeira em andamento mais avançada; se não houver, o objetivo mais adiantado */
-  const abertas=metasAtivas().filter(m=>progresso(m)<1);
-  const ord=(a,b)=>((b.tipo==='financeira')-(a.tipo==='financeira'))||(progresso(b)-progresso(a));
-  const m=abertas.sort(ord)[0]||metasAtivas().sort(ord)[0];
-  if(!m)return `<div class="panel" style="text-align:center;padding:26px">
-    <div class="meta-kicker">Meta ativa</div>
-    <div style="margin:10px 0 14px;color:var(--dim);font-size:13.5px">Nenhuma meta cadastrada ainda. Dê um destino ao dinheiro que sobra.</div>
-    <button class="btn btn-gold" onclick="go('metas')">＋ Criar minha primeira meta</button></div>`;
-  return metaHTML(m,true).replace('<div class="meta">','<div class="meta" style="margin-bottom:16px">')
-           .replace(/class="meta-kicker">[^<]*</,'class="meta-kicker">Meta ativa<');
 }
 
 /* ============================ LANÇAMENTOS ============================ */

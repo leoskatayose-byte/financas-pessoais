@@ -208,14 +208,14 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
    O texto ocupa a folha inteira, como um PDF aberto. Sem moldura escura em
    volta, sem cabeçalho de modal: só a página e os botões no rodapé. */
 .overlay.livro{padding:0;align-items:stretch;background:rgba(0,0,0,.86)}
-.modal.livro-m{max-width:880px;margin:0 auto;border:none;border-radius:0;
-  background:#fff;display:flex;flex-direction:column;height:100%;box-shadow:0 0 90px rgba(0,0,0,.7);position:relative}
-.modal.livro-m .modal-body{flex:1;max-height:none;overflow-y:auto;padding:0;background:#fff}
-.modal.livro-m .papel{border-radius:0;box-shadow:none;margin:0;min-height:100%;
-  max-width:720px;margin-left:auto;margin-right:auto}
-.modal.livro-m .modal-foot{background:#fff;border-top:1px solid #e6e6e6;flex-wrap:wrap}
-.modal.livro-m .modal-foot .btn:not(.btn-gold){background:#fff;border-color:#d8d8d8;color:#333}
-.modal.livro-m .modal-foot .btn:not(.btn-gold):hover{background:#f3f3f3;color:#111;border-color:#bbb}
+.modal.livro-m{max-width:900px;margin:0 auto;border:none;border-radius:0;
+  background:#e7e5df;display:flex;flex-direction:column;height:100%;box-shadow:0 0 90px rgba(0,0,0,.7);position:relative}
+.modal.livro-m .modal-body{flex:1;max-height:none;overflow-y:auto;padding:20px 20px 28px;background:#e7e5df}
+.modal.livro-m .papel{border-radius:3px;border:1px solid #cdc8bc;box-shadow:0 10px 34px rgba(0,0,0,.2);
+  margin:0 auto;min-height:calc(100% - 4px);max-width:720px}
+.modal.livro-m .modal-foot{background:#e7e5df;border-top:1px solid #cdc8bc;flex-wrap:wrap}
+.modal.livro-m .modal-foot .btn:not(.btn-gold){background:#fff;border-color:#c9c4b8;color:#333}
+.modal.livro-m .modal-foot .btn:not(.btn-gold):hover{background:#f6f4ef;color:#111;border-color:#a9a397}
 .livro-x{position:absolute;top:14px;right:16px;z-index:3;width:38px;height:38px;border-radius:50%;
   border:1px solid #d8d8d8;background:rgba(255,255,255,.92);color:#555;font-size:22px;line-height:1;
   display:flex;align-items:center;justify-content:center;transition:.15s}
@@ -328,7 +328,7 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .cal .d{min-height:92px;background:var(--panel);padding:7px;position:relative;transition:.15s;cursor:pointer;overflow:hidden}
 .cal .d:hover{background:var(--panel2)}
 .cal .d.out{opacity:.3}
-.cal .d.hoje{background:var(--panel2);box-shadow:inset 0 2px 0 var(--acc)}
+.cal .d.hoje{background:var(--panel2);box-shadow:inset 0 2px 0 var(--acc);animation:brilhoHoje 3.4s ease-in-out infinite}
 .cal .d .n{font-weight:700;color:var(--dim);font-size:11px;font-variant-numeric:tabular-nums}
 .cal .d.hoje .n{color:var(--acc)}
 .cal .ev{display:block;margin-top:4px;padding:2px 5px;border-radius:3px;font-size:9.5px;overflow:hidden;
@@ -512,6 +512,25 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .pdia .k{animation:pdiaPulso 3.4s ease-in-out infinite}
 @keyframes pdiaPulso{0%,100%{color:var(--mut)}50%{color:var(--acc)}}
 @media(prefers-reduced-motion:reduce){.pdia::after,.pdia .k{animation:none}}
+
+/* O mesmo brilho de 3,4s vira a linguagem do app para "olhe aqui": o nome de
+   quem está usando, a meta que foi batida, o dia de hoje e a fatura aberta.
+   Quatro pontos, nada além disso, para não virar árvore de natal. */
+@keyframes brilhoNome{0%,100%{text-shadow:none}
+  50%{text-shadow:0 0 15px color-mix(in srgb,var(--acc) 62%,transparent)}}
+.brilha{animation:brilhoNome 3.4s ease-in-out infinite}
+@keyframes brilhoMeta{0%,100%{box-shadow:none}
+  50%{box-shadow:0 0 16px -1px color-mix(in srgb,var(--pos) 40%,transparent)}}
+.mm.ok,.meta.batida{animation:brilhoMeta 3.4s ease-in-out infinite}
+.mm.ok .mm-m .chip,.meta.batida .meta-nome{animation:brilhoNome 3.4s ease-in-out infinite}
+@keyframes brilhoHoje{0%,100%{box-shadow:inset 0 2px 0 var(--acc)}
+  50%{box-shadow:inset 0 2px 0 var(--acc),0 0 13px color-mix(in srgb,var(--acc) 42%,transparent)}}
+@keyframes brilhoAberta{0%,100%{box-shadow:none}
+  50%{box-shadow:0 0 15px -2px color-mix(in srgb,var(--neg) 45%,transparent)}}
+.fat-aviso.aberta{animation:brilhoAberta 3.4s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){
+  .brilha,.mm.ok,.meta.batida,.meta.batida .meta-nome,.mm.ok .mm-m .chip,
+  .cal .d.hoje,.fat-aviso.aberta{animation:none}}
 
 /* metas em miniatura, quando há mais de uma */
 .mm-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:10px;padding-bottom:18px}
@@ -873,7 +892,8 @@ textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
   /* playbook em papel: menos margem, texto do tamanho de leitura no celular */
   .papel{padding:26px 18px 30px!important;border-radius:0}
   .modal.livro-m{max-width:100%}
-  .modal.livro-m .modal-body{padding:0}
+  .modal.livro-m .modal-body{padding:8px 8px 14px}
+  .modal.livro-m .papel{min-height:calc(100% - 2px)}
   .papel .cab{flex-direction:column;gap:12px;align-items:flex-start}
   .papel .cab svg{width:150px}
   .papel .cab-dir{text-align:left;min-width:0}
@@ -1928,7 +1948,7 @@ function topoCelular(){
   const nome=((DB&&DB.usuario&&DB.usuario.nome)||'').trim();
   el.innerHTML='<div class="tc-logo">'+LOGO_SVG+'</div>'+
     '<div class="tc-txt">'+(nome
-      ? 'Bem-vindo, <b>'+esc(nome.split(' ')[0])+'</b>'
+      ? 'Bem-vindo, <b class="brilha">'+esc(nome.split(' ')[0])+'</b>'
       : '<button class="tc-nome" onclick="editaNome()">Bem-vindo · dizer meu nome</button>')+
     '</div>';
 }
@@ -1964,7 +1984,7 @@ function boasVindas(){
   const nome=((DB.usuario&&DB.usuario.nome)||'').trim();
   return `<div class="ola">
     <div class="ola-txt">
-      <h2>${saudacao()}${nome?', <button class="ola-nome" onclick="editaNome()" title="trocar o nome">'+esc(nome)+'</button>':''}.</h2>
+      <h2>${saudacao()}${nome?', <button class="ola-nome brilha" onclick="editaNome()" title="trocar o nome">'+esc(nome)+'</button>':''}.</h2>
       <p>${hojePorExtenso()}${nome?'':' · <button class="ola-nome" onclick="editaNome()">como posso te chamar?</button>'}</p>
     </div>
   </div>`;
@@ -2376,7 +2396,7 @@ function metaHTML(m,compacto){
     : [['Etapas',etapasFeitas+' de '+etapasTot,'pos'],
        ['Concluído',(p*100).toFixed(0)+'%','dim']];
   if(m.prazo)nums.push(['Prazo',fmtBR(m.prazo)+(dias!==null&&p<1?(dias>=0?' · '+dias+'d':' · '+Math.abs(dias)+'d atrás'):''),'dim']);
-  return `<div class="meta">
+  return `<div class="meta ${p>=1?'batida':''}">
     ${m.capa?`<div class="meta-cover" style="background-image:url('${esc(m.capa)}')"></div>`:''}
     <div class="meta-in">
       <div class="meta-emo">${esc(m.emoji||'◎')}</div>
@@ -2960,7 +2980,7 @@ function avisoFaturas(cid){
   if(!abertas.length)return '';
   const soma=abertas.reduce((s,x)=>s+x.total,0);
   const linhas=abertas.map(x=>`<button class="btn btn-sm btn-gold" onclick="openPagFat('${cid}','${x.mk}')">Pagar ${mesLabel(x.mk)} · ${brl(x.total)}</button>`).join(' ');
-  return `<div class="alert bad"><span>💳</span>
+  return `<div class="alert bad fat-aviso aberta"><span>💳</span>
     <div>${abertas.length===1?'A fatura de '+mesLabel(abertas[0].mk)+' fechou e não foi paga.'
       :abertas.length+' faturas fecharam e não foram pagas, somando '+brl(soma)+'.'}</div>
     <div class="right" style="display:flex;gap:8px;flex-wrap:wrap">${linhas}</div></div>`;

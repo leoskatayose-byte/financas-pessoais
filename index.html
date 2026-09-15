@@ -228,6 +228,15 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .bar-track{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden}
 .bar-track>i{display:block;height:100%;border-radius:3px;transition:width .6s cubic-bezier(.2,.7,.2,1)}
 .bar-track.over>i{background:var(--neg)!important}
+/* A barra de maior peso (e qualquer uma que estourou o teto) pulsa com a cor
+   dela mesma: o drop-shadow herda a cor escrita no style da barra. */
+.bar-track>i.pulsa{animation:brilhoBarra 2.8s ease-in-out infinite;transform-origin:center}
+@keyframes brilhoBarra{
+  0%,100%{filter:drop-shadow(0 0 0 transparent);transform:scaleY(1)}
+  50%{filter:drop-shadow(0 0 7px currentColor) drop-shadow(0 0 14px currentColor);
+      transform:scaleY(1.45)}}
+.bar-track{overflow:visible}
+@media(prefers-reduced-motion:reduce){.bar-track>i.pulsa{animation:none}}
 
 /* ---------- Anel de progresso ---------- */
 .ring{width:118px;height:118px;flex:0 0 118px;transform:rotate(-90deg)}
@@ -516,9 +525,20 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 /* O mesmo brilho de 3,4s vira a linguagem do app para "olhe aqui": o nome de
    quem está usando, a meta que foi batida, o dia de hoje e a fatura aberta.
    Quatro pontos, nada além disso, para não virar árvore de natal. */
-@keyframes brilhoNome{0%,100%{text-shadow:none}
-  50%{text-shadow:0 0 15px color-mix(in srgb,var(--acc) 62%,transparent)}}
-.brilha{animation:brilhoNome 3.4s ease-in-out infinite}
+@keyframes brilhoNome{
+  0%,100%{filter:drop-shadow(0 0 1px color-mix(in srgb,var(--acc) 25%,transparent))}
+  50%{filter:drop-shadow(0 0 12px color-mix(in srgb,var(--acc) 85%,transparent))
+             drop-shadow(0 0 24px color-mix(in srgb,var(--acc) 40%,transparent))}}
+/* O nome é a única coisa da tela escrita com outra letra: serifada e em itálico,
+   como uma assinatura. A cor vem de um degradê recortado no próprio texto, então
+   o brilho tem de ser drop-shadow, não text-shadow. */
+.brilha.brilha{font-family:Georgia,'Times New Roman',Times,serif;font-style:italic;
+  font-weight:700;letter-spacing:.2px;font-size:1.08em;
+  background:linear-gradient(96deg,var(--acc) 0,var(--acc-s) 52%,var(--meta) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:brilhoNome 2.8s ease-in-out infinite}
+@supports not ((-webkit-background-clip:text) or (background-clip:text)){
+  .brilha.brilha{background:none;color:var(--acc)}}
 @keyframes brilhoMeta{0%,100%{box-shadow:none}
   50%{box-shadow:0 0 16px -1px color-mix(in srgb,var(--pos) 40%,transparent)}}
 .mm.ok,.meta.batida{animation:brilhoMeta 3.4s ease-in-out infinite}
@@ -529,7 +549,7 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
   50%{box-shadow:0 0 15px -2px color-mix(in srgb,var(--neg) 45%,transparent)}}
 .fat-aviso.aberta{animation:brilhoAberta 3.4s ease-in-out infinite}
 @media(prefers-reduced-motion:reduce){
-  .brilha,.mm.ok,.meta.batida,.meta.batida .meta-nome,.mm.ok .mm-m .chip,
+  .brilha,.brilha.brilha,.mm.ok,.meta.batida,.meta.batida .meta-nome,.mm.ok .mm-m .chip,
   .cal .d.hoje,.fat-aviso.aberta{animation:none}}
 
 /* metas em miniatura, quando há mais de uma */
@@ -2034,12 +2054,12 @@ function viewDash(){
   const gastoComTeto=GRUPOS_DESP.filter(comTeto).reduce((s,g)=>s+(r.despesas[g]||0),0);
   const nEstourados=GRUPOS_DESP.filter(g=>comTeto(g)&&(r.despesas[g]||0)>DB.orc[g]).length;
 
-  const barras=desp.length?desp.map(([g,v])=>{
+  const barras=desp.length?desp.map(([g,v],i)=>{
     const teto=DB.orc[g]||0, over=teto>0&&v>teto;
     const pctTeto=teto>0?v/teto*100:0;
     const larg=teto>0?Math.min(100,pctTeto):(v/maxD*100);
     return `<div class="bar-row orc"><div class="lbl" title="${esc(gLbl(g))}">${esc(gLbl(g))}</div>
-      <div class="bar-track ${over?'over':''}"><i data-w="${larg.toFixed(1)}" style="width:0;background:${over?'':'linear-gradient(90deg,'+gCor(g)+'aa,'+gCor(g)+')'}"></i></div>
+      <div class="bar-track ${over?'over':''}"><i class="${over||i===0?'pulsa':''}" data-w="${larg.toFixed(1)}" style="width:0;color:${over?'var(--neg)':gCor(g)};background:${over?'':'linear-gradient(90deg,'+gCor(g)+'aa,'+gCor(g)+')'}"></i></div>
       <div class="num">${brl(v)}</div>
       <div class="num ${over?'neg':(pctTeto>=85?'warn':'muted')}" title="${teto>0?'do teto do mês':'sem teto definido'}">${
         teto>0?pctTeto.toFixed(0)+'%':'—'}</div>
@@ -3920,7 +3940,7 @@ function viewPat(){
   <div class="grid2">
     <div class="panel"><div class="panel-head"><h2>Composição da carteira</h2></div>
       ${cls.length?cls.map(([c,v],i)=>`<div class="bar-row"><div class="lbl">${esc(c)}</div>
-        <div class="bar-track"><i data-w="${(v/maxC*100).toFixed(1)}" style="width:0;background:linear-gradient(90deg,${CORES[i%CORES.length]}aa,${CORES[i%CORES.length]})"></i></div>
+        <div class="bar-track"><i class="${i===0?'pulsa':''}" data-w="${(v/maxC*100).toFixed(1)}" style="width:0;color:${CORES[i%CORES.length]};background:linear-gradient(90deg,${CORES[i%CORES.length]}aa,${CORES[i%CORES.length]})"></i></div>
         <div class="num">${brl(v)}</div><div class="num muted">${total?((v/total)*100).toFixed(0)+'%':'—'}</div></div>`).join(''):'<div class="empty">Nenhum ativo cadastrado.</div>'}</div>
     <div class="panel"><div class="panel-head"><h2>Ativos<small>atualize o valor quando reavaliar</small></h2><button class="btn btn-sm btn-gold" onclick="openPatM()">＋ Ativo</button></div>
       <div class="tbl-scroll"><table><thead><tr><th>Ativo</th><th>Classe</th><th class="num">Valor</th><th class="num">%</th><th></th></tr></thead><tbody>

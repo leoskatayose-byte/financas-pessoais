@@ -2119,15 +2119,16 @@ const NAV=[
   {g:'Finanças',its:[['lancamentos','Bancos'],['cartoes','Cartões'],['pagar','A pagar']]},
   {g:'Análise',its:[['dre','Resultado · DRE'],['patrimonio','Patrimônio']]},
   {g:'Planejamento',its:[['metas','Metas']]},
-  {g:'Formação',its:[['principios','Princípios'],['playbooks','Playbooks']]},
+  {g:'Formação',its:[['playbooks','Playbooks']]},
   {g:'Ajustes',its:[['plano','Plano de contas'],['lixeira','Excluídos'],
-                    ['privacidade','Privacidade'],['admin','Administração']]}
+                    ['privacidade','Privacidade'],['principios','Princípios'],
+                    ['admin','Administração']]}
 ];
 const SECAO={
   dashboard:['Visão geral','Como o mês está indo'],
   pendencias:['Pendências','O que precisa ser feito'],
   metas:['Metas e objetivos','Onde o dinheiro de hoje vai chegar'],
-  principios:['Princípios','As regras que você escolhe seguir'],
+  principios:['Princípios','O banco que alimenta a faixa da Visão geral'],
   playbooks:['Playbooks','Leituras curtas para decidir melhor'],
   lancamentos:['Bancos','Extrato e saldo das suas contas'],
   cartoes:['Cartões','Faturas e parcelamentos'],
@@ -2275,6 +2276,10 @@ function boasVindas(){
 function pedeNome(){
   const el=document.getElementById('ovNome');
   if(!el)return;
+  /* perguntou uma vez, nunca mais. Vale inclusive para quem fecha a caixa no
+     Esc ou clicando fora: ninguem merece responder a mesma coisa toda vez que
+     abre o sistema. */
+  DB.perguntouNome=true;save();
   el.classList.add('show');
   setTimeout(()=>{const i=document.getElementById('n_nome');if(i)i.focus()},80);
 }
@@ -5827,7 +5832,7 @@ const SESSAO = 'lidere_fp_sessao';
    Serve para o app perceber sozinho que já existe versão mais nova publicada
    do que a que está aberta neste navegador: quem usa o sistema recebe as
    melhorias sem precisar saber o que é cache. */
-const APP_BUILD = '2026-09-16.1652';
+const APP_BUILD = '2026-09-16.1658';
 let avisouVersao = false, ultimaChecagem = 0;
 
 async function checaVersao() {

@@ -5707,8 +5707,15 @@ async function fazCriar() {
     return telaLogin({ txt: 'Aceite o aviso de privacidade para continuar.' }, 'criar');
   gateOcupado('criando…');
   try {
-    await criarConta(email, senha);
-    telaLogin({ tipo: 'ok', txt: 'Conta criada. Confirme o e-mail que acabamos de enviar e depois entre — seu acesso ainda precisa ser liberado.' });
+    const r = await criarConta(email, senha);
+    /* Com a confirmação de e-mail desligada no servidor, a resposta já vem com
+       sessão ou com o e-mail dado por confirmado: nesse caso não dá para mandar a
+       pessoa procurar um e-mail que nunca vai chegar. */
+    const pedeEmail = !(r && (r.access_token || r.email_confirmed_at
+                              || (r.user && r.user.email_confirmed_at)));
+    telaLogin({ tipo: 'ok', txt: pedeEmail
+      ? 'Conta criada. Confirme o e-mail que acabamos de enviar e depois entre. Seu acesso ainda precisa ser liberado.'
+      : 'Conta criada. Já pode entrar. Seu acesso ainda precisa ser liberado por quem administra o sistema.' });
   } catch (e) {
     const m = /already registered/i.test(e.message) ? 'Esse e-mail já tem conta. Tente entrar.' : e.message;
     telaLogin({ txt: m }, 'criar');

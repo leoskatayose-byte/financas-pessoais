@@ -580,6 +580,8 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
   border-left:2px solid var(--pcor,var(--acc));border-radius:0 7px 7px 0;padding:5px 10px;
   max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pdia-n{font-size:11px;color:var(--mut);margin-top:9px}
+.pdia-d{font-size:12.5px;color:var(--dim);line-height:1.55;margin-top:10px;
+  padding-top:10px;border-top:1px solid var(--line);max-width:82ch}
 /* A faixa do princípio do dia respira junto com os cartões adotados: mesmo
    brilho, mesmo ritmo. É o lembrete que fica à vista na Visão geral. */
 .pdia{position:relative}
@@ -1486,7 +1488,127 @@ const PRINCIPIOS_BASE=[
  {id:'p13',cat:'Relação consigo',txt:'Comparar patrimônio é comparar capítulos diferentes.',
   desc:'Você vê o resultado dos outros e o processo do seu. É uma comparação torta por construção. O único comparativo honesto é com o seu mês passado.'},
  {id:'p14',cat:'Dinheiro',txt:'Liquidez antes de rentabilidade.',
-  desc:'Dinheiro que você pode precisar amanhã não deve estar onde rende mais — deve estar onde você alcança. Rentabilidade sem acesso vira dívida cara na primeira emergência.'}
+  desc:'Dinheiro que você pode precisar amanhã não deve estar onde rende mais — deve estar onde você alcança. Rentabilidade sem acesso vira dívida cara na primeira emergência.'},
+ {id:'p15',cat:'Dinheiro',txt:'Dinheiro guardado sem destino volta a ser dinheiro gasto.',
+  desc:'Sobra sem nome some. Dê um endereço para cada real que fica: reserva, viagem, troca de carro. O nome é o que segura o dinheiro no lugar.'},
+ {id:'p16',cat:'Dinheiro',txt:'O que não é medido vira sensação, e sensação erra.',
+  desc:'A memória infla o que doeu e apaga o que foi indolor. Sem registro você não discute com fatos, discute com impressão.'},
+ {id:'p17',cat:'Dinheiro',txt:'Preço é o que você paga uma vez; custo é o que você paga todo mês.',
+  desc:'Carro, casa, plano, assinatura: o valor da etiqueta é a menor parte. Antes de comprar, calcule o que aquilo cobra por mês para continuar existindo.'},
+ {id:'p18',cat:'Dinheiro',txt:'Parcela é compromisso, não desconto.',
+  desc:'Dividir em doze não deixa nada mais barato. Só transfere o problema para um mês em que você ainda não sabe o que vai acontecer.'},
+ {id:'p19',cat:'Dinheiro',txt:'Barato que você não usa é caro.',
+  desc:'Promoção só é boa quando a compra já fazia sentido pelo preço cheio. Caso contrário, você não economizou, você gastou.'},
+ {id:'p20',cat:'Dinheiro',txt:'Dinheiro na conta corrente é dinheiro esquecido.',
+  desc:'Saldo parado perde para a inflação todo dia, em silêncio. O que não vai ser usado neste mês deveria estar rendendo em algum lugar.'},
+ {id:'p21',cat:'Dinheiro',txt:'Cada real tem um trabalho.',
+  desc:'Antes do mês começar, diga o que cada parte da renda vai fazer: pagar, guardar, investir, viver. Dinheiro sem função procura função sozinho.'},
+ {id:'p22',cat:'Gasto',txt:'O rombo raramente está na compra grande.',
+  desc:'A compra grande você lembra, e por lembrar já pensou nela. O que corrói é o gasto pequeno e repetido, que nunca entrou em nenhuma conta.'},
+ {id:'p23',cat:'Gasto',txt:'Assinatura é gasto que renova sem pedir licença.',
+  desc:'Uma vez por semestre, abra a lista e cancele o que você não usou nos últimos trinta dias. Nada disso vai fazer falta.'},
+ {id:'p24',cat:'Gasto',txt:'Conveniência tem preço, e o preço é mensal.',
+  desc:'Entrega, aplicativo, taxa de urgência. Pagar por comodidade é legítimo; o erro é não saber quanto a comodidade custou no fim do mês.'},
+ {id:'p25',cat:'Gasto',txt:'Gasto por impulso nasce de um sentimento, não de uma necessidade.',
+  desc:'Cansaço, tédio e frustração vendem muito. Se a vontade apareceu de repente, deixe dormir até amanhã. Metade não sobrevive à noite.'},
+ {id:'p26',cat:'Gasto',txt:'Se o cartão é para tudo, a fatura é uma surpresa.',
+  desc:'Ele não é uma segunda renda, é a soma do que você já decidiu. Conferir a fatura no meio do mês evita o susto no dia dez.'},
+ {id:'p27',cat:'Gasto',txt:'Comparar preço custa dois minutos; arrepender custa meses.',
+  desc:'Nas compras recorrentes e nas grandes, comparar vale muito por hora investida. Nas pequenas e raras, comparar demais é perder tempo caro.'},
+ {id:'p28',cat:'Dívida',txt:'Dívida resolvida é a única que para de crescer.',
+  desc:'Negociar cedo custa desconto; negociar tarde custa juros sobre juros. O tempo trabalha contra quem finge que não está devendo.'},
+ {id:'p29',cat:'Dívida',txt:'Rotativo do cartão é o juro mais caro que você vai encontrar.',
+  desc:'Antes de qualquer investimento, mate o rotativo e o cheque especial. Nenhuma aplicação paga o que eles cobram.'},
+ {id:'p30',cat:'Dívida',txt:'Trocar dívida cara por dívida barata é ganho imediato.',
+  desc:'Consignado, portabilidade, garantia. Não é mágica, é matemática: menos juro no mesmo saldo devedor libera caixa todo mês.'},
+ {id:'p31',cat:'Dívida',txt:'Quem empresta o nome assume a dívida inteira.',
+  desc:'Avalista e fiador não são detalhes de papel. Só assine se você teria coragem de pagar aquilo sozinho, do próprio bolso.'},
+ {id:'p32',cat:'Dívida',txt:'Quitar dívida é investimento com retorno garantido.',
+  desc:'Deixar de pagar 8% ao mês vale mais que ganhar 1% ao mês. É o único rendimento que não depende de mercado nenhum.'},
+ {id:'p33',cat:'Reserva',txt:'Reserva não é investimento, é sono tranquilo.',
+  desc:'Ela existe para você não precisar vender nada nem se endividar quando algo quebra. Rendimento é o segundo critério; liquidez é o primeiro.'},
+ {id:'p34',cat:'Reserva',txt:'Quem não tem reserva paga caro por urgência.',
+  desc:'Sem colchão, todo imprevisto vira crédito no pior preço. A reserva é o que compra o direito de esperar e escolher.'},
+ {id:'p35',cat:'Reserva',txt:'Comece pela reserva, mesmo que pequena.',
+  desc:'Três meses de custo fixo já mudam o jogo. Antes disso, aportar em coisa de longo prazo costuma terminar em resgate no pior momento.'},
+ {id:'p36',cat:'Reserva',txt:'Reserva usada não é fracasso, é a reserva funcionando.',
+  desc:'Ela foi feita para ser gasta em imprevisto. O que não pode é ficar vazia depois: reconstruí-la é a tarefa seguinte.'},
+ {id:'p37',cat:'Investimento',txt:'Aporte constante vence aporte genial.',
+  desc:'Quem investe todo mês, no automático, chega mais longe que quem tenta acertar o momento perfeito e adia por meses.'},
+ {id:'p38',cat:'Investimento',txt:'Se você não sabe explicar, você não sabe o risco.',
+  desc:'Antes de aplicar, explique em voz alta para si mesmo como o dinheiro rende e o que pode dar errado. Se travar, não invista.'},
+ {id:'p39',cat:'Investimento',txt:'Rentabilidade passada é história, não promessa.',
+  desc:'O que rendeu muito no ano passado costuma ser o mais caro deste ano. Escolha por objetivo e prazo, não por ranking.'},
+ {id:'p40',cat:'Investimento',txt:'Taxa pequena, prazo longo, estrago grande.',
+  desc:'Um por cento ao ano parece nada e come uma década de rendimento. Antes do produto, olhe o custo.'},
+ {id:'p41',cat:'Investimento',txt:'Investimento sem prazo definido vira aposta.',
+  desc:'Saber quando você vai precisar do dinheiro é o que define onde ele deve estar. O prazo escolhe o produto, não o contrário.'},
+ {id:'p42',cat:'Investimento',txt:'Diversificar é aceitar que você pode estar errado.',
+  desc:'Concentrar é apostar que você tem razão sobre o futuro. Espalhar é reconhecer que ninguém tem.'},
+ {id:'p43',cat:'Renda',txt:'Renda extra sem controle vira gasto extra.',
+  desc:'Todo dinheiro novo precisa de destino antes de cair na conta. Sem isso, ele se dilui na rotina e você nem sabe onde foi parar.'},
+ {id:'p44',cat:'Renda',txt:'Sua maior fonte de renda merece o mesmo cuidado que seus investimentos.',
+  desc:'Uma hora estudando o que aumenta seu valor no trabalho costuma render mais que uma hora escolhendo aplicação.'},
+ {id:'p45',cat:'Renda',txt:'Uma fonte de renda só é uma fonte de risco.',
+  desc:'Não é sobre virar autônomo. É sobre ter, com o tempo, alguma entrada que não dependa do mesmo contrato.'},
+ {id:'p46',cat:'Renda',txt:'Receber melhor não é o mesmo que receber mais.',
+  desc:'Previsibilidade vale dinheiro. Uma renda menor e constante permite planejar; uma maior e errática costuma virar dívida nos meses fracos.'},
+ {id:'p47',cat:'Decisão',txt:'Decisão financeira boa é a que você repetiria em ano ruim.',
+  desc:'Teste qualquer escolha contra o mês em que tudo dá errado. Se ela só funciona no cenário bom, não é decisão, é torcida.'},
+ {id:'p48',cat:'Decisão',txt:'Dormir sobre compra grande é desconto grátis.',
+  desc:'Vinte e quatro horas de distância mudam o preço que a vontade está disposta a pagar. O que era essencial à noite costuma ser opcional de manhã.'},
+ {id:'p49',cat:'Decisão',txt:'Custo afundado não decide nada.',
+  desc:'O que você já gastou não volta. A pergunta é sempre a mesma: daqui para frente, isso ainda faz sentido?'},
+ {id:'p50',cat:'Decisão',txt:'Automatize o que você já decidiu.',
+  desc:'Débito da reserva, aporte, pagamento de fatura. Decisão boa repetida na mão vira decisão boa esquecida.'},
+ {id:'p51',cat:'Decisão',txt:'Quando estiver em dúvida entre dois, escolha o reversível.',
+  desc:'Erro que dá para desfazer custa pouco. Erro irreversível merece tempo, conversa e conta feita no papel.'},
+ {id:'p52',cat:'Decisão',txt:'Sem número, a discussão vira briga de opinião.',
+  desc:'Traga o valor, o prazo e o impacto no mês. Quase toda decisão difícil fica simples quando os três aparecem na mesma frase.'},
+ {id:'p53',cat:'Constância',txt:'Cinco minutos por dia valem mais que três horas no domingo.',
+  desc:'O controle que sobrevive é o que cabe na rotina. Frequência curta vence esforço heroico e esporádico.'},
+ {id:'p54',cat:'Constância',txt:'O mês fechado no dia certo evita o ano perdido.',
+  desc:'Uma revisão mensal de trinta minutos pega erro cedo, enquanto ele ainda é pequeno e você ainda lembra do que aconteceu.'},
+ {id:'p55',cat:'Constância',txt:'O sistema é melhor que a força de vontade.',
+  desc:'Vontade oscila com o humor. Lembrete, automático e rotina continuam funcionando no dia em que você não está inspirado.'},
+ {id:'p56',cat:'Constância',txt:'Rotina chata é sinal de finanças saudáveis.',
+  desc:'Quando o mês não tem emoção, é porque as decisões difíceis já foram tomadas antes. Tédio financeiro é conquista.'},
+ {id:'p57',cat:'Constância',txt:'Melhor um controle simples mantido que um complexo abandonado.',
+  desc:'Categoria demais cansa. Comece com o que você consegue sustentar e detalhe só onde a informação muda alguma decisão.'},
+ {id:'p58',cat:'Planejamento',txt:'Todo mês tem uma conta que você fingiu que não existia.',
+  desc:'IPVA, material escolar, seguro, presente de fim de ano. Conta anual não é imprevisto: é previsível e mal distribuída.'},
+ {id:'p59',cat:'Planejamento',txt:'Guardar primeiro, gastar o resto.',
+  desc:'Se guardar for o que sobra, nunca sobra. Tire a parte da reserva no dia em que a renda entra, não no fim do mês.'},
+ {id:'p60',cat:'Planejamento',txt:'Orçamento é combinado, não punição.',
+  desc:'Ele existe para você gastar em paz com o que importa. Um teto que só proíbe não sobrevive ao terceiro mês.'},
+ {id:'p61',cat:'Planejamento',txt:'O ano inteiro cabe em doze linhas.',
+  desc:'Olhe os próximos doze meses antes de assumir qualquer parcela. Quem enxerga o ano não é pego pelo mês.'},
+ {id:'p62',cat:'Planejamento',txt:'Metas com prazo e valor viram plano; sem eles, viram desejo.',
+  desc:'Trinta mil em dezoito meses é mil e seiscentos por mês. Vira tarefa. "Juntar dinheiro" não vira nada.'},
+ {id:'p63',cat:'Planejamento',txt:'Custo fixo alto rouba sua liberdade de decidir.',
+  desc:'Quanto maior a parte comprometida todo mês, menos margem para mudar de ideia, trocar de trabalho ou arriscar. Liberdade tem relação direta com custo fixo.'},
+ {id:'p64',cat:'Relação consigo',txt:'Dinheiro não é prova de valor pessoal.',
+  desc:'Separar quem você é do quanto você tem é o que permite decidir sem medo e sem vaidade.'},
+ {id:'p65',cat:'Relação consigo',txt:'Comparar-se com quem você não conhece é caro.',
+  desc:'A vida que aparece não mostra a dívida que a sustenta. Padrão de vida alheio é péssimo conselheiro financeiro.'},
+ {id:'p66',cat:'Relação consigo',txt:'Vergonha atrasa conserto.',
+  desc:'Olhar o extrato depois de um mês ruim é desconfortável e é exatamente o que resolve. Número não julga ninguém.'},
+ {id:'p67',cat:'Relação consigo',txt:'Gastar bem é gastar com o que você realmente valoriza.',
+  desc:'Cortar tudo não é virtude. A meta é tirar dinheiro do que não importa para sobrar no que importa.'},
+ {id:'p68',cat:'Relação consigo',txt:'Conversar sobre dinheiro em casa é mais barato que consertar depois.',
+  desc:'Combinado explícito entre quem divide a vida evita meses de ruído e decisões tomadas em silêncio.'},
+ {id:'p69',cat:'Relação consigo',txt:'Paciência é uma posição financeira.',
+  desc:'Quem consegue esperar compra melhor, vende melhor e negocia melhor. Pressa é sempre cobrada em dinheiro.'},
+ {id:'p70',cat:'Futuro',txt:'Tempo é o único juro que não dá para recuperar.',
+  desc:'Começar cedo com pouco vence começar tarde com muito. O que falta depois nunca é dinheiro, é tempo.'},
+ {id:'p71',cat:'Futuro',txt:'Aposentadoria não é idade, é patrimônio.',
+  desc:'A pergunta não é quando você para, é quanto precisa render para sustentar a sua vida sem você trabalhar.'},
+ {id:'p72',cat:'Futuro',txt:'Seguro não é gasto, é transferência de risco.',
+  desc:'Você paga um valor previsível para não ter uma perda imprevisível. Onde a perda quebraria o seu plano, vale segurar.'},
+ {id:'p73',cat:'Futuro',txt:'Documento organizado é dinheiro protegido.',
+  desc:'Contrato, apólice, senha, inventário. Muita perda patrimonial não vem de investimento ruim, vem de papel perdido.'},
+ {id:'p74',cat:'Futuro',txt:'O que você ensina sobre dinheiro vale mais que o que você deixa.',
+  desc:'Herança sem educação financeira dura pouco. Critério ensinado dura a vida inteira e se multiplica.'}
 ];
 
 /* ===== PLAYBOOKS ===== */
@@ -1735,6 +1857,8 @@ function migraDB(){
   DB.orc=DB.orc||{}; DB.classes=DB.classes||SEED.classes.slice();
   DB.tarefas=DB.tarefas||[]; DB.metas=DB.metas||[];
   DB.tema=DB.tema||'dual'; aplicaTema(DB.tema);
+  /* qual princípio do banco esta pessoa está vendo */
+  DB.princN=Math.abs(Math.round(DB.princN||0));
   DB.lidos=DB.lidos||{};
   DB.usuario=DB.usuario||{nome:''};
   if(!DB.principios||!DB.principios.length)DB.principios=PRINCIPIOS_BASE.map(x=>({...x,adotado:false}));
@@ -2027,9 +2151,13 @@ function tabCount(id){
   if(id==='lixeira')return lixo().length||null;
   return null;
 }
+/* Telas que só quem administra enxerga. Princípios está aqui porque virou
+   conteúdo do sistema: o usuário recebe um por visita na Visão geral, e quem
+   mantém o banco é o administrador. */
+const SO_MASTER=['admin','principios'];
 function podeVer(id){
-  /* Administração é só de quem administra */
-  return id!=='admin' || (typeof PERFIL!=='undefined' && PERFIL && PERFIL.is_admin);
+  return SO_MASTER.indexOf(id)<0
+      || !!(typeof PERFIL!=='undefined' && PERFIL && PERFIL.is_admin);
 }
 function renderNav(){
   document.getElementById('nav').innerHTML=NAV.map(g=>`<div class="nav-g"><b>${g.g}</b>${
@@ -2800,22 +2928,35 @@ function painelMetas(){
 /* ---------- Princípios na Visão geral ----------
    Um princípio adotado vira a faixa de sempre. Vários viram uma fileira de
    fichas: cabem na tela e o do dia continua em destaque. */
+/* ---------- Princípio da vez ----------
+   Antes a pessoa adotava princípios e o app rodava entre os adotados. Agora o
+   banco inteiro entra na roda: a cada entrada no sistema aparece o seguinte,
+   um por vez. Ninguém precisa escolher nada para receber a dose do dia. */
+function princAtual(){
+  const B=PRINCIPIOS_BASE;
+  if(!B||!B.length)return null;
+  const n=Math.abs(Math.round(DB.princN||0));
+  return B[n%B.length];
+}
+/* avança na mão, para quem quiser ler mais de um de uma vez */
+function outroPrincipio(){
+  DB.princN=Math.abs(Math.round(DB.princN||0))+1;
+  save();render();
+}
 function principioDoDia(){
-  const L=principiosAtivos().filter(x=>x.adotado);
-  if(!L.length)return '';
-  const hoje=new Date(); const n=Math.floor((hoje-new Date(hoje.getFullYear(),0,0))/864e5);
-  const doDia=L[n%L.length];
-  if(L.length===1)
-    return `<div class="pdia"><span class="k">Princípio do dia</span><span class="t">${esc(doDia.txt)}</span>
-      <button class="btn btn-sm btn-ghost" onclick="go('principios')">Ver todos</button></div>`;
-  const resto=L.filter(x=>x.id!==doDia.id);
+  const p=princAtual();
+  if(!p)return '';
+  const admin=(typeof PERFIL!=='undefined'&&PERFIL&&PERFIL.is_admin);
   return `<div class="pdia col">
-    <div class="pdia-top"><span class="k">Princípio do dia</span>
-      <span class="t">${esc(doDia.txt)}</span>
-      <button class="btn btn-sm btn-ghost" onclick="go('principios')">Ver todos</button></div>
-    <div class="pdia-g">${resto.map(x=>`<span class="pf" style="--pcor:${pcor(x.cat)}"
-      title="${esc(x.cat)}">${esc(x.txt)}</span>`).join('')}</div>
-    <div class="pdia-n">${L.length} princípios adotados. O do dia troca sozinho a cada dia.</div>
+    <div class="pdia-top">
+      <span class="k">Princípio</span>
+      <span class="t">${esc(p.txt)}</span>
+      <span class="pf" style="--pcor:${pcor(p.cat)}">${esc(p.cat)}</span>
+      <button class="btn btn-sm btn-ghost" onclick="outroPrincipio()">Outro</button>
+      ${admin?'<button class="btn btn-sm btn-ghost" onclick="go(\'principios\')">Ver todos</button>':''}
+    </div>
+    <div class="pdia-d">${esc(p.desc)}</div>
+    <div class="pdia-n">Um princípio por visita, de ${PRINCIPIOS_BASE.length} no banco. Na próxima vez que você entrar, vem o seguinte.</div>
   </div>`;
 }
 
@@ -5686,7 +5827,7 @@ const SESSAO = 'lidere_fp_sessao';
    Serve para o app perceber sozinho que já existe versão mais nova publicada
    do que a que está aberta neste navegador: quem usa o sistema recebe as
    melhorias sem precisar saber o que é cache. */
-const APP_BUILD = '2026-09-16.1644';
+const APP_BUILD = '2026-09-16.1652';
 let avisouVersao = false, ultimaChecagem = 0;
 
 async function checaVersao() {
@@ -5998,6 +6139,9 @@ async function iniciarSessao() {
   document.getElementById('gate').innerHTML = '';
   aplicaTema(DB.tema || 'dual');
   mesAtual = mesDeHoje();
+  /* entrou de novo, vem o próximo princípio do banco */
+  DB.princN = Math.abs(Math.round(DB.princN || 0)) + 1;
+  save();
   render();
   nuvemStatus('ok');
   /* primeiro acesso: quem chegou agora ainda não disse como se chama */

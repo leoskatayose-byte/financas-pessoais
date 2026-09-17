@@ -698,6 +698,43 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
   max-width:calc(100vw - 24px)}
 @media(max-width:600px){.nova-v{bottom:10px;padding:9px 11px;font-size:12px}}
 
+/* ==========================================================================
+   Guia de primeiro acesso
+   O resto da tela escurece, o que está sendo explicado fica aceso, e um balão
+   conta o que aquilo faz. Tudo em cima da tela de verdade: a pessoa aprende
+   olhando o próprio sistema, não um vídeo.
+   ========================================================================== */
+.guia-luz{position:fixed;z-index:120;border-radius:12px;pointer-events:none;
+  box-shadow:0 0 0 3px var(--acc),0 0 0 9999px rgba(3,6,8,.78),0 0 26px var(--glow);
+  transition:top .28s cubic-bezier(.2,.8,.2,1),left .28s cubic-bezier(.2,.8,.2,1),
+             width .28s cubic-bezier(.2,.8,.2,1),height .28s cubic-bezier(.2,.8,.2,1)}
+.guia-luz.sem{box-shadow:0 0 0 9999px rgba(3,6,8,.80)}
+.guia-cx{position:fixed;z-index:121;width:330px;max-width:calc(100vw - 28px);
+  background:var(--panel);border:1px solid var(--line-f);border-radius:14px;
+  padding:16px 18px 14px;box-shadow:0 26px 60px rgba(0,0,0,.6);
+  transition:top .28s cubic-bezier(.2,.8,.2,1),left .28s cubic-bezier(.2,.8,.2,1)}
+.guia-cx .passo{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;
+  color:var(--acc);font-weight:800;margin-bottom:6px}
+.guia-cx h4{margin:0 0 7px;font-size:16.5px;color:var(--txt);font-weight:700;line-height:1.25}
+.guia-cx p{margin:0;font-size:13px;color:var(--dim);line-height:1.55}
+.guia-barra{height:3px;background:var(--raise);border-radius:2px;margin:13px 0 11px;overflow:hidden}
+.guia-barra i{display:block;height:100%;background:var(--acc);border-radius:2px;
+  transition:width .3s ease}
+.guia-acts{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.guia-acts .esq{margin-right:auto;font-size:11.5px}
+.guia-acts .lnk{background:none;border:none;color:var(--mut);font-size:11.5px;
+  font-weight:600;padding:4px 2px;cursor:pointer}
+.guia-acts .lnk:hover{color:var(--acc)}
+.guia-x{position:fixed;z-index:122;top:14px;right:16px;width:34px;height:34px;border-radius:50%;
+  border:1px solid var(--line-f);background:var(--panel);color:var(--dim);font-size:19px;line-height:1;
+  display:flex;align-items:center;justify-content:center}
+.guia-x:hover{color:var(--txt);border-color:var(--acc)}
+@media(max-width:820px){
+  .guia-cx{width:auto;left:12px!important;right:12px;
+    top:auto!important;bottom:14px;max-width:none}
+}
+@media(prefers-reduced-motion:reduce){.guia-luz,.guia-cx,.guia-barra i{transition:none}}
+
 /* ---------- Porta de entrada (Fase 2) ---------- */
 .gate{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;
   padding:26px 16px;overflow-y:auto;
@@ -2185,7 +2222,7 @@ function podeVer(id){
 function renderNav(){
   document.getElementById('nav').innerHTML=NAV.map(g=>`<div class="nav-g"><b>${g.g}</b>${
     g.its.filter(([id])=>podeVer(id)).map(([id,lbl])=>{const c=tabCount(id);
-      return `<button class="nav-i ${activeTab===id?'on':''}" onclick="go('${id}')"><span class="ic">${svgIc(id)}</span>${lbl}${c?`<span class="n">${c}</span>`:''}</button>`}).join('')
+      return `<button class="nav-i ${activeTab===id?'on':''}" data-id="${id}" onclick="go('${id}')"><span class="ic">${svgIc(id)}</span>${lbl}${c?`<span class="n">${c}</span>`:''}</button>`}).join('')
   }</div>`).join('');
 }
 const TEMAS=[
@@ -5908,7 +5945,7 @@ const SESSAO = 'lidere_fp_sessao';
    Serve para o app perceber sozinho que já existe versão mais nova publicada
    do que a que está aberta neste navegador: quem usa o sistema recebe as
    melhorias sem precisar saber o que é cache. */
-const APP_BUILD = '2026-09-17.1429';
+const APP_BUILD = '2026-09-17.1522';
 let avisouVersao = false, ultimaChecagem = 0;
 
 async function checaVersao() {
@@ -6228,6 +6265,8 @@ async function iniciarSessao() {
   /* primeiro acesso: quem chegou agora ainda não disse como se chama */
   if (!(DB.usuario && DB.usuario.nome) && !DB.perguntouNome
       && typeof pedeNome === 'function') pedeNome();
+  /* primeira vez no sistema: o guia se apresenta sozinho */
+  if (typeof guiaTalvez === 'function') guiaTalvez();
   setTimeout(checaVersao, 5000);
   setInterval(checaVersao, 20 * 60 * 1000);
   window.addEventListener('focus', checaVersao);
@@ -6302,10 +6341,203 @@ function viewPrivacidade() {
       <tr><td>Quem enxerga</td><td class="dim">Você. E quem administra o sistema, para dar suporte.</td></tr>
       <tr><td>Levar embora</td><td class="dim">O botão <b>Baixar backup</b>, na coluna lateral, exporta tudo em JSON.</td></tr>
     </tbody></table>
-    <div class="alert bad" style="margin-top:14px"><span>⚠️</span>
+    <div class="alert" style="margin-top:14px"><span>✦</span>
+      <div><b>Guia do sistema</b> mostra, na própria tela, para que serve cada parte.
+        Dá para rever quando quiser.</div>
+      <button class="btn btn-sm right" onclick="iniciaGuia(0)">Ver o guia</button></div>
+    <div class="alert bad" style="margin-top:10px"><span>⚠️</span>
       <div><b>Apagar a conta</b> remove seu login e todos os seus dados, sem volta.</div>
       <button class="btn btn-sm right" onclick="excluirConta()">Apagar minha conta</button></div>
   </div>`;
+}
+/* ============================================================
+   GUIA DE PRIMEIRO ACESSO
+   Uma volta guiada pelo sistema, na tela de verdade: a parte explicada fica
+   acesa, o resto escurece, e um balão diz para que serve. Sai da frente a
+   qualquer momento e nunca mais aparece sozinho depois de concluído.
+
+   Em teste: por enquanto só começa sozinho para quem administra. Quando for
+   liberado para todo mundo, é tirar o filtro em guiaPodeRodar().
+   ============================================================ */
+let guiaN = 0, guiaVivo = false, guiaAlvoAtual = null;
+
+const GUIA = [
+  { sec: 'dashboard', alvo: '', tit: 'Bem-vindo ao seu financeiro',
+    txt: 'Em dois minutos eu mostro onde fica cada coisa. Você pode sair quando quiser e voltar aqui depois, em Privacidade.' },
+
+  { sec: 'dashboard', alvo: '.side .brand, .topo-cel', tit: 'O menu fica aqui',
+    txt: 'Tudo é dividido em quatro partes: o dia a dia, as suas finanças, a análise do mês e o planejamento. No celular, o botão ☰ abre esse mesmo menu.' },
+
+  { sec: 'dashboard', alvo: '.cena, .ola', tit: 'Visão geral',
+    txt: 'Esta é a primeira tela: quanto entrou, quanto saiu, quanto sobrou e para onde o dinheiro foi no mês. É o resumo que responde antes de você perguntar.' },
+
+  { sec: 'dashboard', alvo: '.pdia', tit: 'Um princípio por visita',
+    txt: 'A cada vez que você entra aparece um princípio diferente sobre dinheiro, com a explicação. São dezenas, e mudam sozinhos.' },
+
+  { sec: 'dashboard', alvo: '.stats', tit: 'Os números do mês',
+    txt: 'Entradas, saídas, saldo, resultado e quanto foi nos cartões. Trocando o mês na barra de cima, tudo aqui acompanha.' },
+
+  { sec: 'lancamentos', alvo: '.nav-i[data-id="lancamentos"]', tit: 'Bancos',
+    txt: 'Aqui ficam as suas contas, com extrato e saldo. Cadastre um banco escolhendo o símbolo dele, que o nome já vem junto.' },
+
+  { sec: 'lancamentos', alvo: '.tb-acts', tit: 'Lançar ou importar',
+    txt: '“+ Lançamento” abre uma linha por vez. “Importar extrato” lê OFX, CSV e o PDF do banco, mostra o que encontrou e você confirma. Dentro do extrato ainda tem o “Em lote”, para várias de uma vez.' },
+
+  { sec: 'cartoes', alvo: '.nav-i[data-id="cartoes"]', tit: 'Cartões e faturas',
+    txt: 'Cada cartão com a fatura do mês, o limite usado e o que já está comprometido nas próximas. Quando você marca a fatura como paga, as parcelas daquele mês são baixadas junto.' },
+
+  { sec: 'pagar', alvo: '.nav-i[data-id="pagar"]', tit: 'A pagar e parcelamentos',
+    txt: 'O que vence, o que está atrasado e o que já foi pago. Compra parcelada vira uma série numerada, e o sistema avisa se faltou parcela em algum mês.' },
+
+  { sec: 'dre', alvo: '.nav-i[data-id="dre"]', tit: 'Resultado do mês',
+    txt: 'A mesma estrutura que uma empresa usa: receitas de trabalho menos despesas, o resultado do período, depois as receitas financeiras e então o resultado líquido.' },
+
+  { sec: 'patrimonio', alvo: '.nav-i[data-id="patrimonio"]', tit: 'Patrimônio',
+    txt: 'O que você já construiu, por classe de ativo, somado ao saldo em conta. É o número que importa no longo prazo.' },
+
+  { sec: 'metas', alvo: '.nav-i[data-id="metas"]', tit: 'Metas',
+    txt: 'Meta com valor e prazo, ou objetivo com etapas. Cada aporte registrado vira avanço no anel, e as metas aparecem também na primeira tela.' },
+
+  { sec: 'plano', alvo: '.nav-i[data-id="plano"]', tit: 'Plano de contas',
+    txt: 'O sistema já vem com centenas de contas prontas e um banco de palavras que classifica o extrato sozinho. Tudo é seu: renomeie, crie e apague o que quiser.' },
+
+  { sec: 'dashboard', alvo: '.side-foot', tit: 'Aparência, backup e saída',
+    txt: 'No rodapé do menu você troca a paleta de cores, baixa um backup completo em um clique e restaura quando precisar.' },
+
+  { sec: 'lancamentos', alvo: '.tb-acts', tit: 'Por onde começar',
+    txt: 'Cadastre o seu banco, importe o extrato do mês e confira a classificação. Em dez minutos o seu mês está na tela. Bom proveito.' }
+];
+
+const guiaEl = id => document.getElementById(id);
+
+function guiaPodeRodar() {
+  /* em teste: só o administrador recebe o guia sozinho */
+  return !!(typeof PERFIL !== 'undefined' && PERFIL && PERFIL.is_admin);
+}
+
+function guiaMonta() {
+  if (guiaEl('guiaLuz')) return;
+  const luz = document.createElement('div');
+  luz.className = 'guia-luz'; luz.id = 'guiaLuz';
+  const cx = document.createElement('div');
+  cx.className = 'guia-cx'; cx.id = 'guiaCx';
+  const x = document.createElement('button');
+  x.className = 'guia-x'; x.id = 'guiaX'; x.innerHTML = '×';
+  x.title = 'Fechar o guia'; x.setAttribute('aria-label', 'Fechar o guia');
+  x.onclick = () => guiaFecha(true);
+  document.body.appendChild(luz); document.body.appendChild(cx); document.body.appendChild(x);
+  document.addEventListener('keydown', guiaTecla);
+  window.addEventListener('resize', guiaPosiciona);
+}
+
+function guiaTecla(e) {
+  if (!guiaVivo) return;
+  if (e.key === 'Escape') guiaFecha(true);
+  else if (e.key === 'ArrowRight' || e.key === 'Enter') guiaVai(1);
+  else if (e.key === 'ArrowLeft') guiaVai(-1);
+}
+
+function iniciaGuia(n) {
+  guiaMonta();
+  guiaN = n || 0; guiaVivo = true;
+  document.body.style.overflow = 'hidden';
+  guiaPasso();
+}
+
+function guiaVai(d) {
+  const p = guiaN + d;
+  if (p < 0) return;
+  if (p >= GUIA.length) return guiaFecha(false);
+  guiaN = p; guiaPasso();
+}
+
+/* o primeiro alvo que esta mesmo na tela: seletor pode listar varios, e um
+   deles pode estar escondido pelo tema ou pelo tamanho da janela */
+function guiaAcha(sel) {
+  if (!sel) return null;
+  const vis = e => { const r = e.getBoundingClientRect(); return r.width > 8 && r.height > 8 };
+  const l = [...document.querySelectorAll(sel)];
+  return l.find(e => vis(e) && e.getBoundingClientRect().left > -2) || l.find(vis) || null;
+}
+const guiaQuerMenu = g => !!(g.alvo && /\.side|\.nav-i|\.brand/.test(g.alvo));
+
+function guiaPasso() {
+  const g = GUIA[guiaN];
+  if (!g) return guiaFecha(false);
+  if (g.sec && activeTab !== g.sec) { go(g.sec); }
+  /* no celular a coluna do menu fica escondida: abre so quando o passo fala dela */
+  if (window.innerWidth <= 1024 && typeof toggleMenu === 'function') toggleMenu(guiaQuerMenu(g));
+  /* o render acabou de trocar a tela: espera o navegador desenhar */
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    guiaAlvoAtual = guiaAcha(g.alvo);
+    if (guiaAlvoAtual) {
+      const r = guiaAlvoAtual.getBoundingClientRect();
+      if (r.top < 70 || r.bottom > window.innerHeight - 40)
+        guiaAlvoAtual.scrollIntoView({ block: 'center' });
+    }
+    const ult = guiaN === GUIA.length - 1;
+    guiaEl('guiaCx').innerHTML =
+      '<div class="passo">Guia · passo ' + (guiaN + 1) + ' de ' + GUIA.length + '</div>' +
+      '<h4>' + esc(g.tit) + '</h4><p>' + esc(g.txt) + '</p>' +
+      '<div class="guia-barra"><i style="width:' + ((guiaN + 1) / GUIA.length * 100).toFixed(1) + '%"></i></div>' +
+      '<div class="guia-acts">' +
+        '<button class="lnk esq" onclick="guiaFecha(true)">Pular o guia</button>' +
+        (guiaN ? '<button class="btn btn-sm btn-ghost" onclick="guiaVai(-1)">Voltar</button>' : '') +
+        '<button class="btn btn-sm btn-gold" onclick="guiaVai(1)">' +
+          (ult ? 'Concluir' : 'Próximo') + '</button></div>';
+    requestAnimationFrame(guiaPosiciona);
+    const b = guiaEl('guiaCx').querySelector('.btn-gold'); if (b) b.focus();
+  }));
+}
+
+function guiaPosiciona() {
+  if (!guiaVivo) return;
+  const luz = guiaEl('guiaLuz'), cx = guiaEl('guiaCx');
+  if (!luz || !cx) return;
+  const el = guiaAlvoAtual && guiaAlvoAtual.isConnected ? guiaAlvoAtual : null;
+  const L = 12, VW = window.innerWidth, VH = window.innerHeight;
+  if (!el) {
+    luz.className = 'guia-luz sem';
+    luz.style.cssText += ';top:50%;left:50%;width:0;height:0';
+    cx.style.top = Math.round(VH / 2 - cx.offsetHeight / 2) + 'px';
+    cx.style.left = Math.round(VW / 2 - cx.offsetWidth / 2) + 'px';
+    return;
+  }
+  luz.className = 'guia-luz';
+  const r = el.getBoundingClientRect();
+  const top = Math.max(6, r.top - 6), left = Math.max(6, r.left - 6);
+  luz.style.top = top + 'px'; luz.style.left = left + 'px';
+  luz.style.width = Math.min(VW - 12, r.width + 12) + 'px';
+  luz.style.height = Math.min(VH - 12, r.height + 12) + 'px';
+  /* o balão procura o lado com espaço: direita, esquerda, abaixo, acima */
+  const w = cx.offsetWidth || 330, h = cx.offsetHeight || 190;
+  let x, y;
+  if (r.right + L + w < VW) x = r.right + L;
+  else if (r.left - L - w > 0) x = r.left - L - w;
+  else x = Math.max(L, Math.min(VW - w - L, r.left));
+  if (r.right + L + w < VW || r.left - L - w > 0) y = Math.min(VH - h - L, Math.max(L, r.top));
+  else y = (r.bottom + L + h < VH) ? r.bottom + L : Math.max(L, r.top - L - h);
+  cx.style.left = Math.round(x) + 'px';
+  cx.style.top = Math.round(y) + 'px';
+}
+
+function guiaFecha(pulou) {
+  guiaVivo = false;
+  ['guiaLuz', 'guiaCx', 'guiaX'].forEach(id => { const e = guiaEl(id); if (e) e.remove() });
+  document.removeEventListener('keydown', guiaTecla);
+  window.removeEventListener('resize', guiaPosiciona);
+  document.body.style.overflow = '';
+  if (window.innerWidth <= 1024 && typeof toggleMenu === 'function') toggleMenu(false);
+  if (DB) { DB.guiaFeito = true; save(); }
+  if (!pulou) toast('Guia concluído. Para rever, é em Privacidade.');
+}
+
+/* chamado depois que a sessão abriu: só na primeira vez, e só se não houver
+   nada mais urgente na frente (a caixa do nome tem prioridade) */
+function guiaTalvez() {
+  if (!DB || DB.guiaFeito || !guiaPodeRodar()) return;
+  if (document.querySelector('.overlay.show')) return;
+  setTimeout(() => { if (!document.querySelector('.overlay.show')) iniciaGuia(0) }, 700);
 }
 /* ===== Backup ===== */
 function exportData(){

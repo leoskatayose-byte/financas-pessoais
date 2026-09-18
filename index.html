@@ -657,10 +657,25 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
   .cal .d.hoje,.fat-aviso.aberta{animation:none}}
 
 /* metas em miniatura, quando há mais de uma */
-.mm-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:10px;padding-bottom:18px}
-.mm{display:flex;align-items:center;gap:13px;text-align:left;width:100%;
+.mm-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;padding-bottom:18px}
+.mm{position:relative;overflow:hidden;display:flex;align-items:center;gap:13px;
+  text-align:left;width:100%;min-height:126px;
   background:var(--panel2);border:1px solid var(--line);border-left:2px solid var(--meta);
   border-radius:0 11px 11px 0;padding:12px 14px;transition:.15s}
+/* a foto ocupa a metade direita e vai sumindo em direcao ao texto: a mascara
+   apaga a imagem, entao o fundo do quadro aparece por baixo sem tarja */
+.mm-img{position:absolute;right:0;top:0;bottom:0;width:50%;z-index:0;
+  background-size:cover;background-repeat:no-repeat;
+  background-position:var(--capa-pos,50% 50%);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.35) 40%,#000 80%);
+  mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.35) 40%,#000 80%)}
+/* veu por cima da foto e por baixo do texto: garante leitura em foto clara */
+.mm.foto::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(90deg,var(--panel2) 34%,
+             color-mix(in srgb,var(--panel2) 55%,transparent) 60%,transparent 82%)}
+.mm.foto .mm-b{max-width:60%}
+.mm-anel,.mm-b{position:relative;z-index:2}
+@media(max-width:600px){.mm{min-height:112px}.mm-img{width:44%}.mm.foto .mm-b{max-width:64%}}
 .mm:hover{border-color:var(--line-f);border-left-color:var(--meta-s,var(--meta));background:var(--raise);transform:translateY(-1px)}
 .mm.ok{border-left-color:var(--pos)}
 .mm-anel{position:relative;width:50px;height:50px;flex:0 0 50px}
@@ -3465,7 +3480,8 @@ function miniMeta(m){
   const noPrazo=!m.prazo||m.prazo>=hoje||p>=1;
   const etapasFeitas=(m.etapas||[]).filter(e=>e.feito).length, etapasTot=(m.etapas||[]).length;
   const C=2*Math.PI*26, off=(C*(1-p)).toFixed(1);
-  return `<button class="mm ${p>=1?'ok':''}" onclick="go('metas')" title="${esc(m.nome)}">
+  return `<button class="mm ${p>=1?'ok':''} ${m.capa?'foto':''}" onclick="go('metas')" title="${esc(m.nome)}">
+    ${m.capa?`<span class="mm-img" style="background-image:url('${esc(m.capa)}');--capa-pos:${esc(m.capaPos||'50% 50%')}"></span>`:''}
     <div class="mm-anel">
       <svg viewBox="0 0 64 64"><circle class="tr" cx="32" cy="32" r="26"/>
         <circle class="fg" cx="32" cy="32" r="26" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off}"/></svg>
@@ -6454,7 +6470,7 @@ const SESSAO = 'lidere_fp_sessao';
    Serve para o app perceber sozinho que já existe versão mais nova publicada
    do que a que está aberta neste navegador: quem usa o sistema recebe as
    melhorias sem precisar saber o que é cache. */
-const APP_BUILD = '2026-09-18.1732';
+const APP_BUILD = '2026-09-18.1742';
 let avisouVersao = false, ultimaChecagem = 0;
 
 async function checaVersao() {

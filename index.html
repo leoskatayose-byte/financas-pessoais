@@ -779,6 +779,91 @@ html[data-oculto] .vlr{letter-spacing:.06em;font-variant-numeric:normal;
 html[data-oculto] .btn.olho{color:var(--acc);border-color:var(--acc)}
 @media(prefers-reduced-motion:reduce){html[data-oculto] .vlr{transition:none}}
 
+/* ==========================================================================
+   Agenda (mesmo desenho do sistema Central da Lidere)
+   Calendario pequeno de bussola a esquerda, periodo no topo, filtros por
+   origem e o corpo mudando conforme a janela: dia, semana, mes ou 30 dias.
+   ========================================================================== */
+.ag-split{display:grid;grid-template-columns:240px 1fr;gap:12px;align-items:start}
+@media(max-width:980px){.ag-split{grid-template-columns:1fr}}
+.ag-mini{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:12px 12px 13px;position:sticky;top:12px}
+@media(max-width:980px){.ag-mini{position:static}}
+.ag-mini .mh{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:9px}
+.ag-mini .mh b{font-size:12px;font-weight:700;color:var(--txt);text-align:center;flex:1}
+.ag-mini .nv{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:7px;
+  width:22px;height:22px;cursor:pointer;font-size:12px;line-height:1;padding:0;font-family:inherit}
+.ag-mini .nv:hover{color:var(--txt);border-color:var(--acc)}
+.ag-mini .gr{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.ag-mini .wd{font-size:8.5px;font-weight:800;letter-spacing:.4px;color:var(--mut);text-align:center;padding:2px 0 4px}
+.ag-mini .dd{position:relative;aspect-ratio:1;border:0;background:transparent;color:var(--dim);
+  font-size:11px;font-weight:600;border-radius:8px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;font-family:inherit;padding:0}
+.ag-mini .dd:hover{background:var(--raise);color:var(--txt)}
+.ag-mini .dd.out{opacity:.22;pointer-events:none}
+.ag-mini .dd.fds{color:var(--mut)}
+.ag-mini .dd.rng{background:color-mix(in srgb,var(--acc) 13%,transparent);color:var(--txt);border-radius:0}
+.ag-mini .dd.rng.ini{border-radius:8px 0 0 8px}
+.ag-mini .dd.rng.fim{border-radius:0 8px 8px 0}
+.ag-mini .dd.rng.ini.fim{border-radius:8px}
+.ag-mini .dd.hoje{color:var(--acc);font-weight:800}
+.ag-mini .dd.on{background:var(--acc);color:var(--acc-ink);font-weight:800;border-radius:8px}
+.ag-mini .dd.on:hover{background:var(--acc);color:var(--acc-ink)}
+.ag-mini .dd i{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:3px;height:3px;
+  border-radius:50%;background:var(--mut)}
+.ag-mini .dd.cheio i{background:var(--acc)}
+.ag-mini .dd.atras i{background:var(--neg)}
+.ag-mini .dd.on i{background:var(--acc-ink)}
+.ag-mini .leg{font-size:10px;color:var(--mut);margin-top:11px;line-height:1.6;
+  border-top:1px solid var(--line);padding-top:9px}
+.ag-mini .leg b{color:var(--txt);font-weight:700}
+.ag-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px}
+.ag-nav{display:flex;align-items:center;gap:4px}
+.ag-per{font-size:13px;font-weight:700;min-width:200px;text-align:center;color:var(--txt)}
+.ag-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.ag-chip{font-size:10.5px;font-weight:700;letter-spacing:.3px;padding:4px 10px;border-radius:999px;
+  border:1px solid var(--line);background:transparent;color:var(--mut);cursor:pointer;white-space:nowrap}
+.ag-chip.off{opacity:.45;text-decoration:line-through}
+.ag-week{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+.ag-day{background:var(--panel2);border:1px solid var(--line);border-radius:11px;
+  padding:8px 8px 9px;min-width:0;min-height:118px}
+.ag-day.hoje{border-color:var(--acc)}
+.ag-day.fds .dh{opacity:.55}
+.ag-day .dh{display:flex;align-items:baseline;justify-content:space-between;gap:5px;
+  margin-bottom:7px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.ag-day .dh .dn{font-size:9.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--mut)}
+.ag-day .dh .dd{font-size:15px;font-weight:800;color:var(--txt)}
+.ag-day.hoje .dh .dd,.ag-day.hoje .dh .dn{color:var(--acc)}
+.ag-vazio{font-size:10.5px;color:var(--mut);opacity:.55;padding:3px 2px}
+.ag-row{display:block;width:100%;text-align:left;background:transparent;border:0;
+  border-left:2.5px solid var(--line);padding:4px 0 5px 7px;margin-bottom:4px;cursor:pointer;
+  border-radius:0 5px 5px 0;font:inherit}
+.ag-row:hover{background:var(--raise)}
+.ag-row .rt{font-size:11px;font-weight:600;line-height:1.35;color:var(--txt);overflow-wrap:anywhere}
+.ag-row .rm{font-size:9.5px;color:var(--mut);margin-top:1px;overflow-wrap:anywhere;line-height:1.35}
+.ag-row.ok .rt{text-decoration:line-through;opacity:.5}
+.ag-lin{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;
+  border:0;border-top:1px solid var(--line);padding:9px 4px;cursor:pointer;font:inherit}
+.ag-lin:hover{background:var(--raise)}
+.ag-lin .bo{width:3px;align-self:stretch;border-radius:2px;flex:0 0 3px;min-height:26px}
+.ag-lin .tx{flex:1;min-width:0}
+.ag-lin .tx b{font-size:12.5px;font-weight:600;display:block;line-height:1.4;color:var(--txt);overflow-wrap:anywhere}
+.ag-lin .tx i{font-size:11px;color:var(--mut);font-style:normal;overflow-wrap:anywhere}
+.ag-lin.ok .tx b{text-decoration:line-through;opacity:.5}
+.ag-lin .vl{font-size:12px;font-weight:700;white-space:nowrap;color:var(--txt)}
+.ag-lin .dt{font-size:11px;color:var(--mut);white-space:nowrap;font-weight:700;min-width:64px;text-align:right}
+.ag-dh{display:flex;align-items:baseline;gap:8px;padding:13px 4px 5px;
+  border-top:1px solid var(--line);margin-top:5px}
+.ag-dh:first-child{border-top:0;margin-top:0;padding-top:2px}
+.ag-dh b{font-size:12.5px;color:var(--txt)}
+.ag-dh span{font-size:11px;color:var(--mut);flex:1}
+.ag-dh i{font-size:10px;font-style:normal;color:var(--mut);font-weight:800}
+.ag-dh + .ag-lin{border-top:0}
+@media(max-width:1100px){.ag-week{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:680px){.ag-week{grid-template-columns:repeat(2,1fr)}
+  .ag-per{min-width:120px;font-size:12px}
+  .ag-lin .dt{min-width:0}}
+
 /* ---------- Porta de entrada (Fase 2) ---------- */
 .gate{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;
   padding:26px 16px;overflow-y:auto;
@@ -2664,7 +2749,7 @@ function viewPend(){
   const toggle=`<div class="filters">
     <div class="seg" style="max-width:280px">
       <div class="o ${pendView==='kanban'?'sel':''}" onclick="pendView='kanban';render()">▦ Kanban</div>
-      <div class="o ${pendView==='cal'?'sel':''}" onclick="pendView='cal';render()">▤ Calendário</div>
+      <div class="o ${pendView!=='kanban'?'sel':''}" onclick="pendView='agenda';render()">▤ Agenda</div>
     </div>
     <button class="btn btn-sm btn-gold right" onclick="openTarefa()">＋ Pendência</button></div>`;
   const filtros=`<div class="filters">
@@ -2677,7 +2762,7 @@ function viewPend(){
       ${PEND_SORTS.map(function(o){return `<option value="${o[0]}" ${pendSort===o[0]?'selected':''}>${o[1]}</option>`}).join('')}</select>`:''}
     ${pendFiltroLigado()?`<button class="btn btn-sm" onclick="limpaFiltroPend()">Limpar filtros</button>
       <span class="muted" style="font-size:11.5px">${pendFiltradas().length} de ${T.length}</span>`:''}</div>`;
-  return stats+toggle+filtros+(pendView==='kanban'?kanban():calendario());
+  return stats+toggle+filtros+(pendView==='kanban'?kanban():viewAgenda());
 }
 /* Redesenha sem tirar o cursor de quem está digitando na busca. */
 function rerenderPend(){
@@ -2856,6 +2941,255 @@ function saveTarefa(){
   save();closeModal('ovTar');render();toast('Pendência salva');
 }
 
+/* ============================================================
+   AGENDA
+   Mesma agenda do sistema Central da Lidere, trazida para cá: quatro janelas
+   (dia, semana, mês e próximos 30 dias), calendário pequeno ao lado servindo de
+   bússola, filtros por origem e um bloco de atrasados que cobra o que ficou
+   para trás.
+
+   Aqui as origens são três: as suas pendências, as contas a pagar e o
+   vencimento das faturas do cartão. Tudo que tem data aparece.
+   ============================================================ */
+const AG_ORIGENS = [
+  { id: 'pendencia', nome: 'Pendências', cor: 'var(--acc)' },
+  { id: 'conta', nome: 'Contas a pagar', cor: 'var(--warn)' },
+  { id: 'fatura', nome: 'Faturas do cartão', cor: 'var(--meta)' }
+];
+const agOrigem = id => AG_ORIGENS.find(o => o.id === id) || AG_ORIGENS[0];
+const AG_DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+const agDia = dk => new Date(dk + 'T12:00:00');
+const agMais = (dk, n) => { const d = agDia(dk); d.setDate(d.getDate() + n); return iso(d) };
+const agSegunda = dk => agMais(dk, -((agDia(dk).getDay() + 6) % 7));
+const agDiasNoMes = (y, m) => new Date(y, m + 1, 0).getDate();
+const agMesExtenso = dk => { const d = agDia(dk);
+  return MESES_EXT[d.getMonth()] + ' de ' + d.getFullYear() };
+
+let agModo = 'semana', agRef = iso(new Date()), agMesRef = '';
+let agOrigemOff = [], agSoAbertos = true, agAtrAberto = false;
+
+function setAgModo(m) { agModo = m; agMesRef = ''; render() }
+function agHoje() { agRef = iso(new Date()); agMesRef = ''; render() }
+function agMesAndar(n) { const d = agDia(agMesRef || agRef);
+  agMesRef = iso(new Date(d.getFullYear(), d.getMonth() + n, 1)); render() }
+function agIrPara(dk) { agRef = dk; agMesRef = ''; pendSel = dk; render() }
+function agAndar(n) {
+  agMesRef = '';
+  if (agModo === 'mes') { const d = agDia(agRef);
+    agRef = iso(new Date(d.getFullYear(), d.getMonth() + n, 1)); render(); return }
+  agRef = agMais(agRef, n * (agModo === 'dia' ? 1 : agModo === 'semana' ? 7 : 30));
+  render();
+}
+function agTogOrigem(id) { const i = agOrigemOff.indexOf(id);
+  if (i < 0) agOrigemOff.push(id); else agOrigemOff.splice(i, 1); render() }
+function agToggleAbertos() { agSoAbertos = !agSoAbertos; render() }
+function agTogAtraso() { agAtrAberto = !agAtrAberto; render() }
+
+function agJanela() {
+  if (agModo === 'dia') return { de: agRef, ate: agRef };
+  if (agModo === 'semana') { const s = agSegunda(agRef); return { de: s, ate: agMais(s, 6) } }
+  if (agModo === 'mes') { const d = agDia(agRef);
+    return { de: iso(new Date(d.getFullYear(), d.getMonth(), 1)),
+             ate: iso(new Date(d.getFullYear(), d.getMonth() + 1, 0)) } }
+  return { de: agRef, ate: agMais(agRef, 29) };
+}
+
+/* Tudo que tem data, de qualquer parte do sistema, vira item de agenda. */
+function agItens(de, ate) {
+  const out = [];
+  pendFiltradas().forEach(t => {
+    if (!t.data || t.data < de || t.data > ate) return;
+    out.push({ dk: t.data, origem: 'pendencia', titulo: t.titulo || 'Pendência',
+      tipo: PEND_LBL[t.prio || 'media'], detalhe: t.desc || '', valor: 0,
+      feito: t.col === 'done', abrir: `openTarefa('${t.id}')` });
+  });
+  alive(DB.cp).forEach(c => {
+    if (!c.venc || c.venc < de || c.venc > ate) return;
+    out.push({ dk: c.venc, origem: 'conta', titulo: c.desc || 'Conta a pagar',
+      tipo: c.recorrencia || 'avulsa', detalhe: c.obs || '', valor: c.valor || 0,
+      feito: c.situacao === 'Pago', abrir: `openCp('${c.id}')` });
+  });
+  /* fatura: cai no dia do vencimento de cada cartão, mês a mês */
+  const m0 = de.slice(0, 7), m1 = ate.slice(0, 7);
+  DB.cartoes.forEach(c => {
+    if (!c.venc) return;
+    for (let mk = m0; mk <= m1; mk = addMes(mk, 1)) {
+      const dia = Math.min(+c.venc, agDiasNoMes(+mk.slice(0, 4), +mk.slice(5, 7) - 1));
+      const dk = mk + '-' + ('0' + dia).slice(-2);
+      if (dk < de || dk > ate) continue;
+      const tot = totalFatura(c.id, mk);
+      if (!tot) continue;
+      out.push({ dk, origem: 'fatura', titulo: 'Fatura ' + (c.nome || 'do cartão'),
+        tipo: 'vencimento', detalhe: mesLabel(mk), valor: tot,
+        feito: !!(pagFatura(c.id, mk) || (typeof pagFatLegado === 'function' && pagFatLegado(c.id, mk))),
+        abrir: `abreCartao('${c.id}')` });
+    }
+  });
+  return out.sort((a, b) => String(a.dk).localeCompare(String(b.dk)));
+}
+const agPassa = x => agOrigemOff.indexOf(x.origem) < 0;
+const agEhAtraso = (x, hoje) => !x.feito && x.dk < hoje;
+
+/* ---------- pedaços de tela ---------- */
+function agLinha(x, hoje) {                       /* item dentro do dia, na semana */
+  const o = agOrigem(x.origem), atr = agEhAtraso(x, hoje);
+  return `<div class="ag-row ${x.feito ? 'ok' : ''}" onclick="${x.abrir}"
+    style="border-left-color:${atr ? 'var(--neg)' : o.cor}"
+    title="${esc(o.nome + ' · ' + x.titulo)}">
+    <div class="rt">${esc(x.titulo)}</div>
+    <div class="rm">${esc(x.tipo)}${x.valor ? ' · ' + brl(x.valor) : ''}</div></div>`;
+}
+function agLinhaLarga(x, hoje, semOrigem) {       /* linha larga: dia e 30 dias */
+  const o = agOrigem(x.origem), atr = agEhAtraso(x, hoje);
+  return `<div class="ag-lin ${x.feito ? 'ok' : ''}" onclick="${x.abrir}">
+    <span class="bo" style="background:${atr ? 'var(--neg)' : o.cor}"></span>
+    <span class="tx"><b>${esc(x.titulo)}</b><i>${semOrigem ? '' : esc(o.nome) + ' · '}${esc(x.tipo)}${
+      x.detalhe ? ' · ' + esc(String(x.detalhe).slice(0, 60)) : ''}</i></span>
+    ${x.valor ? `<span class="vl">${brl(x.valor)}</span>` : ''}
+    <span class="dt" style="${atr ? 'color:var(--neg)' : ''}">${
+      x.dk === hoje ? 'hoje' : fmtBR(x.dk)}</span></div>`;
+}
+function agCabecalhoDia(dk, n, hoje) {
+  const nome = agDia(dk).toLocaleDateString('pt-BR', { weekday: 'long' });
+  return `<div class="ag-dh"><b>${fmtBR(dk)}</b>
+    <span>${nome.charAt(0).toUpperCase() + nome.slice(1)}${
+      dk === hoje ? ' · hoje' : dk === agMais(hoje, 1) ? ' · amanhã' : ''}</span>
+    <i>${n}</i></div>`;
+}
+function agTituloPeriodo() {
+  const { de, ate } = agJanela(), dd = agDia(de), da = agDia(ate);
+  if (agModo === 'dia') { const t = dd.toLocaleDateString('pt-BR',
+    { weekday: 'long', day: 'numeric', month: 'long' });
+    return t.charAt(0).toUpperCase() + t.slice(1) }
+  if (agModo === 'semana') {
+    const mi = MESES_EXT[dd.getMonth()], mf = MESES_EXT[da.getMonth()];
+    return dd.getDate() + (mi === mf ? '' : ' de ' + mi) + ' a ' + da.getDate() + ' de ' + mf;
+  }
+  if (agModo === 'mes') return agMesExtenso(de);
+  return fmtBR(de) + ' a ' + fmtBR(ate);
+}
+
+/* calendário pequeno do lado: contexto do mês e navegação */
+function agMiniCal(todos, hoje, de, ate) {
+  const base = agDia(agMesRef || agRef), y = base.getFullYear(), mo = base.getMonth();
+  const prim = new Date(y, mo, 1), inicio = (prim.getDay() + 6) % 7;
+  const dim = agDiasNoMes(y, mo), antes = new Date(y, mo, 0).getDate();
+  const porDia = {};
+  todos.forEach(x => { const a = porDia[x.dk] = porDia[x.dk] || { n: 0, atras: 0 };
+    if (agSoAbertos && x.feito) return;
+    a.n++; if (agEhAtraso(x, hoje)) a.atras++ });
+  let cel = '';
+  for (let i = inicio - 1; i >= 0; i--) cel += `<button class="dd out">${antes - i}</button>`;
+  for (let d = 1; d <= dim; d++) {
+    const dt = new Date(y, mo, d), dk = iso(dt), info = porDia[dk] || { n: 0, atras: 0 };
+    const dentro = dk >= de && dk <= ate, fds = dt.getDay() === 0 || dt.getDay() === 6;
+    const sel = (agModo === 'dia' && dk === agRef) || (agModo === 'mes' && dk === pendSel);
+    const cls = ['dd', fds ? 'fds' : '', sel ? 'on' : dentro ? 'rng' : '',
+      dk === de ? 'ini' : '', dk === ate ? 'fim' : '', dk === hoje ? 'hoje' : '',
+      info.atras ? 'atras' : info.n ? 'cheio' : ''].filter(Boolean).join(' ');
+    cel += `<button class="${cls}" onclick="agIrPara('${dk}')"
+      title="${fmtBR(dk)}${info.n ? ' · ' + info.n + ' item(ns)' : ''}">${d}${info.n ? '<i></i>' : ''}</button>`;
+  }
+  const sobra = (7 - ((inicio + dim) % 7)) % 7;
+  for (let d = 1; d <= sobra; d++) cel += `<button class="dd out">${d}</button>`;
+  const noMes = todos.filter(x => x.dk.slice(0, 7) === iso(prim).slice(0, 7)
+    && !(agSoAbertos && x.feito)).length;
+  return `<div class="ag-mini">
+    <div class="mh"><button class="nv" title="Mês anterior" onclick="agMesAndar(-1)">‹</button>
+      <b>${esc(agMesExtenso(iso(prim)))}</b>
+      <button class="nv" title="Próximo mês" onclick="agMesAndar(1)">›</button></div>
+    <div class="gr">${['S','T','Q','Q','S','S','D'].map(w => `<div class="wd">${w}</div>`).join('')}${cel}</div>
+    <div class="leg"><b>${noMes}</b> item(ns) no mês${
+      agMesRef ? '<br><button class="lnk-teto" onclick="agHoje()">voltar para hoje</button>' : ''}
+      <br>Clique num dia para ir até ele.</div></div>`;
+}
+
+function viewAgenda() {
+  const hoje = iso(new Date()), { de, ate } = agJanela();
+  const ini = de < agMais(hoje, -90) ? de : agMais(hoje, -90);
+  const fim = ate > agMais(hoje, 7) ? ate : agMais(hoje, 7);
+  const todos = agItens(ini, fim);
+  const atr = todos.filter(x => agEhAtraso(x, hoje) && agPassa(x));
+  const itens = todos.filter(x => x.dk >= de && x.dk <= ate && agPassa(x)
+    && !(agSoAbertos && x.feito));
+
+  const modos = [['dia','Dia'],['semana','Semana'],['mes','Mês'],['lista','30 dias']]
+    .map(([k, l]) => `<button class="btn btn-sm ${agModo === k ? 'btn-gold' : ''}"
+      onclick="setAgModo('${k}')">${l}</button>`).join('');
+  const naSemana = (agModo === 'semana' && agSegunda(agRef) === agSegunda(hoje))
+    || (agModo === 'mes' && agRef.slice(0, 7) === hoje.slice(0, 7));
+  const barra = `<div class="ag-top">
+    <div class="ag-nav">
+      <button class="btn btn-sm" onclick="agAndar(-1)" title="Anterior">‹</button>
+      <span class="ag-per">${esc(agTituloPeriodo())}</span>
+      <button class="btn btn-sm" onclick="agAndar(1)" title="Próximo">›</button>
+      ${(agRef === hoje || naSemana) ? '' : '<button class="btn btn-sm" onclick="agHoje()">Hoje</button>'}</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap">${modos}</div>
+    <div style="margin-left:auto">
+      <button class="btn btn-sm ${agSoAbertos ? 'btn-gold' : ''}" onclick="agToggleAbertos()">${
+        agSoAbertos ? 'Só em aberto' : 'Mostrando tudo'}</button></div></div>`;
+
+  const chips = `<div class="ag-chips">${AG_ORIGENS.map(o => {
+    const on = agOrigemOff.indexOf(o.id) < 0;
+    const n = todos.filter(x => x.origem === o.id && x.dk >= de && x.dk <= ate
+      && !(agSoAbertos && x.feito)).length;
+    return `<button class="ag-chip ${on ? '' : 'off'}" onclick="agTogOrigem('${o.id}')"
+      style="${on ? `border-color:${o.cor};color:${o.cor}` : ''}">${esc(o.nome)}${n ? ' · ' + n : ''}</button>`;
+  }).join('')}</div>`;
+
+  const MOSTRA = 3;
+  const blocoAtr = atr.length ? `<div class="panel" style="border-color:color-mix(in srgb,var(--neg) 35%,var(--line))">
+    <div class="panel-head"><h2>Atrasado<small>passou da data e continua em aberto · ${atr.length} item(ns)${
+      atr.length > MOSTRA && !agAtrAberto ? ' · mostrando ' + MOSTRA : ''}</small></h2>
+      ${atr.length > MOSTRA ? `<button class="btn btn-sm" onclick="agTogAtraso()">${
+        agAtrAberto ? 'Recolher' : 'Ver os ' + atr.length}</button>` : ''}</div>
+    ${(agAtrAberto ? atr : atr.slice(0, MOSTRA)).map(x => agLinhaLarga(x, hoje)).join('')}</div>` : '';
+
+  let corpo = '';
+  if (agModo === 'semana') {
+    const porDia = {}; itens.forEach(x => (porDia[x.dk] = porDia[x.dk] || []).push(x));
+    let cols = '';
+    for (let i = 0; i < 7; i++) {
+      const dk = agMais(de, i), d = agDia(dk), fds = d.getDay() === 0 || d.getDay() === 6;
+      const lista = porDia[dk] || [];
+      cols += `<div class="ag-day ${dk === hoje ? 'hoje' : ''} ${fds ? 'fds' : ''}">
+        <div class="dh"><span class="dn">${AG_DIAS[d.getDay()]}</span>
+          <span class="dd">${('0' + d.getDate()).slice(-2)}</span></div>
+        ${lista.map(x => agLinha(x, hoje)).join('') || '<div class="ag-vazio">livre</div>'}</div>`;
+    }
+    corpo = `<div class="panel"><div class="ag-week">${cols}</div></div>`;
+  } else if (agModo === 'mes') {
+    corpo = calendario();
+  } else if (agModo === 'dia') {
+    const secoes = AG_ORIGENS.map(o => {
+      const seg = itens.filter(x => x.origem === o.id);
+      if (!seg.length) return '';
+      const feitos = seg.filter(x => x.feito).length;
+      return `<div class="ag-dh"><b style="color:${o.cor}">${esc(o.nome)}</b>
+        <span>${feitos ? feitos + ' de ' + seg.length + ' já feito' + (feitos > 1 ? 's' : '') : ''}</span>
+        <i>${seg.length}</i></div>` + seg.map(x => agLinhaLarga(x, hoje, true)).join('');
+    }).join('');
+    corpo = `<div class="panel"><div class="panel-head">
+      <h2>${esc(agTituloPeriodo())}<small>${itens.length} item(ns)${
+        agRef === hoje ? '' : ' · ' + fmtBR(agRef)}</small></h2>
+      <button class="btn btn-sm" onclick="openTarefa(null,'todo','${agRef}')">＋ Pendência</button></div>
+      ${secoes || '<div class="empty">Nada marcado para este dia.</div>'}</div>`;
+  } else {
+    const porDia = {}; itens.forEach(x => (porDia[x.dk] = porDia[x.dk] || []).push(x));
+    const dias = Object.keys(porDia).sort();
+    corpo = dias.length ? `<div class="panel">${dias.map(dk =>
+      agCabecalhoDia(dk, porDia[dk].length, hoje)
+      + porDia[dk].map(x => agLinhaLarga(x, hoje)).join('')).join('')}</div>`
+      : '<div class="panel"><div class="empty">Nada marcado neste período.</div></div>';
+  }
+
+  const aviso = (!itens.length && !atr.length && agOrigemOff.length)
+    ? '<div class="alert" style="margin-top:10px"><span>ℹ</span><div>Você escondeu origens nos filtros acima. Clique de novo para trazer de volta.</div></div>' : '';
+  const miolo = agModo === 'mes' ? corpo
+    : `<div class="ag-split">${agMiniCal(todos, hoje, de, ate)}<div>${corpo}</div></div>`;
+  return barra + chips + blocoAtr + miolo + aviso;
+}
 /* ============================ METAS E OBJETIVOS ============================ */
 const metasAtivas=()=>alive(DB.metas);
 const juntado=m=>(m.aportes||[]).reduce((s,a)=>s+(a.valor||0),0);
@@ -6120,7 +6454,7 @@ const SESSAO = 'lidere_fp_sessao';
    Serve para o app perceber sozinho que já existe versão mais nova publicada
    do que a que está aberta neste navegador: quem usa o sistema recebe as
    melhorias sem precisar saber o que é cache. */
-const APP_BUILD = '2026-09-18.1715';
+const APP_BUILD = '2026-09-18.1732';
 let avisouVersao = false, ultimaChecagem = 0;
 
 async function checaVersao() {

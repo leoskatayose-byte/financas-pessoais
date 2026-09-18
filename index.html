@@ -98,7 +98,19 @@ input,select,textarea{font-family:inherit}
 .brand{display:block;padding:4px 6px 18px;border-bottom:1px solid var(--line);margin-bottom:16px}
 .brand svg{width:100%;height:auto;display:block}
 .brand .sub{font-size:9px;letter-spacing:2.4px;color:var(--mut);text-transform:uppercase;margin-top:11px;font-weight:700;padding-left:2px}
-.nav-g{margin-bottom:16px}
+.nav-g{margin-bottom:6px}
+.nav-h{display:flex;align-items:center;gap:6px;width:100%;background:none;border:0;
+  padding:7px 8px 6px;border-radius:8px;cursor:pointer;color:var(--mut);font:inherit;text-align:left}
+.nav-h:hover{background:var(--panel2);color:var(--dim)}
+.nav-h b{font-size:9.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;flex:1}
+.nav-h .se{display:inline-block;font-size:13px;line-height:1;transform:rotate(90deg);
+  transition:transform .18s ease;opacity:.75}
+.nav-g.fechada .nav-h .se{transform:rotate(0deg)}
+.nav-h .n{background:var(--raise);color:var(--dim);border-radius:20px;padding:1px 7px;
+  font-size:10px;font-weight:700}
+.nav-its{display:grid;overflow:hidden}
+.nav-g.fechada .nav-its{display:none}
+@media(prefers-reduced-motion:reduce){.nav-h .se{transition:none}}
 .nav-g > b{display:block;font-size:9px;letter-spacing:1.8px;text-transform:uppercase;color:var(--mut);font-weight:800;padding:0 8px 7px}
 .nav-i{
   display:flex;align-items:center;gap:10px;width:100%;text-align:left;
@@ -657,7 +669,31 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
   .cal .d.hoje,.fat-aviso.aberta{animation:none}}
 
 /* metas em miniatura, quando há mais de uma */
-.mm-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;padding-bottom:18px}
+/* os quadros dividem a largura em partes iguais: duas metas, meia tela cada;
+   tres, um terco. Acima de quatro, quebra em linhas de quatro. */
+.mm-g{display:grid;grid-template-columns:repeat(var(--cols,3),minmax(0,1fr));gap:10px;padding-bottom:18px}
+@media(max-width:1180px){.mm-g{grid-template-columns:repeat(min(var(--cols,3),3),minmax(0,1fr))}}
+@media(max-width:900px){.mm-g{grid-template-columns:repeat(min(var(--cols,2),2),minmax(0,1fr))}}
+@media(max-width:620px){.mm-g{grid-template-columns:1fr}}
+/* a tela de Metas segue a mesma ideia, com os cartoes grandes */
+.meta-g{display:grid;grid-template-columns:repeat(var(--cols,2),minmax(0,1fr));gap:14px;align-items:start}
+@media(max-width:1180px){.meta-g{grid-template-columns:repeat(min(var(--cols,2),2),minmax(0,1fr))}}
+@media(max-width:820px){.meta-g{grid-template-columns:1fr}}
+.meta.grade{margin-bottom:0}
+.meta.grade .meta-in{flex-direction:column;align-items:stretch;gap:14px}
+/* no grid o anel sobe para o canto, menor: o cartao fica mais curto e a
+   porcentagem continua visivel de longe */
+.meta.grade .meta-in{position:relative;padding-right:104px}
+.meta.grade .ring-w{position:absolute;top:16px;right:16px;align-self:auto}
+.meta.grade .ring{width:82px;height:82px;flex:0 0 82px}
+.meta.grade .ring-t b{font-size:18px}
+.meta.grade .ring-t span{font-size:7.5px;margin-top:3px}
+.meta.grade .meta-nums{gap:14px}
+.meta.grade .meta-emo{width:46px;height:46px;flex:0 0 46px;font-size:26px}
+@media(max-width:820px){.meta.grade .meta-in{padding-right:24px}
+  .meta.grade .ring-w{position:static;align-self:flex-start}
+  .meta.grade .ring{width:118px;height:118px;flex:0 0 118px}
+  .meta.grade .ring-t b{font-size:25px}}
 .mm{position:relative;overflow:hidden;display:flex;align-items:center;gap:13px;
   text-align:left;width:100%;min-height:126px;
   background:var(--panel2);border:1px solid var(--line);border-left:2px solid var(--meta);
@@ -2088,6 +2124,7 @@ function migraDB(){
   /* qual princípio do banco esta pessoa está vendo */
   DB.princN=Math.abs(Math.round(DB.princN||0));
   DB.oculto=!!DB.oculto;   /* olho do banco: valores borrados na tela */
+  DB.navFechados=Array.isArray(DB.navFechados)?DB.navFechados:[];  /* pastas do menu */
   DB.lidos=DB.lidos||{};
   DB.usuario=DB.usuario||{nome:''};
   if(!DB.principios||!DB.principios.length)DB.principios=PRINCIPIOS_BASE.map(x=>({...x,adotado:false}));
@@ -2394,11 +2431,31 @@ function podeVer(id){
   return SO_MASTER.indexOf(id)<0
       || !!(typeof PERFIL!=='undefined' && PERFIL && PERFIL.is_admin);
 }
+/* ---------- Pastas do menu ----------
+   Cada grupo abre e fecha. O que esta fechado fica guardado na base, e a pasta
+   que tem a tela aberta no momento nunca esconde o caminho de volta. */
+const navFechado=g=>((DB&&DB.navFechados)||[]).indexOf(g)>=0;
+function navToggle(g){
+  if(!DB)return;
+  DB.navFechados=DB.navFechados||[];
+  const i=DB.navFechados.indexOf(g);
+  if(i<0)DB.navFechados.push(g);else DB.navFechados.splice(i,1);
+  save();renderNav();
+}
 function renderNav(){
-  document.getElementById('nav').innerHTML=NAV.map(g=>`<div class="nav-g"><b>${g.g}</b>${
-    g.its.filter(([id])=>podeVer(id)).map(([id,lbl])=>{const c=tabCount(id);
-      return `<button class="nav-i ${activeTab===id?'on':''}" data-id="${id}" onclick="go('${id}')"><span class="ic">${svgIc(id)}</span>${lbl}${c?`<span class="n">${c}</span>`:''}</button>`}).join('')
-  }</div>`).join('');
+  document.getElementById('nav').innerHTML=NAV.map(g=>{
+    const its=g.its.filter(([id])=>podeVer(id));
+    if(!its.length)return '';
+    const aqui=its.some(([id])=>id===activeTab);
+    const fechado=navFechado(g.g)&&!aqui;
+    const n=its.reduce((t,[id])=>t+(tabCount(id)||0),0);
+    return `<div class="nav-g ${fechado?'fechada':''}">
+      <button class="nav-h" onclick="navToggle('${esc(g.g)}')"
+        aria-expanded="${fechado?'false':'true'}" title="${fechado?'Abrir':'Recolher'} ${esc(g.g)}">
+        <span class="se">›</span><b>${esc(g.g)}</b>${fechado&&n?`<span class="n">${n}</span>`:''}</button>
+      <div class="nav-its">${its.map(([id,lbl])=>{const c=tabCount(id);
+        return `<button class="nav-i ${activeTab===id?'on':''}" data-id="${id}" onclick="go('${id}')"><span class="ic">${svgIc(id)}</span>${lbl}${c?`<span class="n">${c}</span>`:''}</button>`}).join('')}</div>
+    </div>`}).join('');
 }
 const TEMAS=[
   {id:'dual',nome:'Turquesa + âmbar',a:'#2ee6c0',b:'#f0b448'},
@@ -3224,9 +3281,11 @@ function viewMetas(){
   </div>`;
   return stats+`<div class="panel-head" style="margin:4px 0 12px"><h2 style="font-size:17px">Suas metas<small>o que o dinheiro de hoje está construindo</small></h2>
     <button class="btn btn-sm btn-gold" onclick="openMeta()">＋ Nova meta</button></div>`
-    +(L.length?L.map(m=>metaHTML(m)).join(''):'<div class="empty">Nenhuma meta ainda. Clique em “＋ Nova meta”. Pode ser uma viagem, um carro ou a reserva de emergência.</div>');
+    +(L.length
+      ? `<div class="meta-g" style="--cols:${Math.min(L.length,3)}">${L.map(m=>metaHTML(m,false,L.length>1)).join('')}</div>`
+      : '<div class="empty">Nenhuma meta ainda. Clique em “＋ Nova meta”. Pode ser uma viagem, um carro ou a reserva de emergência.</div>');
 }
-function metaHTML(m,compacto){
+function metaHTML(m,compacto,grade){
   const p=progresso(m), fin=m.tipo==='financeira', jun=juntado(m);
   const hoje=iso(new Date());
   const noPrazo=!m.prazo||m.prazo>=hoje||p>=1;
@@ -3239,7 +3298,7 @@ function metaHTML(m,compacto){
     : [['Etapas',etapasFeitas+' de '+etapasTot,'pos'],
        ['Concluído',(p*100).toFixed(0)+'%','dim']];
   if(m.prazo)nums.push(['Prazo',fmtBR(m.prazo)+(dias!==null&&p<1?(dias>=0?' · '+dias+'d':' · '+Math.abs(dias)+'d atrás'):''),'dim']);
-  return `<div class="meta ${p>=1?'batida':''}">
+  return `<div class="meta ${p>=1?'batida':''} ${grade?'grade':''}">
     ${m.capa?`<div class="meta-cover" style="background-image:url('${esc(m.capa)}');--capa-pos:${esc(m.capaPos||'50% 50%')}"><i class="mc-veu"></i></div>`:''}
     <div class="meta-in">
       <div class="meta-emo">${esc(m.emoji||'◎')}</div>
@@ -3511,7 +3570,7 @@ function painelMetas(){
   return `<div class="panel"><div class="panel-head"><h2>Suas metas
       <small>${nAb?nAb+' em andamento':'todas concluídas'} · clique para abrir</small></h2>
       <button class="btn btn-sm btn-ghost" onclick="go('metas')">Ver todas</button></div>
-    <div class="mm-g">${todas.map(miniMeta).join('')}</div></div>`;
+    <div class="mm-g" style="--cols:${Math.min(todas.length,4)}">${todas.map(miniMeta).join('')}</div></div>`;
 }
 
 /* ---------- Princípios na Visão geral ----------
@@ -6470,7 +6529,7 @@ const SESSAO = 'lidere_fp_sessao';
    Serve para o app perceber sozinho que já existe versão mais nova publicada
    do que a que está aberta neste navegador: quem usa o sistema recebe as
    melhorias sem precisar saber o que é cache. */
-const APP_BUILD = '2026-09-18.1742';
+const APP_BUILD = '2026-09-18.1757';
 let avisouVersao = false, ultimaChecagem = 0;
 
 async function checaVersao() {

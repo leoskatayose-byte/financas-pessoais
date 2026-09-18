@@ -751,21 +751,8 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .btn.olho{padding:8px 11px;line-height:1}
 .btn.olho svg{width:17px;height:17px;display:block;fill:none;stroke:currentColor;
   stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-html[data-oculto] .vlr,
-html[data-oculto] td.num:not(.cel-a),
-html[data-oculto] div.num,
-html[data-oculto] .stat .v,
-html[data-oculto] .stat .sub,
-html[data-oculto] .big,
-html[data-oculto] .bsel-v,
-html[data-oculto] .bsel-s,
-html[data-oculto] .mm-v,
-html[data-oculto] .pl-v,
-html[data-oculto] .cal .val,
-html[data-oculto] .dia-i .vl,
-html[data-oculto] #pgSub{
-  filter:blur(7px);-webkit-user-select:none;user-select:none;
-  transition:filter .18s ease}
+html[data-oculto] .vlr{letter-spacing:.06em;font-variant-numeric:normal;
+  -webkit-user-select:none;user-select:none}
 html[data-oculto] .btn.olho{color:var(--acc);border-color:var(--acc)}
 @media(prefers-reduced-motion:reduce){html[data-oculto] .vlr{transition:none}}
 
@@ -2311,6 +2298,9 @@ function aplicaOculto(){
   }
 }
 /* embrulha todo valor em dinheiro que esteja solto no meio do texto */
+/* o valor sai da tela e entra o pontilhado; o numero real fica so no banco */
+const PONTOS_DIN='\u2022\u2022\u2022\u2022\u2022\u2022';
+const mascaraDin=t=>(/R\$/.test(t)?'R$ ':'')+PONTOS_DIN;
 const RE_DIN=/(R\$\s?-?[\d.]+,\d{2}|-?\d{1,3}(?:\.\d{3})*,\d{2})/g;
 const PULA_DIN=new Set(['SCRIPT','STYLE','INPUT','TEXTAREA','SELECT','OPTION','LABEL','SVG']);
 function marcaDinheiro(){
@@ -2318,6 +2308,11 @@ function marcaDinheiro(){
   const raizes=[document.getElementById('views'),document.getElementById('pgSub'),
                 document.querySelector('.tb-acts')].filter(Boolean);
   raizes.forEach(r=>{
+    r.querySelectorAll('[title]').forEach(e=>{
+      const t=e.getAttribute('title')||'';
+      if(RE_DIN.test(t)){RE_DIN.lastIndex=0;e.setAttribute('title',t.replace(RE_DIN,m=>mascaraDin(m)))}
+      RE_DIN.lastIndex=0;
+    });
     const w=document.createTreeWalker(r,NodeFilter.SHOW_TEXT),alvos=[];
     let n;
     while((n=w.nextNode())){
@@ -2332,7 +2327,8 @@ function marcaDinheiro(){
       const frag=document.createDocumentFragment();
       partes.forEach((t,i)=>{
         if(!t)return;
-        if(i%2){const e=document.createElement('span');e.className='vlr';e.textContent=t;frag.appendChild(e)}
+        if(i%2){const e=document.createElement('span');e.className='vlr';
+          e.textContent=mascaraDin(t);frag.appendChild(e)}
         else frag.appendChild(document.createTextNode(t));
       });
       no.parentNode.replaceChild(frag,no);
@@ -2341,7 +2337,7 @@ function marcaDinheiro(){
 }
 function trocaOculto(){
   if(!DB)return;
-  DB.oculto=!DB.oculto;save();aplicaOculto();marcaDinheiro();
+  DB.oculto=!DB.oculto;save();aplicaOculto();render();
   toast(DB.oculto?'Valores ocultos. Ninguém vê os números na sua tela.':'Valores à mostra de novo');
 }
 function setTema(id){DB.tema=id;aplicaTema(id);save();render();toast('Tema: '+(TEMAS.find(t=>t.id===id)||{}).nome)}
@@ -6053,7 +6049,7 @@ const SESSAO = 'lidere_fp_sessao';
    Serve para o app perceber sozinho que já existe versão mais nova publicada
    do que a que está aberta neste navegador: quem usa o sistema recebe as
    melhorias sem precisar saber o que é cache. */
-const APP_BUILD = '2026-09-18.1614';
+const APP_BUILD = '2026-09-18.1619';
 let avisouVersao = false, ultimaChecagem = 0;
 
 async function checaVersao() {

@@ -5945,7 +5945,7 @@ const SESSAO = 'lidere_fp_sessao';
    Serve para o app perceber sozinho que já existe versão mais nova publicada
    do que a que está aberta neste navegador: quem usa o sistema recebe as
    melhorias sem precisar saber o que é cache. */
-const APP_BUILD = '2026-09-17.1522';
+const APP_BUILD = '2026-09-18.1001';
 let avisouVersao = false, ultimaChecagem = 0;
 
 async function checaVersao() {
@@ -6344,7 +6344,8 @@ function viewPrivacidade() {
     <div class="alert" style="margin-top:14px"><span>✦</span>
       <div><b>Guia do sistema</b> mostra, na própria tela, para que serve cada parte.
         Dá para rever quando quiser.</div>
-      <button class="btn btn-sm right" onclick="iniciaGuia(0)">Ver o guia</button></div>
+      <button class="btn btn-sm right" onclick="iniciaGuia(0)">Ver o guia</button>
+      <button class="btn btn-sm" onclick="iniciaGuia(guiaPratica())">Primeiros passos</button></div>
     <div class="alert bad" style="margin-top:10px"><span>⚠️</span>
       <div><b>Apagar a conta</b> remove seu login e todos os seus dados, sem volta.</div>
       <button class="btn btn-sm right" onclick="excluirConta()">Apagar minha conta</button></div>
@@ -6404,9 +6405,46 @@ const GUIA = [
   { sec: 'dashboard', alvo: '.side-foot', tit: 'Aparência, backup e saída',
     txt: 'No rodapé do menu você troca a paleta de cores, baixa um backup completo em um clique e restaura quando precisar.' },
 
-  { sec: 'lancamentos', alvo: '.tb-acts', tit: 'Por onde começar',
-    txt: 'Cadastre o seu banco, importe o extrato do mês e confira a classificação. Em dez minutos o seu mês está na tela. Bom proveito.' }
+  { sec: 'dashboard', alvo: '', tit: 'Agora a gente faz junto',
+    txt: 'Explicação basta até aqui. Vamos cadastrar o seu banco, colocar o saldo do início do mês e fazer o primeiro lançamento agora, você no comando e eu do lado.' },
+
+  /* --- daqui para baixo o guia espera a pessoa agir --- */
+  { sec: 'lancamentos', alvo: '#c_bancoPick', pratica: true,
+    acao: () => { if (!document.querySelector('#ovConta.show')) openConta('banco'); },
+    espera: () => !!cBanco || !!cLogo,
+    tit: '1. Escolha o seu banco',
+    txt: 'Clique no símbolo do banco onde está o seu dinheiro. Se for o Banco do Brasil, clique no dele: o nome da conta já vem preenchido. Tem outro banco? Use “＋ Usar minha imagem”.' },
+
+  { sec: 'lancamentos', alvo: '#c_bancoBox, #c_saldo', pratica: true,
+    espera: () => alive(DB.contas).length > (guiaContas0 || 0),
+    tit: '2. O saldo do primeiro dia do mês',
+    txt: 'Abra o extrato do seu banco e veja quanto tinha na conta no dia 1. Escreva esse valor em “Saldo inicial” e confirme a data. É a partir dele que o app calcula o saldo de todo dia seguinte. Depois clique em Salvar.' },
+
+  { sec: 'lancamentos', alvo: '.bsel-g, .bnav', pratica: true,
+    tit: '3. Conta criada',
+    txt: 'Pronto: esta é a sua conta. Tudo que entrar e sair passa a cair aqui, e o saldo anda sozinho a partir do valor que você acabou de informar.' },
+
+  { sec: 'lancamentos', alvo: '#l_desc, #ovLanc .modal', pratica: true,
+    acao: () => { if (!document.querySelector('#ovLanc.show')) openLanc(); },
+    espera: () => alive(DB.lanc).length > (guiaLanc0 || 0),
+    tit: '4. Faça o primeiro lançamento',
+    txt: 'Escolha Saída, ponha a data, escreva o que foi (ex.: SUPERMERCADO) e o valor. Repare na “Conta do plano”: o app sugere sozinho pela descrição. Salve para ver o que acontece.' },
+
+  { sec: 'lancamentos', alvo: '.tbl-scroll, #views .panel', pratica: true,
+    tit: '5. Olhe o seu extrato',
+    txt: 'O lançamento entrou na lista e o saldo do dia já mudou. Repita para os outros gastos do mês, ou use o atalho do próximo passo.' },
+
+  { sec: 'lancamentos', alvo: '.tb-acts', pratica: true,
+    tit: '6. O caminho rápido',
+    txt: '“Importar extrato” lê o arquivo OFX, CSV ou o PDF do seu banco e traz o mês inteiro de uma vez, já classificado. Dentro do extrato ainda existe o “Em lote”, para digitar vários de uma vez.' },
+
+  { sec: 'dashboard', alvo: '', tit: 'É isso',
+    txt: 'Seu banco está cadastrado e o mês começou a aparecer na tela. Daqui para frente é manter: lançar ou importar, conferir a fatura do cartão e olhar o resultado no fim do mês. Para rever este guia, é em Privacidade.' }
 ];
+/* quantos itens existiam quando o passo começou, para saber que a pessoa fez */
+let guiaContas0 = 0, guiaLanc0 = 0, guiaTimer = null;
+/* numero de serie do passo: o que esta rodando e sempre o ultimo */
+let guiaGer = 0;
 
 const guiaEl = id => document.getElementById(id);
 
@@ -6464,11 +6502,17 @@ const guiaQuerMenu = g => !!(g.alvo && /\.side|\.nav-i|\.brand/.test(g.alvo));
 function guiaPasso() {
   const g = GUIA[guiaN];
   if (!g) return guiaFecha(false);
+  const ger = ++guiaGer;
+  clearInterval(guiaTimer); guiaTimer = null;
   if (g.sec && activeTab !== g.sec) { go(g.sec); }
+  guiaContas0 = alive(DB.contas).length;
+  guiaLanc0 = alive(DB.lanc).length;
+  if (typeof g.acao === 'function') { try { g.acao() } catch (e) {} }
   /* no celular a coluna do menu fica escondida: abre so quando o passo fala dela */
   if (window.innerWidth <= 1024 && typeof toggleMenu === 'function') toggleMenu(guiaQuerMenu(g));
   /* o render acabou de trocar a tela: espera o navegador desenhar */
   requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (ger !== guiaGer || !guiaVivo) return;   /* outro passo tomou a frente */
     guiaAlvoAtual = guiaAcha(g.alvo);
     if (guiaAlvoAtual) {
       const r = guiaAlvoAtual.getBoundingClientRect();
@@ -6483,10 +6527,23 @@ function guiaPasso() {
       '<div class="guia-acts">' +
         '<button class="lnk esq" onclick="guiaFecha(true)">Pular o guia</button>' +
         (guiaN ? '<button class="btn btn-sm btn-ghost" onclick="guiaVai(-1)">Voltar</button>' : '') +
-        '<button class="btn btn-sm btn-gold" onclick="guiaVai(1)">' +
-          (ult ? 'Concluir' : 'Próximo') + '</button></div>';
+        '<button class="btn btn-sm ' + (g.espera ? 'btn-ghost' : 'btn-gold') +
+          '" onclick="guiaVai(1)">' +
+          (ult ? 'Concluir' : (g.espera ? 'Faço depois' : 'Próximo')) + '</button></div>';
     requestAnimationFrame(guiaPosiciona);
     const b = guiaEl('guiaCx').querySelector('.btn-gold'); if (b) b.focus();
+    /* passo de pratica: fica de olho e anda sozinho quando a pessoa faz */
+    if (typeof g.espera === 'function') {
+      const t = setInterval(() => {
+        if (ger !== guiaGer || !guiaVivo) { clearInterval(t); return }
+        let pronto = false;
+        try { pronto = !!g.espera() } catch (e) {}
+        if (!pronto) { guiaPosiciona(); return }
+        clearInterval(t); if (guiaTimer === t) guiaTimer = null;
+        setTimeout(() => { if (guiaVivo && ger === guiaGer) guiaVai(1) }, 550);
+      }, 400);
+      guiaTimer = t;
+    }
   }));
 }
 
@@ -6523,6 +6580,8 @@ function guiaPosiciona() {
 
 function guiaFecha(pulou) {
   guiaVivo = false;
+  guiaGer++;
+  clearInterval(guiaTimer); guiaTimer = null;
   ['guiaLuz', 'guiaCx', 'guiaX'].forEach(id => { const e = guiaEl(id); if (e) e.remove() });
   document.removeEventListener('keydown', guiaTecla);
   window.removeEventListener('resize', guiaPosiciona);
@@ -6531,6 +6590,9 @@ function guiaFecha(pulou) {
   if (DB) { DB.guiaFeito = true; save(); }
   if (!pulou) toast('Guia concluído. Para rever, é em Privacidade.');
 }
+
+/* onde começa a parte de mão na massa, para quem quer só ela */
+const guiaPratica = () => Math.max(0, GUIA.findIndex(g => g.pratica) - 1);
 
 /* chamado depois que a sessão abriu: só na primeira vez, e só se não houver
    nada mais urgente na frente (a caixa do nome tem prioridade) */

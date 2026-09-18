@@ -742,6 +742,33 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 }
 @media(prefers-reduced-motion:reduce){.guia-luz,.guia-cx,.guia-barra i{transition:none}}
 
+/* ==========================================================================
+   Ocultar valores
+   O mesmo olho dos aplicativos de banco: some com todo número de dinheiro para
+   você poder abrir o sistema na frente dos outros. Não é segurança, é privacidade
+   de tela: o dado continua lá, só não fica à mostra.
+   ========================================================================== */
+.btn.olho{padding:8px 11px;line-height:1}
+.btn.olho svg{width:17px;height:17px;display:block;fill:none;stroke:currentColor;
+  stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+html[data-oculto] .vlr,
+html[data-oculto] td.num:not(.cel-a),
+html[data-oculto] div.num,
+html[data-oculto] .stat .v,
+html[data-oculto] .stat .sub,
+html[data-oculto] .big,
+html[data-oculto] .bsel-v,
+html[data-oculto] .bsel-s,
+html[data-oculto] .mm-v,
+html[data-oculto] .pl-v,
+html[data-oculto] .cal .val,
+html[data-oculto] .dia-i .vl,
+html[data-oculto] #pgSub{
+  filter:blur(7px);-webkit-user-select:none;user-select:none;
+  transition:filter .18s ease}
+html[data-oculto] .btn.olho{color:var(--acc);border-color:var(--acc)}
+@media(prefers-reduced-motion:reduce){html[data-oculto] .vlr{transition:none}}
+
 /* ---------- Porta de entrada (Fase 2) ---------- */
 .gate{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;
   padding:26px 16px;overflow-y:auto;
@@ -1121,6 +1148,8 @@ textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
       <div class="tb-acts">
         <div class="mesnav"><button onclick="stepMes(-1)" title="Mês anterior">‹</button><b id="mesLbl"></b><button onclick="stepMes(1)" title="Próximo mês">›</button></div>
         <span id="nuvemStatus" style="font-size:11px;color:var(--mut);white-space:nowrap"></span>
+        <button class="btn olho" id="btOlho" onclick="trocaOculto()" title="Ocultar valores"
+          aria-label="Ocultar valores"></button>
         <button class="btn" onclick="openImport()">↓ Importar extrato</button>
         <button class="btn btn-gold" onclick="openLanc()">+ Lançamento</button>
       </div>
@@ -1941,6 +1970,7 @@ function migraDB(){
   DB.tema=DB.tema||'dual'; aplicaTema(DB.tema);
   /* qual princípio do banco esta pessoa está vendo */
   DB.princN=Math.abs(Math.round(DB.princN||0));
+  DB.oculto=!!DB.oculto;   /* olho do banco: valores borrados na tela */
   DB.lidos=DB.lidos||{};
   DB.usuario=DB.usuario||{nome:''};
   if(!DB.principios||!DB.principios.length)DB.principios=PRINCIPIOS_BASE.map(x=>({...x,adotado:false}));
@@ -2265,6 +2295,55 @@ const TEMAS=[
 ];
 const temaVisivel=t=>!t.teste||(typeof PERFIL!=='undefined'&&PERFIL&&PERFIL.is_admin);
 function aplicaTema(id){document.documentElement.setAttribute('data-tema',id)}
+/* ---------- Ocultar valores ----------
+   Igual ao olho do aplicativo do banco: esconde o dinheiro da tela inteira.
+   Fica guardado na base, então a pessoa reencontra do jeito que deixou. */
+const OLHO_ABERTO='<svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="2.8"/></svg>';
+const OLHO_FECHADO='<svg viewBox="0 0 24 24"><path d="M4 5l16 14"/><path d="M9.6 6.2A9.9 9.9 0 0 1 12 5.9c6.4 0 10 6.1 10 6.1a18 18 0 0 1-3.4 4"/><path d="M6.6 8A18 18 0 0 0 2 12s3.6 6.1 10 6.1a10.6 10.6 0 0 0 4-.75"/><path d="M9.6 10.4a3 3 0 0 0 4.2 4.2"/></svg>';
+function aplicaOculto(){
+  const on=!!(DB&&DB.oculto);
+  document.documentElement.toggleAttribute('data-oculto',on);
+  const b=document.getElementById('btOlho');
+  if(b){
+    b.innerHTML=on?OLHO_FECHADO:OLHO_ABERTO;
+    const t=on?'Mostrar valores':'Ocultar valores';
+    b.title=t;b.setAttribute('aria-label',t);b.setAttribute('aria-pressed',on?'true':'false');
+  }
+}
+/* embrulha todo valor em dinheiro que esteja solto no meio do texto */
+const RE_DIN=/(R\$\s?-?[\d.]+,\d{2}|-?\d{1,3}(?:\.\d{3})*,\d{2})/g;
+const PULA_DIN=new Set(['SCRIPT','STYLE','INPUT','TEXTAREA','SELECT','OPTION','LABEL','SVG']);
+function marcaDinheiro(){
+  if(!DB||!DB.oculto)return;
+  const raizes=[document.getElementById('views'),document.getElementById('pgSub'),
+                document.querySelector('.tb-acts')].filter(Boolean);
+  raizes.forEach(r=>{
+    const w=document.createTreeWalker(r,NodeFilter.SHOW_TEXT),alvos=[];
+    let n;
+    while((n=w.nextNode())){
+      const p=n.parentElement;
+      if(!p||PULA_DIN.has(p.tagName)||p.classList.contains('vlr'))continue;
+      RE_DIN.lastIndex=0;
+      if(RE_DIN.test(n.nodeValue||''))alvos.push(n);
+    }
+    alvos.forEach(no=>{
+      const partes=(no.nodeValue||'').split(RE_DIN);
+      if(partes.length<2)return;
+      const frag=document.createDocumentFragment();
+      partes.forEach((t,i)=>{
+        if(!t)return;
+        if(i%2){const e=document.createElement('span');e.className='vlr';e.textContent=t;frag.appendChild(e)}
+        else frag.appendChild(document.createTextNode(t));
+      });
+      no.parentNode.replaceChild(frag,no);
+    });
+  });
+}
+function trocaOculto(){
+  if(!DB)return;
+  DB.oculto=!DB.oculto;save();aplicaOculto();marcaDinheiro();
+  toast(DB.oculto?'Valores ocultos. Ninguém vê os números na sua tela.':'Valores à mostra de novo');
+}
 function setTema(id){DB.tema=id;aplicaTema(id);save();render();toast('Tema: '+(TEMAS.find(t=>t.id===id)||{}).nome)}
 function renderTemas(){
   document.getElementById('temas').innerHTML=TEMAS.filter(temaVisivel).map(t=>
@@ -2301,7 +2380,7 @@ function render(){
   const [t,sub]=SECAO[activeTab]||['',''];
   document.getElementById('pgTitle').childNodes[0].nodeValue=t;
   document.getElementById('pgSub').textContent=sub+' · saldo em '+mesLabel(mesAtual)+': '+brl(r.saldoFim);
-  renderNav();renderTemas();topoCelular();
+  renderNav();renderTemas();topoCelular();aplicaOculto();
   if(typeof renderGuiaBotao==='function')renderGuiaBotao();
   const V={dashboard:viewDash,pendencias:viewPend,metas:viewMetas,principios:viewPrinc,playbooks:viewPb,lancamentos:viewLanc,cartoes:viewCartoes,pagar:viewPagar,dre:viewDre,patrimonio:viewPat,plano:viewPlano,lixeira:viewLixo,privacidade:viewPrivacidade,admin:viewAdmin};
   document.getElementById('views').innerHTML=(V[activeTab]||viewDash)();
@@ -5974,7 +6053,7 @@ const SESSAO = 'lidere_fp_sessao';
    Serve para o app perceber sozinho que já existe versão mais nova publicada
    do que a que está aberta neste navegador: quem usa o sistema recebe as
    melhorias sem precisar saber o que é cache. */
-const APP_BUILD = '2026-09-18.1038';
+const APP_BUILD = '2026-09-18.1614';
 let avisouVersao = false, ultimaChecagem = 0;
 
 async function checaVersao() {
@@ -6661,6 +6740,7 @@ function importData(){
 
 /* ===== Efeitos ===== */
 function fxAfterRender(){
+  if(typeof marcaDinheiro==='function')marcaDinheiro();
   document.querySelectorAll('.ring .fg[data-off]').forEach(c=>{
     requestAnimationFrame(()=>requestAnimationFrame(()=>c.style.strokeDashoffset=c.dataset.off));
   });

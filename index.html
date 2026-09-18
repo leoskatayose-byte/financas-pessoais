@@ -712,6 +712,50 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .mm.foto .mm-b{max-width:60%}
 .mm-anel,.mm-b{position:relative;z-index:2}
 @media(max-width:600px){.mm{min-height:112px}.mm-img{width:44%}.mm.foto .mm-b{max-width:64%}}
+/* ---------- acabamento do painel de metas ----------
+   Cada quadro ganha uma barra de progresso no pe, que cresce quando a tela
+   desenha e brilha na cor da meta, e a borda da esquerda respira devagar. */
+.mm-pg{position:absolute;left:0;right:0;bottom:0;height:3px;z-index:3;
+  background:color-mix(in srgb,var(--raise) 70%,transparent);overflow:hidden}
+.mm-pg > i{display:block;height:100%;background:linear-gradient(90deg,var(--meta),var(--meta-s));
+  border-radius:0 3px 3px 0;transition:width 1.1s cubic-bezier(.2,.8,.2,1);
+  animation:metaPulso 3.4s ease-in-out infinite}
+.mm.ok .mm-pg > i{background:linear-gradient(90deg,var(--pos),var(--acc-s))}
+@keyframes metaPulso{0%,100%{box-shadow:0 0 5px 0 color-mix(in srgb,var(--meta) 45%,transparent)}
+  50%{box-shadow:0 0 14px 1px color-mix(in srgb,var(--meta) 85%,transparent)}}
+.mm{border-left-width:3px;animation:metaBorda 3.4s ease-in-out infinite}
+@keyframes metaBorda{0%,100%{border-left-color:var(--meta)}
+  50%{border-left-color:var(--meta-s)}}
+/* meta batida continua com a comemoracao verde, sem a respiracao da borda */
+.mm.ok{animation:brilhoMeta 3.4s ease-in-out infinite}
+/* um brilho atravessa o quadro quando o mouse passa */
+.mm-luz{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;
+  background:linear-gradient(105deg,transparent 30%,
+             color-mix(in srgb,var(--meta-s) 22%,transparent) 48%,transparent 66%);
+  transform:translateX(-60%)}
+.mm:hover .mm-luz{animation:metaVarre .85s ease-out}
+@keyframes metaVarre{0%{opacity:0;transform:translateX(-60%)}
+  35%{opacity:1}100%{opacity:0;transform:translateX(60%)}}
+/* cabecalho: ponto pulsando e o quanto ja foi juntado no total */
+.painel-metas .panel-head h2{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.pm-dot{width:8px;height:8px;border-radius:50%;background:var(--meta);flex:0 0 8px;
+  animation:pmDot 3.4s ease-in-out infinite}
+@keyframes pmDot{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--meta) 55%,transparent);opacity:.75}
+  50%{box-shadow:0 0 0 7px transparent;opacity:1}}
+.pm-tot{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--dim);
+  margin-left:auto;margin-right:10px;white-space:nowrap}
+.pm-tot b{font-size:14px;color:var(--meta);font-weight:800;
+  animation:pmNum 3.4s ease-in-out infinite}
+@keyframes pmNum{0%,100%{text-shadow:none}
+  50%{text-shadow:0 0 12px color-mix(in srgb,var(--meta) 70%,transparent)}}
+.pm-bar{display:block;width:90px;height:4px;border-radius:3px;background:var(--raise);overflow:hidden}
+.pm-bar > i{display:block;height:100%;border-radius:3px;
+  background:linear-gradient(90deg,var(--meta),var(--meta-s));
+  transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+@media(max-width:700px){.pm-tot{margin-left:0;width:100%;order:3}}
+@media(prefers-reduced-motion:reduce){
+  .mm,.mm-pg > i,.pm-dot,.pm-tot b{animation:none}
+  .mm:hover .mm-luz{animation:none}}
 .mm:hover{border-color:var(--line-f);border-left-color:var(--meta-s,var(--meta));background:var(--raise);transform:translateY(-1px)}
 .mm.ok{border-left-color:var(--pos)}
 .mm-anel{position:relative;width:50px;height:50px;flex:0 0 50px}
@@ -3553,7 +3597,9 @@ function miniMeta(m){
       <div class="mm-m"><b>${(p*100).toFixed(0)}%</b>
         <span class="chip ${p>=1?'chip-ok':(noPrazo?'chip-n':'chip-bad')}">${p>=1?'concluída':(noPrazo?'no prazo':'atrasada')}</span>
         ${m.prazo?`<span class="muted">${fmtBR(m.prazo)}</span>`:''}</div>
-    </div></button>`;
+    </div>
+    <span class="mm-pg"><i data-w="${(p*100).toFixed(1)}" style="width:0"></i></span>
+    <span class="mm-luz"></span></button>`;
 }
 function painelMetas(){
   const abertas=metasAtivas().filter(m=>progresso(m)<1);
@@ -3567,8 +3613,13 @@ function painelMetas(){
     return metaHTML(todas[0],true).replace('<div class="meta">','<div class="meta" style="margin-bottom:16px">')
              .replace(/class="meta-kicker">[^<]*</,'class="meta-kicker">Meta ativa<');
   const nAb=abertas.length;
-  return `<div class="panel"><div class="panel-head"><h2>Suas metas
+  const alvoTot=todas.filter(m=>m.tipo==='financeira').reduce((s,m)=>s+(m.valorAlvo||0),0);
+  const junTot=todas.filter(m=>m.tipo==='financeira').reduce((s,m)=>s+juntado(m),0);
+  const pctTot=alvoTot?Math.min(100,junTot/alvoTot*100):0;
+  return `<div class="panel painel-metas"><div class="panel-head"><h2><span class="pm-dot"></span>Suas metas
       <small>${nAb?nAb+' em andamento':'todas concluídas'} · clique para abrir</small></h2>
+      ${alvoTot?`<span class="pm-tot" title="quanto já foi juntado somando as metas financeiras">
+        <b>${pctTot.toFixed(0)}%</b> do total<span class="pm-bar"><i data-w="${pctTot.toFixed(1)}" style="width:0"></i></span></span>`:''}
       <button class="btn btn-sm btn-ghost" onclick="go('metas')">Ver todas</button></div>
     <div class="mm-g" style="--cols:${Math.min(todas.length,4)}">${todas.map(miniMeta).join('')}</div></div>`;
 }
@@ -6529,7 +6580,7 @@ const SESSAO = 'lidere_fp_sessao';
    Serve para o app perceber sozinho que já existe versão mais nova publicada
    do que a que está aberta neste navegador: quem usa o sistema recebe as
    melhorias sem precisar saber o que é cache. */
-const APP_BUILD = '2026-09-18.1757';
+const APP_BUILD = '2026-09-18.1809';
 let avisouVersao = false, ultimaChecagem = 0;
 
 async function checaVersao() {
@@ -7222,6 +7273,9 @@ function fxAfterRender(){
   });
   document.querySelectorAll('.rit .b[data-h]').forEach(b=>{
     b.style.height='0';requestAnimationFrame(()=>requestAnimationFrame(()=>b.style.height=b.dataset.h+'%'));
+  });
+  document.querySelectorAll('.mm-pg > i[data-w],.pm-bar > i[data-w]').forEach(b=>{
+    const w=b.dataset.w+'%';requestAnimationFrame(()=>requestAnimationFrame(()=>b.style.width=w));
   });
   document.querySelectorAll('.bar-track > i[data-w]').forEach(b=>{
     const w=b.dataset.w+'%';requestAnimationFrame(()=>requestAnimationFrame(()=>b.style.width=w));

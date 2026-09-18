@@ -322,20 +322,32 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .meta{position:relative;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:14px;
   background:var(--panel);transition:.18s}
 .meta:hover{border-color:var(--line-f)}
-/* A capa da meta aparece INTEIRA, numa faixa no alto do cartao: o fundo e a
-   propria imagem borrada, so para nao sobrar tarja preta dos lados, e por cima
-   vem a imagem completa, sem corte nenhum. */
-.meta-cover{position:relative;z-index:0;height:216px;background-size:0 0;overflow:hidden}
-.meta-cover::before{content:"";position:absolute;inset:0;background-image:inherit;
-  background-size:cover;background-position:center;transform:scale(1.15);
-  filter:blur(28px) brightness(.5) saturate(.85)}
-.meta-cover::after{content:"";position:absolute;inset:10px;z-index:1;
-  background-image:inherit;background-size:contain;background-position:center;
-  background-repeat:no-repeat}
-.mc-veu{position:absolute;inset:0;z-index:2;pointer-events:none;
-  background:linear-gradient(180deg,transparent 52%,
-             color-mix(in srgb,var(--panel) 55%,transparent) 78%,var(--panel) 100%)}
-@media(max-width:720px){.meta-cover{height:180px}}
+/* Capa da meta: preenche o cartao inteiro, como era, mas quem manda no
+   enquadramento e a pessoa (capaPos, ajustada arrastando no editor). Mesma
+   ideia de capa do Notion, do Trello e do Facebook. */
+.meta{min-height:196px}
+.meta-cover{position:absolute;inset:0;z-index:0;opacity:.55;
+  background-size:cover;background-repeat:no-repeat;
+  background-position:var(--capa-pos,50% 50%)}
+.mc-veu{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(100deg,var(--panel) 24%,
+             color-mix(in srgb,var(--panel) 70%,transparent) 60%,
+             color-mix(in srgb,var(--panel) 30%,transparent))}
+@media(max-width:720px){
+  .meta{min-height:0}
+  .mc-veu{background:linear-gradient(170deg,color-mix(in srgb,var(--panel) 45%,transparent) 0,
+          color-mix(in srgb,var(--panel) 78%,transparent) 45%,var(--panel) 100%)}
+}
+/* previa de enquadramento no editor: arraste a imagem para escolher o pedaco */
+.capa-prev{position:relative;height:160px;border-radius:11px;overflow:hidden;
+  border:1px solid var(--line-f);background:var(--panel2) center/cover no-repeat;
+  cursor:grab;touch-action:none;user-select:none;margin-bottom:8px}
+.capa-prev.pegando{cursor:grabbing}
+.capa-prev.vazia{display:flex;align-items:center;justify-content:center;
+  color:var(--mut);font-size:12px;text-align:center;padding:0 18px;cursor:default}
+.capa-prev .dica{position:absolute;left:10px;bottom:10px;font-size:11px;font-weight:600;
+  color:#fff;background:rgba(0,0,0,.55);border-radius:20px;padding:5px 11px;
+  pointer-events:none;letter-spacing:.2px}
 .meta-in{position:relative;display:flex;gap:24px;align-items:flex-start;padding:20px 24px}
 @media(max-width:720px){.meta-in{flex-direction:column;align-items:stretch;gap:16px}}
 .meta-emo{margin-top:3px;font-size:34px;line-height:1;width:56px;height:56px;flex:0 0 56px;display:flex;align-items:center;justify-content:center;
@@ -1450,7 +1462,14 @@ textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
       <div class="field"><label>Ícone</label><input id="m_emoji" maxlength="4" placeholder="🎯"><div class="hint">Aparece quando não há foto.</div></div>
       <div class="field"><label>Foto de capa</label><input type="file" accept="image/*" onchange="capaArquivo(this)"><div class="hint">Ou cole um link de imagem abaixo.</div></div>
     </div>
-    <div class="field"><label>Link da imagem</label><input id="m_capa" placeholder="https://…"></div>
+    <div class="field"><label>Link da imagem</label>
+      <input id="m_capa" placeholder="https://…" oninput="renderCapaPrev()"></div>
+    <div class="field"><label>Enquadramento</label>
+      <div class="capa-prev vazia" id="capaPrev" onpointerdown="capaPega(event)"
+        onpointermove="capaMove(event)" onpointerup="capaSolta()" onpointercancel="capaSolta()"></div>
+      <div class="hint">A imagem preenche o cartão. Arraste para escolher a parte que
+        aparece, como numa foto de capa. <button type="button" class="lnk-teto"
+        onclick="capaCentro()">centralizar</button></div></div>
   </div>
   <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('ovMeta')">Cancelar</button><button class="btn btn-gold" onclick="saveMeta()">Salvar</button></div>
 </div></div>
@@ -2872,7 +2891,7 @@ function metaHTML(m,compacto){
        ['Concluído',(p*100).toFixed(0)+'%','dim']];
   if(m.prazo)nums.push(['Prazo',fmtBR(m.prazo)+(dias!==null&&p<1?(dias>=0?' · '+dias+'d':' · '+Math.abs(dias)+'d atrás'):''),'dim']);
   return `<div class="meta ${p>=1?'batida':''}">
-    ${m.capa?`<div class="meta-cover" style="background-image:url('${esc(m.capa)}')"><i class="mc-veu"></i></div>`:''}
+    ${m.capa?`<div class="meta-cover" style="background-image:url('${esc(m.capa)}');--capa-pos:${esc(m.capaPos||'50% 50%')}"><i class="mc-veu"></i></div>`:''}
     <div class="meta-in">
       <div class="meta-emo">${esc(m.emoji||'◎')}</div>
       <div class="meta-body">
@@ -2933,15 +2952,56 @@ function openMeta(id){
   document.getElementById('m_prazo').value=m?(m.prazo||''):'';
   document.getElementById('m_emoji').value=m?(m.emoji||'◎'):'🎯';
   document.getElementById('m_capa').value=m?(m.capa||''):'';
+  capaPos=m?(m.capaPos||'50% 50%'):'50% 50%';
+  renderCapaPrev();
   tipoMeta();
   document.getElementById('ovMeta').classList.add('show');
   setTimeout(()=>document.getElementById('m_nome').focus(),60);
 }
 function tipoMeta(){document.getElementById('m_alvoBox').style.display=document.getElementById('m_tipo').value==='financeira'?'':'none'}
+/* ---------- Enquadrar a capa ----------
+   A imagem preenche o cartao; arrastando aqui a pessoa escolhe que parte dela
+   fica visivel. E o mesmo gesto de "reposicionar capa" do Notion. */
+let capaPos='50% 50%', capaArr=null;
+function renderCapaPrev(){
+  const el=document.getElementById('capaPrev');if(!el)return;
+  const url=(document.getElementById('m_capa').value||'').trim();
+  if(!url){
+    el.className='capa-prev vazia';el.style.backgroundImage='';
+    el.textContent='Escolha uma foto acima e ela aparece aqui, do jeito que vai ficar no cartão.';
+    return;
+  }
+  el.className='capa-prev';
+  el.style.backgroundImage=`url('${url.replace(/'/g,"\\'")}')`;
+  el.style.backgroundPosition=capaPos;
+  el.innerHTML='<span class="dica">arraste para enquadrar</span>';
+}
+function capaPega(e){
+  const el=document.getElementById('capaPrev');
+  if(!el||el.classList.contains('vazia'))return;
+  const p=capaPos.split(' ').map(v=>parseFloat(v));
+  capaArr={x:e.clientX,y:e.clientY,px:isNaN(p[0])?50:p[0],py:isNaN(p[1])?50:p[1]};
+  el.classList.add('pegando');el.setPointerCapture&&el.setPointerCapture(e.pointerId);
+}
+function capaMove(e){
+  if(!capaArr)return;
+  const el=document.getElementById('capaPrev');
+  const dx=(e.clientX-capaArr.x)/el.offsetWidth*100;
+  const dy=(e.clientY-capaArr.y)/el.offsetHeight*100;
+  const lim=v=>Math.max(0,Math.min(100,v));
+  capaPos=lim(capaArr.px-dx*1.6).toFixed(0)+'% '+lim(capaArr.py-dy*1.6).toFixed(0)+'%';
+  el.style.backgroundPosition=capaPos;
+}
+function capaSolta(){
+  capaArr=null;
+  const el=document.getElementById('capaPrev');if(el)el.classList.remove('pegando');
+}
+function capaCentro(){capaPos='50% 50%';renderCapaPrev()}
 function capaArquivo(inp){
   const f=inp.files[0];if(!f)return;
   if(f.size>1400000)return toast('Imagem muito grande: use uma até 1,4 MB');
-  const r=new FileReader();r.onload=()=>{document.getElementById('m_capa').value=r.result;toast('Imagem carregada')};r.readAsDataURL(f);
+  const r=new FileReader();r.onload=()=>{document.getElementById('m_capa').value=r.result;
+    capaPos='50% 50%';renderCapaPrev();toast('Imagem carregada')};r.readAsDataURL(f);
 }
 function saveMeta(){
   const nome=document.getElementById('m_nome').value.trim();
@@ -2949,7 +3009,7 @@ function saveMeta(){
   const tipo=document.getElementById('m_tipo').value;
   const o={nome,tipo,valorAlvo:tipo==='financeira'?parseNum(document.getElementById('m_alvo').value):0,
     prazo:document.getElementById('m_prazo').value,emoji:document.getElementById('m_emoji').value.trim()||'◎',
-    capa:document.getElementById('m_capa').value.trim()};
+    capa:document.getElementById('m_capa').value.trim(),capaPos};
   if(tipo==='financeira'&&!o.valorAlvo)return toast('Informe o valor da meta');
   const id=document.getElementById('m_id').value;
   if(id)Object.assign(DB.metas.find(x=>x.id===id),o);
@@ -6060,7 +6120,7 @@ const SESSAO = 'lidere_fp_sessao';
    Serve para o app perceber sozinho que já existe versão mais nova publicada
    do que a que está aberta neste navegador: quem usa o sistema recebe as
    melhorias sem precisar saber o que é cache. */
-const APP_BUILD = '2026-09-18.1708';
+const APP_BUILD = '2026-09-18.1715';
 let avisouVersao = false, ultimaChecagem = 0;
 
 async function checaVersao() {

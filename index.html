@@ -725,6 +725,13 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .guia-acts .lnk{background:none;border:none;color:var(--mut);font-size:11.5px;
   font-weight:600;padding:4px 2px;cursor:pointer}
 .guia-acts .lnk:hover{color:var(--acc)}
+.gop-g{display:grid;gap:9px}
+.gop{display:block;width:100%;text-align:left;background:var(--panel2);
+  border:1px solid var(--line);border-left:2px solid var(--acc);border-radius:0 11px 11px 0;
+  padding:12px 14px;transition:.15s;cursor:pointer}
+.gop:hover{border-color:var(--acc);background:var(--raise)}
+.gop b{display:block;font-size:14px;color:var(--txt)}
+.gop span{display:block;font-size:12px;color:var(--mut);margin-top:3px}
 .guia-x{position:fixed;z-index:122;top:14px;right:16px;width:34px;height:34px;border-radius:50%;
   border:1px solid var(--line-f);background:var(--panel);color:var(--dim);font-size:19px;line-height:1;
   display:flex;align-items:center;justify-content:center}
@@ -1100,6 +1107,7 @@ textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
     <nav id="nav"></nav>
     <div class="side-foot">
       <div class="temas" id="temas"></div>
+      <button class="lnk" id="btGuia" style="display:none" onclick="openGuiaMenu()">✦ Guia do sistema</button>
       <button class="lnk" onclick="exportData()">↓ Baixar backup</button>
       <button class="lnk" onclick="importData()">↑ Restaurar backup</button>
       <button class="lnk" onclick="sair()">⏋ Sair</button>
@@ -1349,6 +1357,26 @@ textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
   <div class="modal-foot">
     <button class="btn btn-ghost" onclick="pulaNome()">Agora não</button>
     <button class="btn btn-gold" onclick="salvaPrimeiroNome()">Continuar</button>
+  </div>
+</div></div>
+
+<!-- Modal: guia do sistema -->
+<div class="overlay" id="ovGuia"><div class="modal">
+  <div class="modal-head"><h3>Guia do sistema</h3><button class="modal-x" onclick="closeModal('ovGuia')">×</button></div>
+  <div class="modal-body">
+    <p class="muted" style="font-size:13px;line-height:1.55;margin:0 0 14px">
+      O guia acende cada parte do sistema na tela de verdade e conta para que serve.
+      A segunda metade faz junto com você: cadastra o banco, pergunta o saldo do
+      primeiro dia do mês e acompanha o primeiro lançamento.</p>
+    <div class="gop-g">
+      <button class="gop" onclick="closeModal('ovGuia');iniciaGuia(0)">
+        <b>Ver o guia completo</b>
+        <span>a volta inteira, do menu ao plano de contas</span></button>
+      <button class="gop" onclick="closeModal('ovGuia');iniciaGuia(guiaPratica())">
+        <b>Primeiros passos</b>
+        <span>direto na parte de mão na massa</span></button>
+    </div>
+    <div class="hint" id="guiaAviso" style="margin-top:12px"></div>
   </div>
 </div></div>
 
@@ -2274,6 +2302,7 @@ function render(){
   document.getElementById('pgTitle').childNodes[0].nodeValue=t;
   document.getElementById('pgSub').textContent=sub+' · saldo em '+mesLabel(mesAtual)+': '+brl(r.saldoFim);
   renderNav();renderTemas();topoCelular();
+  if(typeof renderGuiaBotao==='function')renderGuiaBotao();
   const V={dashboard:viewDash,pendencias:viewPend,metas:viewMetas,principios:viewPrinc,playbooks:viewPb,lancamentos:viewLanc,cartoes:viewCartoes,pagar:viewPagar,dre:viewDre,patrimonio:viewPat,plano:viewPlano,lixeira:viewLixo,privacidade:viewPrivacidade,admin:viewAdmin};
   document.getElementById('views').innerHTML=(V[activeTab]||viewDash)();
   fxAfterRender();
@@ -5945,7 +5974,7 @@ const SESSAO = 'lidere_fp_sessao';
    Serve para o app perceber sozinho que já existe versão mais nova publicada
    do que a que está aberta neste navegador: quem usa o sistema recebe as
    melhorias sem precisar saber o que é cache. */
-const APP_BUILD = '2026-09-18.1001';
+const APP_BUILD = '2026-09-18.1038';
 let avisouVersao = false, ultimaChecagem = 0;
 
 async function checaVersao() {
@@ -6341,11 +6370,12 @@ function viewPrivacidade() {
       <tr><td>Quem enxerga</td><td class="dim">Você. E quem administra o sistema, para dar suporte.</td></tr>
       <tr><td>Levar embora</td><td class="dim">O botão <b>Baixar backup</b>, na coluna lateral, exporta tudo em JSON.</td></tr>
     </tbody></table>
+    ${(typeof guiaPodeRodar === 'function' && guiaPodeRodar()) ? `
     <div class="alert" style="margin-top:14px"><span>✦</span>
       <div><b>Guia do sistema</b> mostra, na própria tela, para que serve cada parte.
         Dá para rever quando quiser.</div>
       <button class="btn btn-sm right" onclick="iniciaGuia(0)">Ver o guia</button>
-      <button class="btn btn-sm" onclick="iniciaGuia(guiaPratica())">Primeiros passos</button></div>
+      <button class="btn btn-sm" onclick="iniciaGuia(guiaPratica())">Primeiros passos</button></div>` : ''}
     <div class="alert bad" style="margin-top:10px"><span>⚠️</span>
       <div><b>Apagar a conta</b> remove seu login e todos os seus dados, sem volta.</div>
       <button class="btn btn-sm right" onclick="excluirConta()">Apagar minha conta</button></div>
@@ -6600,6 +6630,20 @@ function guiaTalvez() {
   if (!DB || DB.guiaFeito || !guiaPodeRodar()) return;
   if (document.querySelector('.overlay.show')) return;
   setTimeout(() => { if (!document.querySelector('.overlay.show')) iniciaGuia(0) }, 700);
+}
+
+/* O botao do menu so existe para quem pode receber o guia. Enquanto estiver em
+   teste, isso quer dizer: so quem administra. */
+function renderGuiaBotao() {
+  const b = document.getElementById('btGuia');
+  if (b) b.style.display = guiaPodeRodar() ? '' : 'none';
+}
+function openGuiaMenu() {
+  const a = document.getElementById('guiaAviso');
+  if (a) a.textContent = DB && DB.guiaFeito
+    ? 'Você já viu o guia uma vez. Daqui em diante ele só aparece quando você pedir.'
+    : 'Da primeira vez ele aparece sozinho.';
+  document.getElementById('ovGuia').classList.add('show');
 }
 /* ===== Backup ===== */
 function exportData(){

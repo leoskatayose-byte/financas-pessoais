@@ -210,6 +210,9 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .tbl-scroll{overflow-x:auto}
 .chip{font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;display:inline-block;white-space:nowrap;letter-spacing:.3px}
 .chip-n{background:var(--panel2);color:var(--dim);border:1px solid var(--line)}
+.btn-del{margin-right:auto;border-color:color-mix(in srgb,var(--neg) 45%,var(--line));color:var(--neg)}
+.btn-del:hover{background:color-mix(in srgb,var(--neg) 14%,transparent)}
+.btn-del.trava{opacity:.55}
 .chip-ok{background:color-mix(in srgb,var(--pos) 15%,transparent);color:var(--pos)}
 .chip-warn{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
 .chip-bad{background:color-mix(in srgb,var(--neg) 15%,transparent);color:var(--neg)}
@@ -478,6 +481,10 @@ tbody tr{transition:.12s} tbody tr:hover{background:var(--panel2)}
 .dia-i .vl{font-weight:700;font-size:12.5px;font-variant-numeric:tabular-nums}
 .dia-i.ok .tt{text-decoration:line-through;color:var(--mut)}
 .chip-date{background:var(--raise);color:var(--dim)}
+.chip-time{background:color-mix(in srgb,var(--acc) 15%,transparent);color:var(--acc);font-variant-numeric:tabular-nums}
+.chip-vlr{background:var(--raise);color:var(--txt);font-weight:600;font-variant-numeric:tabular-nums}
+.rh{color:var(--acc);font-variant-numeric:tabular-nums;font-weight:700}
+.kb-card{cursor:pointer}
 .chip-date.over{background:color-mix(in srgb,var(--neg) 18%,transparent);color:var(--neg)}
 
 /* ---------- Filtros, formulários, modais ---------- */
@@ -1340,8 +1347,6 @@ textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
         <span id="nuvemStatus" style="font-size:11px;color:var(--mut);white-space:nowrap"></span>
         <button class="btn olho" id="btOlho" onclick="trocaOculto()" title="Ocultar valores"
           aria-label="Ocultar valores"></button>
-        <button class="btn" onclick="openImport()">↓ Importar extrato</button>
-        <button class="btn btn-gold" onclick="openLanc()">+ Lançamento</button>
       </div>
     </header>
     <main class="page" id="views"></main>
@@ -1521,10 +1526,17 @@ textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
         <div class="field"><label>Dia do fechamento</label><input type="number" id="c_fech" min="1" max="31" placeholder="ex.: 4"></div>
         <div class="field"><label>Dia do vencimento</label><input type="number" id="c_venc" min="1" max="31" placeholder="ex.: 10"></div>
       </div>
+      <div class="field"><label>Esse dia cai em</label>
+        <select id="c_vencProx">
+          <option value="1">mês seguinte ao da fatura: a fatura de setembro vence em outubro</option>
+          <option value="0">mesmo mês da fatura: a fatura de setembro vence em setembro</option>
+        </select>
+        <div class="hint">Muda só a data da cobrança. A compra continua pesando no mês em que foi feita.</div></div>
       <div class="field"><label>Conta do plano para a fatura</label><select data-combo id="c_codFat"></select></div>
     </div>
   </div>
-  <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('ovConta')">Cancelar</button><button class="btn btn-gold" onclick="saveConta()">Salvar</button></div>
+  <div class="modal-foot"><button class="btn btn-del" id="c_excluir" style="display:none" onclick="excluirBanco()">Excluir banco</button>
+    <button class="btn btn-ghost" onclick="closeModal('ovConta')">Cancelar</button><button class="btn btn-gold" onclick="saveConta()">Salvar</button></div>
 </div></div>
 
 <!-- Modal: conta do plano -->
@@ -1616,6 +1628,12 @@ textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
     <div class="fgrid">
       <div class="field"><label>Prazo</label><input type="date" id="t_data"></div>
       <div class="field"><label>Coluna</label><select id="t_col"><option value="todo">A fazer</option><option value="doing">Fazendo</option><option value="done">Concluído</option></select></div>
+    </div>
+    <div class="fgrid">
+      <div class="field"><label>Horário</label><input type="time" id="t_hora">
+        <div class="hint">Opcional. Com hora, a pendência entra na ordem do dia.</div></div>
+      <div class="field"><label>Valor (R$)</label><input id="t_valor" inputmode="decimal" placeholder="0,00">
+        <div class="hint">Opcional, quando a pendência envolve dinheiro.</div></div>
     </div>
     <div class="field"><label>Prioridade</label><div class="seg" id="t_prio">
       <div class="o" data-v="baixa" onclick="pickPrio('baixa')">Baixa</div>
@@ -2126,7 +2144,7 @@ function seedDB(limpo){
   const contas=SEED.contas.map(c=>({id:'bco-'+c.idx,nome:c.nome,banco:bancoPeloNome(c.nome),
     saldoInicial:limpo?0:c.saldoInicial,dataInicial:limpo?mes1:(c.dataInicial||'2026-07-01')}));
   const codFat={1:'14.01',2:'14.02',3:'14.03'};
-  const cartoes=SEED.cartoes.map(c=>({id:'crt-'+c.idx,nome:c.nome,banco:bancoPeloNome(c.nome),limite:limpo?0:c.limite,fech:c.fechamento,venc:c.vencimento,contaPagId:'bco-1',codFat:codFat[c.idx]}));
+  const cartoes=SEED.cartoes.map(c=>({id:'crt-'+c.idx,nome:c.nome,banco:bancoPeloNome(c.nome),limite:limpo?0:c.limite,fech:c.fechamento,venc:c.vencimento,vencProx:true,contaPagId:'bco-1',codFat:codFat[c.idx]}));
   let kws=SEED.kws.map(k=>({p:k.p,cod:k.cod,dir:''}));
   // Direção: PIX que entra é receita (1.09); PIX que sai é transferência enviada (16.02).
   kws=kws.filter(k=>!(k.p==='PIX'||k.p==='RECEBIMENTO PIX'));
@@ -2186,7 +2204,11 @@ function migraDB(){
   DB.fatPag=DB.fatPag||{};
   DB.cp.forEach(c=>{if(c.fatId===undefined)c.fatId=null});
   DB.contas.forEach(c=>{c.banco=c.banco||'';c.logo=c.logo||''});
-  DB.cartoes.forEach(c=>{c.banco=c.banco||'';c.logo=c.logo||''});
+  DB.cartoes.forEach(c=>{c.banco=c.banco||'';c.logo=c.logo||'';
+    /* fatura de setembro costuma vencer em outubro; base antiga nasce assim */
+    if(c.vencProx===undefined)c.vencProx=true});
+  /* pendencia ganhou horario e valor depois */
+  DB.tarefas.forEach(t=>{if(t.hora===undefined)t.hora='';if(t.valor===undefined)t.valor=0});
   /* toda parcela pertence a uma série; sem isso a mesma compra vira duas */
   if(typeof carimbaSeries==='function'){try{carimbaSeries()}catch(e){}}
   /* Série importada da planilha vem com as parcelas daquele arquivo só. Uma
@@ -2338,6 +2360,20 @@ const crtNome=id=>{const c=DB.cartoes.find(x=>x.id===id);return c?c.nome:'-'};
 
 const lancsAtivos=()=>alive(DB.lanc);
 const fatAtivos=()=>alive(DB.fat);
+/* ---------- Quando a fatura vence ----------
+   O mes de referencia diz de qual fatura se trata; o vencimento é outra coisa.
+   A fatura de setembro costuma ser cobrada em outubro, e era isso que o app
+   errava: mostrava a cobranca dentro do proprio mes de referencia. */
+function vencFatura(crt,mk){
+  if(!crt||!crt.venc||!mk)return '';
+  const alvo=crt.vencProx===false?mk:addMes(mk,1);
+  return alvo+'-'+pad(Math.min(+crt.venc,diasNoMes(alvo)));
+}
+/* mes de referencia da fatura que vence dentro de um mes */
+const mesRefQueVence=(crt,mk)=>crt&&crt.vencProx===false?mk:addMes(mk,-1);
+const vencFatTexto=crt=>!crt||!crt.venc?'-'
+  :'dia '+crt.venc+(crt.vencProx===false?'':' do mês seguinte');
+
 function lancsDoMes(mk,contaId){return lancsAtivos().filter(l=>mesDe(l.data)===mk&&(!contaId||contaId==='todas'||l.contaId===contaId))}
 function fatDoMes(mk,cartaoId){return fatAtivos().filter(f=>f.mesRef===mk&&(!cartaoId||f.cartaoId===cartaoId))}
 function saldoInicialMes(contaId,mk){
@@ -2823,11 +2859,13 @@ function limpaFiltroPend(){pendBusca='';pendPrio='';pendQuando='';render()}
 const pendFiltroLigado=()=>!!(pendBusca||pendPrio||pendQuando);
 /* A posição gravada manda; empate cai no título, senão a lista dança a cada render. */
 const pendPorOrdem=(x,y)=>((x.ordem||0)-(y.ordem||0))||String(x.titulo||'').localeCompare(String(y.titulo||''),'pt-BR');
+/* dentro do mesmo dia manda o relogio; sem hora marcada, vai para o fim */
+const pendPorHora=(x,y)=>String(x.hora||'99:99').localeCompare(String(y.hora||'99:99'))||pendPorOrdem(x,y);
 function pendOrdena(items){
   const arr=items.slice();
   const porData=dir=>(x,y)=>{const a=x.data||'',b=y.data||'';
     if(!a&&!b)return pendPorOrdem(x,y); if(!a)return 1; if(!b)return -1;
-    return a===b?pendPorOrdem(x,y):(a<b?-dir:dir)};
+    return a===b?pendPorHora(x,y):(a<b?-dir:dir)};
   if(pendSort==='pri_desc')arr.sort((x,y)=>((PEND_PRI[y.prio]||0)-(PEND_PRI[x.prio]||0))||pendPorOrdem(x,y));
   else if(pendSort==='pri_asc')arr.sort((x,y)=>((PEND_PRI[x.prio]||0)-(PEND_PRI[y.prio]||0))||pendPorOrdem(x,y));
   else if(pendSort==='data_asc')arr.sort(porData(1));
@@ -2892,11 +2930,14 @@ function cardHTML(t,manual){
   const late=t.col!=='done'&&t.data&&t.data<hoje;
   const p=t.prio||'media';
   return `<div class="kb-card ${t.col==='done'?'done':''} ${late?'late':''}" draggable="true" data-id="${t.id}"
+      onclick="openTarefa('${t.id}')" title="Clique para editar"
       ondragstart="dragStart(event,'${t.id}')" ondragend="dragEnd(event)">
     <div class="t">${esc(t.titulo)}</div>
     ${t.desc?`<div class="d">${esc(t.desc)}</div>`:''}
     <div class="m"><span class="pchip ${p}">${PEND_LBL[p]}</span>
-      ${t.data?`<span class="chip chip-date ${late?'over':''}">${late?'venceu ':''}${fmtBR(t.data)}</span>`:'<span class="chip chip-n">sem data</span>'}</div>
+      ${t.data?`<span class="chip chip-date ${late?'over':''}">${late?'venceu ':''}${fmtBR(t.data)}</span>`:'<span class="chip chip-n">sem data</span>'}
+      ${t.hora?`<span class="chip chip-time">⏱ ${esc(t.hora)}</span>`:''}
+      ${t.valor?`<span class="chip chip-vlr">${brl(t.valor)}</span>`:''}</div>
     <div class="acts">${manual?`<button class="iconbtn" title="Subir" onclick="event.stopPropagation();moveCard('${t.id}',-1)">▲</button><button class="iconbtn" title="Descer" onclick="event.stopPropagation();moveCard('${t.id}',1)">▼</button>`:''}<button class="iconbtn" title="Editar" onclick="event.stopPropagation();openTarefa('${t.id}')">✎</button><button class="iconbtn del" title="Excluir" onclick="event.stopPropagation();delItem('tarefas','${t.id}')">🗑</button></div>
   </div>`;
 }
@@ -2988,14 +3029,15 @@ function calendario(){
 /* Faturas que vencem nesse dia, dentro do mês que está na tela. */
 function fatDoDia(dk){
   if(mesDe(dk)!==mesAtual)return [];
-  const dia=Number(dk.slice(8));
-  return DB.cartoes.filter(c=>Number(c.venc)===dia)
-    .map(c=>({c,tt:fatDoMes(mesAtual,c.id).reduce((a,f)=>a+f.valor,0)})).filter(x=>x.tt>0);
+  return DB.cartoes.filter(c=>c.venc).map(c=>{
+    const mk=mesRefQueVence(c,mesAtual);
+    return {c,mk,tt:fatDoMes(mk,c.id).reduce((a,f)=>a+f.valor,0)};
+  }).filter(x=>x.tt>0&&vencFatura(x.c,x.mk)===dk);
 }
 function diaHTML(dk){
   const hoje=iso(new Date());
   const d=new Date(dk+'T12:00:00');
-  const tar=pendOrdena(pendFiltradas().filter(t=>t.data===dk));
+  const tar=pendFiltradas().filter(t=>t.data===dk).sort(pendPorHora);
   const cc=alive(DB.cp).filter(c=>c.venc===dk);
   const fats=fatDoDia(dk);
   const sec=(t,n)=>`<div class="dia-sec">${t} (${n})</div>`;
@@ -3008,9 +3050,10 @@ function diaHTML(dk){
         <div class="tt">${esc(t.titulo)}</div>
         ${t.desc?`<div class="ob">${esc(t.desc)}</div>`:''}
         <div class="mt"><span class="pchip ${p}">${PEND_LBL[p]}</span>
+          ${t.hora?`<span class="chip chip-time">⏱ ${esc(t.hora)}</span>`:''}
           <span class="chip chip-date ${late?'over':''}">${late?'venceu ':''}${fmtBR(dk)}</span>
           <span class="chip chip-n">${(COLS.find(c=>c.id===t.col)||{}).lbl||''}</span></div>
-      </div></div>`}).join('');
+      </div>${t.valor?`<div class="vl">${brl(t.valor)}</div>`:''}</div>`}).join('');
   if(cc.length)h+=sec('Contas a pagar',cc.length)+cc.map(c=>{
     const pago=c.situacao==='Pago';
     return `<div class="dia-i" style="cursor:pointer" onclick="openCp('${c.id}')">
@@ -3021,7 +3064,7 @@ function diaHTML(dk){
   if(fats.length)h+=sec('Faturas do cartão',fats.length)+fats.map(x=>
     `<div class="dia-i" style="cursor:pointer" onclick="abreCartao('${x.c.id}')">
       <div class="bd"><div class="tt bnome">${marcaBanco(x.c,'mini')}<span>${esc(x.c.nome)}</span></div>
-        <div class="mt"><span class="chip chip-n">vencimento da fatura</span></div></div>
+        <div class="mt"><span class="chip chip-n">vence a fatura de ${mesLabel(x.mk)}</span></div></div>
       <div class="vl">${brl(x.tt)}</div></div>`).join('');
   const vazio=(tar.length+cc.length+fats.length)?'':'<div class="empty">Nada marcado para este dia.</div>';
   return `<div class="panel" style="margin-bottom:0"><div class="panel-head"><h2 style="text-transform:none">${fmtBR(dk)}
@@ -3040,6 +3083,8 @@ function openTarefa(id,col,data){
   document.getElementById('t_desc').value=t?(t.desc||''):'';
   document.getElementById('t_data').value=t?(t.data||''):(data||'');
   document.getElementById('t_col').value=t?t.col:(col||'todo');
+  document.getElementById('t_hora').value=t?(t.hora||''):'';
+  document.getElementById('t_valor').value=(t&&t.valor)?n0(t.valor):'';
   curPrio=t?(t.prio||'media'):'media';pickPrio(curPrio);
   document.getElementById('ovTar').classList.add('show');
   setTimeout(()=>document.getElementById('t_titulo').focus(),60);
@@ -3049,6 +3094,8 @@ function saveTarefa(){
   if(!titulo)return toast('Informe o título da pendência');
   const col=document.getElementById('t_col').value;
   const o={titulo,desc:document.getElementById('t_desc').value.trim(),data:document.getElementById('t_data').value,
+           hora:document.getElementById('t_hora').value||'',
+           valor:parseNum(document.getElementById('t_valor').value)||0,
            col,prio:curPrio};
   const id=document.getElementById('t_id').value;
   if(id){const t=DB.tarefas.find(x=>x.id===id);const era=t.col;Object.assign(t,o);
@@ -3117,8 +3164,8 @@ function agItens(de, ate) {
   pendFiltradas().forEach(t => {
     if (!t.data || t.data < de || t.data > ate) return;
     out.push({ dk: t.data, origem: 'pendencia', titulo: t.titulo || 'Pendência',
-      tipo: PEND_LBL[t.prio || 'media'], detalhe: t.desc || '', valor: 0,
-      feito: t.col === 'done', abrir: `openTarefa('${t.id}')` });
+      tipo: PEND_LBL[t.prio || 'media'], detalhe: t.desc || '', valor: t.valor || 0,
+      hora: t.hora || '', feito: t.col === 'done', abrir: `openTarefa('${t.id}')` });
   });
   alive(DB.cp).forEach(c => {
     if (!c.venc || c.venc < de || c.venc > ate) return;
@@ -3126,23 +3173,24 @@ function agItens(de, ate) {
       tipo: c.recorrencia || 'avulsa', detalhe: c.obs || '', valor: c.valor || 0,
       feito: c.situacao === 'Pago', abrir: `openCp('${c.id}')` });
   });
-  /* fatura: cai no dia do vencimento de cada cartão, mês a mês */
-  const m0 = de.slice(0, 7), m1 = ate.slice(0, 7);
+  /* fatura: cai no dia do vencimento, que costuma ser no mês seguinte ao da
+     referência. A de setembro aparece aqui em outubro, como o banco cobra. */
+  const m0 = addMes(de.slice(0, 7), -1), m1 = ate.slice(0, 7);
   DB.cartoes.forEach(c => {
     if (!c.venc) return;
     for (let mk = m0; mk <= m1; mk = addMes(mk, 1)) {
-      const dia = Math.min(+c.venc, agDiasNoMes(+mk.slice(0, 4), +mk.slice(5, 7) - 1));
-      const dk = mk + '-' + ('0' + dia).slice(-2);
-      if (dk < de || dk > ate) continue;
+      const dk = vencFatura(c, mk);
+      if (!dk || dk < de || dk > ate) continue;
       const tot = totalFatura(c.id, mk);
       if (!tot) continue;
       out.push({ dk, origem: 'fatura', titulo: 'Fatura ' + (c.nome || 'do cartão'),
-        tipo: 'vencimento', detalhe: mesLabel(mk), valor: tot,
+        tipo: 'vencimento', detalhe: 'fatura de ' + mesLabel(mk), valor: tot,
         feito: !!(pagFatura(c.id, mk) || (typeof pagFatLegado === 'function' && pagFatLegado(c.id, mk))),
         abrir: `abreCartao('${c.id}')` });
     }
   });
-  return out.sort((a, b) => String(a.dk).localeCompare(String(b.dk)));
+  return out.sort((a, b) => String(a.dk).localeCompare(String(b.dk))
+    || String(a.hora || '99:99').localeCompare(String(b.hora || '99:99')));
 }
 const agPassa = x => agOrigemOff.indexOf(x.origem) < 0;
 const agEhAtraso = (x, hoje) => !x.feito && x.dk < hoje;
@@ -3153,14 +3201,14 @@ function agLinha(x, hoje) {                       /* item dentro do dia, na sema
   return `<div class="ag-row ${x.feito ? 'ok' : ''}" onclick="${x.abrir}"
     style="border-left-color:${atr ? 'var(--neg)' : o.cor}"
     title="${esc(o.nome + ' · ' + x.titulo)}">
-    <div class="rt">${esc(x.titulo)}</div>
+    <div class="rt">${x.hora ? `<b class="rh">${esc(x.hora)}</b> ` : ''}${esc(x.titulo)}</div>
     <div class="rm">${esc(x.tipo)}${x.valor ? ' · ' + brl(x.valor) : ''}</div></div>`;
 }
 function agLinhaLarga(x, hoje, semOrigem) {       /* linha larga: dia e 30 dias */
   const o = agOrigem(x.origem), atr = agEhAtraso(x, hoje);
   return `<div class="ag-lin ${x.feito ? 'ok' : ''}" onclick="${x.abrir}">
     <span class="bo" style="background:${atr ? 'var(--neg)' : o.cor}"></span>
-    <span class="tx"><b>${esc(x.titulo)}</b><i>${semOrigem ? '' : esc(o.nome) + ' · '}${esc(x.tipo)}${
+    <span class="tx"><b>${x.hora ? `<span class="rh">${esc(x.hora)}</span> ` : ''}${esc(x.titulo)}</b><i>${semOrigem ? '' : esc(o.nome) + ' · '}${esc(x.tipo)}${
       x.detalhe ? ' · ' + esc(String(x.detalhe).slice(0, 60)) : ''}</i></span>
     ${x.valor ? `<span class="vl">${brl(x.valor)}</span>` : ''}
     <span class="dt" style="${atr ? 'color:var(--neg)' : ''}">${
@@ -3987,13 +4035,16 @@ function avisoFaturas(cid){
   const abertas=faturasEmAberto(cid);
   if(!abertas.length)return '';
   const soma=abertas.reduce((s,x)=>s+x.total,0);
+  const crtA=DB.cartoes.find(c=>c.id===cid);
+  const quando=mk=>crtA&&crtA.venc?' · venceu em '+fmtBR(vencFatura(crtA,mk)):'';
   const linhas=abertas.map(x=>`<button class="btn btn-sm btn-gold" onclick="openPagFat('${cid}','${x.mk}')">Pagar ${mesLabel(x.mk)} · ${brl(x.total)}</button>`).join(' ');
   return `<div class="alert bad fat-aviso aberta"><span>💳</span>
-    <div>${abertas.length===1?'A fatura de '+mesLabel(abertas[0].mk)+' fechou e não foi paga.'
+    <div>${abertas.length===1?'A fatura de '+mesLabel(abertas[0].mk)+' fechou e não foi paga'+quando(abertas[0].mk)+'.'
       :abertas.length+' faturas fecharam e não foram pagas, somando '+brl(soma)+'.'}</div>
     <div class="right" style="display:flex;gap:8px;flex-wrap:wrap">${linhas}</div></div>`;
 }
 function painelFaturas(cid){
+  const crtP=DB.cartoes.find(c=>c.id===cid);
   const meses=[...new Set(fatAtivos().filter(f=>f.cartaoId===cid).map(f=>f.mesRef))]
     .filter(m=>m<=mesAtual).sort().reverse().slice(0,12);
   if(!meses.length)return '';
@@ -4001,7 +4052,8 @@ function painelFaturas(cid){
     const t=totalFatura(cid,m), p=pagFatura(cid,m), leg=p?null:pagFatLegado(cid,m);
     const dif=p?Math.round((p.valor-t)*100)/100:0;
     return `<tr>
-      <td><b>${mesLabel(m)}</b>${m===mesAtual?' <span class="pill">mês na tela</span>':''}</td>
+      <td><b>${mesLabel(m)}</b>${m===mesAtual?' <span class="pill">mês na tela</span>':''}
+        ${crtP&&crtP.venc?`<div class="muted" style="font-size:11px">vence em ${fmtBR(vencFatura(crtP,m))}</div>`:''}</td>
       <td class="num">${brl(t)}</td>
       <td>${p?`<span class="chip chip-ok">pago em ${fmtBR(p.data)}</span>`
             :leg?`<span class="chip chip-ok">saída no extrato em ${fmtBR(leg.data)}</span>`
@@ -4058,7 +4110,7 @@ function viewCartoes(){
     <div class="stat"><div class="k">Fatura de ${mesLabel(mesAtual)}</div><div class="v goldtxt">${brl(total)}</div><div class="sub">${F.length} lançamento(s)</div></div>
     <div class="stat"><div class="k">Situação</div><div class="v ${pago||pagoLeg?'pos':''}" style="font-size:20px">${pago?'Paga':pagoLeg?'Paga':'Em aberto'}</div><div class="sub">${pago?brl(pago.valor)+' em '+fmtBR(pago.data):pagoLeg?'saída no extrato em '+fmtBR(pagoLeg.data):(total>0?'ainda não foi paga':'sem movimento')}</div></div>
     <div class="stat"><div class="k">Limite</div><div class="v">${crt&&crt.limite>0?brl(crt.limite):'-'}</div><div class="sub">${crt&&crt.limite>0?usoLim.toFixed(0)+'% usado nesta fatura':'sem limite cadastrado'}</div></div>
-    <div class="stat"><div class="k">Fechamento / vencimento</div><div class="v" style="font-size:20px">${crt&&crt.fech?'dia '+crt.fech:'-'} / ${crt&&crt.venc?'dia '+crt.venc:'-'}</div><div class="sub">${crt?esc(bcoNome(crt.contaPagId)):''}</div></div>
+    <div class="stat"><div class="k">Fechamento / vencimento</div><div class="v" style="font-size:20px">${crt&&crt.fech?'dia '+crt.fech:'-'} / ${vencFatTexto(crt)}</div><div class="sub">${crt&&crt.venc?'esta fatura vence em '+fmtBR(vencFatura(crt,mesAtual)):''}${crt?' · '+esc(bcoNome(crt.contaPagId)):''}</div></div>
     <div class="stat"><div class="k">Parcelado em aberto</div><div class="v">${brl(Object.values(futuras).reduce((a,b)=>a+b,0))}</div><div class="sub">nas próximas faturas</div></div>
   </div>
   <div class="panel">
@@ -5518,11 +5570,46 @@ function openConta(tipo,id){
     document.getElementById('c_limite').value=o?n0(o.limite):'';
     document.getElementById('c_fech').value=o&&o.fech?o.fech:'';
     document.getElementById('c_venc').value=o&&o.venc?o.venc:'';
+    document.getElementById('c_vencProx').value=(o&&o.vencProx===false)?'0':'1';
     document.getElementById('c_contaPag').innerHTML=DB.contas.map(c=>`<option value="${c.id}" ${o&&o.contaPagId===c.id?'selected':''}>${esc(c.nome)}</option>`).join('');
     document.getElementById('c_codFat').innerHTML=optsPlano(o?o.codFat:'14.01',p=>p.grupo==='CARTÃO CRÉDITO');
   }
+  const bx=document.getElementById('c_excluir');
+  bx.style.display=(isB&&o)?'':'none';
+  if(isB&&o){const u=usoDoBanco(o.id);
+    bx.textContent=u.total?'Excluir banco (tem movimento)':'Excluir banco';
+    bx.classList.toggle('trava',!!u.total)}
   document.getElementById('ovConta').classList.add('show');
   setTimeout(()=>document.getElementById('c_nome').focus(),60);
+}
+/* ---------- Apagar uma conta bancária ----------
+   Conta criada por engano ou teste some sem deixar rastro. Conta com
+   movimento fica: apagar o lugar onde o dinheiro passou não resolve nada,
+   só esconde. Então o app diz o que está preso nela e manda arrumar antes. */
+function usoDoBanco(id){
+  const l=lancsAtivos().filter(x=>x.contaId===id).length;
+  const lixo=DB.lanc.filter(x=>x.contaId===id&&x.deletedAt).length;
+  const c=DB.cartoes.filter(x=>x.contaPagId===id).length;
+  const f=Object.values(DB.fatPag||{}).filter(p=>p.contaId===id).length;
+  return {l,lixo,c,f,total:l+lixo+c+f};
+}
+function excluirBanco(){
+  const id=document.getElementById('c_id').value;
+  const c=DB.contas.find(x=>x.id===id); if(!c)return;
+  const u=usoDoBanco(id);
+  if(u.total){
+    const q=[u.l?u.l+' lançamento(s) no extrato':'',
+             u.lixo?u.lixo+' lançamento(s) nos Excluídos':'',
+             u.c?u.c+' cartão(ões) pagos por ela':'',
+             u.f?u.f+' fatura(s) baixada(s) nela':''].filter(Boolean).join(', ');
+    return toast('Este banco tem '+q+'. Mova ou apague isso antes.');
+  }
+  if(DB.contas.length<2)return toast('Deixe pelo menos um banco cadastrado');
+  if(!confirm('Excluir o banco "'+c.nome+'"? Ele está vazio, e isso não tem volta.'))return;
+  DB.contas=DB.contas.filter(x=>x.id!==id);
+  if(typeof filtroConta!=='undefined'&&filtroConta===id)filtroConta='todas';
+  if(typeof contaSel!=='undefined'&&contaSel===id)contaSel=null;
+  save();closeModal('ovConta');render();toast('Banco excluído');
 }
 function saveConta(){
   const nome=document.getElementById('c_nome').value.trim();
@@ -5534,6 +5621,7 @@ function saveConta(){
   }else{
     const o={nome,banco:cBanco,logo:cLogo,limite:parseNum(document.getElementById('c_limite').value),
       fech:+document.getElementById('c_fech').value||null,venc:+document.getElementById('c_venc').value||null,
+      vencProx:document.getElementById('c_vencProx').value==='1',
       contaPagId:document.getElementById('c_contaPag').value,codFat:document.getElementById('c_codFat').value};
     if(id)Object.assign(DB.cartoes.find(x=>x.id===id),o); else{const nid=uid();DB.cartoes.push({id:nid,...o});filtroCartao=nid;cartaoSel=nid}
   }
@@ -5559,8 +5647,8 @@ function openPagFat(cid,mk){
     `<b>${esc(crt.nome)}</b> · fatura de ${mesLabel(mk)}: <b>${brl(total)}</b> em ${fatDoMes(mk,cid).length} lançamento(s).
      <div class="muted" style="font-size:11.5px;margin-top:4px">As compras já estão distribuídas nos grupos do DRE. O pagamento entra como movimentação neutra.</div>`;
   document.getElementById('pf_valor').value=n0(total);
-  const dia=crt.venc||10;
-  document.getElementById('pf_data').value=mk+'-'+pad(Math.min(dia,diasNoMes(mk)));
+  document.getElementById('pf_data').value=
+    vencFatura(crt,mk)||(mk+'-'+pad(Math.min(crt.venc||10,diasNoMes(mk))));
   document.getElementById('pf_conta').innerHTML=DB.contas.map(c=>
     `<option value="${c.id}" ${crt.contaPagId===c.id?'selected':''}>${esc(c.nome)}</option>`).join('');
   document.getElementById('pf_cod').innerHTML=optsPlano(crt.codFat||'14.01',p=>p.grupo==='CARTÃO CRÉDITO');
@@ -6580,7 +6668,7 @@ const SESSAO = 'lidere_fp_sessao';
    Serve para o app perceber sozinho que já existe versão mais nova publicada
    do que a que está aberta neste navegador: quem usa o sistema recebe as
    melhorias sem precisar saber o que é cache. */
-const APP_BUILD = '2026-09-23.1640';
+const APP_BUILD = '2026-10-09.1122';
 let avisouVersao = false, ultimaChecagem = 0;
 
 async function checaVersao() {
@@ -7017,8 +7105,8 @@ const GUIA = [
   { sec: 'lancamentos', alvo: '.nav-i[data-id="lancamentos"]', tit: 'Bancos',
     txt: 'Aqui ficam as suas contas, com extrato e saldo. Cadastre um banco escolhendo o símbolo dele, que o nome já vem junto.' },
 
-  { sec: 'lancamentos', alvo: '.tb-acts', tit: 'Lançar ou importar',
-    txt: '“+ Lançamento” abre uma linha por vez. “Importar extrato” lê OFX, CSV e o PDF do banco, mostra o que encontrou e você confirma. Dentro do extrato ainda tem o “Em lote”, para várias de uma vez.' },
+  { sec: 'lancamentos', alvo: '#views .panel-head', tit: 'Lançar ou importar',
+    txt: 'Os botões ficam aqui dentro, na tela do banco: “＋ Lançamento” abre uma linha por vez, “Em lote” abre várias, e “Importar extrato” lê OFX, CSV e o PDF do banco. A compra do cartão se lança na tela do cartão, nunca aqui.' },
 
   { sec: 'cartoes', alvo: '.nav-i[data-id="cartoes"]', tit: 'Cartões e faturas',
     txt: 'Cada cartão com a fatura do mês, o limite usado e o que já está comprometido nas próximas. Quando você marca a fatura como paga, as parcelas daquele mês são baixadas junto.' },
@@ -7070,9 +7158,9 @@ const GUIA = [
     tit: '5. Olhe o seu extrato',
     txt: 'O lançamento entrou na lista e o saldo do dia já mudou. Repita para os outros gastos do mês, ou use o atalho do próximo passo.' },
 
-  { sec: 'lancamentos', alvo: '.tb-acts', pratica: true,
+  { sec: 'lancamentos', alvo: '#views .panel-head', pratica: true,
     tit: '6. O caminho rápido',
-    txt: '“Importar extrato” lê o arquivo OFX, CSV ou o PDF do seu banco e traz o mês inteiro de uma vez, já classificado. Dentro do extrato ainda existe o “Em lote”, para digitar vários de uma vez.' },
+    txt: '“Importar extrato”, aqui nesta barra, lê o arquivo OFX, CSV ou o PDF do seu banco e traz o mês inteiro de uma vez, já classificado. Ao lado dele, “Em lote” serve para digitar vários sem abrir e fechar janela.' },
 
   { sec: 'dashboard', alvo: '', tit: 'É isso',
     txt: 'Seu banco está cadastrado e o mês começou a aparecer na tela. Daqui para frente é manter: lançar ou importar, conferir a fatura do cartão e olhar o resultado no fim do mês. Para rever este guia, é em Privacidade.' }
